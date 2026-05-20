@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #app { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+  overscroll-behavior-y: contain;
+}
+
+@layer components {
+  .safe-top { padding-top: max(env(safe-area-inset-top), 16px); }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+  .ios-card { @apply bg-white rounded-2.5xl shadow-soft border border-black/[.04]; }
+  .ios-button-primary { @apply rounded-full font-semibold text-white bg-teal-600 px-6 py-3.5 transition-all active:scale-[.97] shadow-soft; }
+  .ios-button-danger { @apply rounded-full font-semibold text-white bg-coral-600 px-6 py-3.5 transition-all active:scale-[.97] shadow-soft; }
+  .input { @apply w-full rounded-2xl border border-ink-300/40 bg-white px-4 py-3.5 text-ink-900 placeholder:text-ink-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition; }
+  .chip { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold; }
+  .scroll-no-bar::-webkit-scrollbar { display: none; }
+  .scroll-no-bar { scrollbar-width: none; }
+  .glass { background: rgba(255,255,255,.72); backdrop-filter: blur(20px) saturate(180%); }
+}
+
+@keyframes laser { 0%,100% { transform: translateY(-50%); opacity:.6 } 50% { transform: translateY(50%); opacity:1 } }
+.animate-laser { animation: laser 1.6s ease-in-out infinite; }
+@keyframes fade-in { from { opacity:0 } to { opacity:1 } }
+.animate-fade-in { animation: fade-in 200ms ease-out; }
+@keyframes pop-in { 0% { transform: scale(.7); opacity:0 } 60% { transform: scale(1.06); opacity:1 } 100% { transform: scale(1) } }
+.animate-pop-in { animation: pop-in 380ms cubic-bezier(.2,.8,.2,1); }
