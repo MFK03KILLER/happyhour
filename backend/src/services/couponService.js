@@ -53,6 +53,7 @@ async function purchase({ customerId, couponId, paymentMethod }) {
     customerId,
     amountUSD: coupon.priceUSD,
     method: paymentMethod,
+    context: { kind: 'coupon_purchase', label: coupon.title, refType: 'Coupon', refId: coupon._id },
   });
   const purchased = await purchasedRepo.create({
     customerId,

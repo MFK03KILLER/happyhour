@@ -10,7 +10,7 @@ const MOCK_CARDS = {
   paypal: { brand: 'PayPal', last4: 'PP' },
 };
 
-async function processMockPayment({ customerId, amountUSD, method }) {
+async function processMockPayment({ customerId, amountUSD, method, context }) {
   if (!env.MOCK_PAYMENTS) throw new BadRequestError('Real payments not enabled in demo');
   if (!MOCK_CARDS[method]) throw new BadRequestError('Unsupported payment method');
   const card = MOCK_CARDS[method];
@@ -22,6 +22,7 @@ async function processMockPayment({ customerId, amountUSD, method }) {
     last4: card.last4,
     status: 'succeeded',
     mockTransactionId: `mock_${nanoid(12)}`,
+    context: context || { kind: 'other' },
   });
   return payment;
 }

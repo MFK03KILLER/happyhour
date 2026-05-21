@@ -18,6 +18,7 @@ async function subscribe({ customerId, plan, paymentMethod }) {
     customerId,
     amountUSD: def.amountUSD,
     method: paymentMethod,
+    context: { kind: 'subscription', label: `${plan.charAt(0).toUpperCase() + plan.slice(1)} membership`, refType: 'Subscription' },
   });
   const now = new Date();
   const periodEnd = new Date(now.getTime() + def.days * 24 * 60 * 60 * 1000);

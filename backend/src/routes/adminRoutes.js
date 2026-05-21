@@ -29,6 +29,46 @@ router.get('/audit-logs', ctrl.auditLogs);
 
 /**
  * @openapi
+ * /admin/payments:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Paginated list of all payments
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: method
+ *         schema: { type: string, enum: [apple_pay, google_pay, card, paypal] }
+ *       - in: query
+ *         name: kind
+ *         schema: { type: string, enum: [subscription, coupon_purchase, other] }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [succeeded, failed, refunded] }
+ */
+router.get('/payments', ctrl.payments);
+
+/**
+ * @openapi
+ * /admin/revenue:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Revenue analytics
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: range
+ *         schema: { type: string, enum: [today, week, month, year] }
+ */
+router.get('/revenue', ctrl.revenue);
+
+/**
+ * @openapi
  * /admin/vendors:
  *   get:
  *     tags: [Admin]

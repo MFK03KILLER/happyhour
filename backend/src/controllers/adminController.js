@@ -5,6 +5,7 @@ const merchantService = require('../services/merchantService');
 const couponService = require('../services/couponService');
 const statsService = require('../services/statsService');
 const auditService = require('../services/auditService');
+const revenueService = require('../services/revenueService');
 const userRepo = require('../repositories/userRepository');
 const { ConflictError } = require('../utils/errors');
 
@@ -102,11 +103,32 @@ exports.listUsers = asyncHandler(async (req, res) => {
 });
 
 exports.overview = asyncHandler(async (req, res) => {
-  const data = await statsService.adminOverview();
-  res.json(data);
+  const [base, money] = await Promise.all([
+    statsService.adminOverview(),
+    revenueService.todayWeekMonth(),
+  ]);
+  res.json({ ...base, revenue: money });
 });
 
 exports.auditLogs = asyncHandler(async (req, res) => {
   const data = await auditService.list({ skip: 0, limit: 100 });
+  res.json(data);
+});
+
+exports.payments = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page || '1', 10);
+  const limit = Math.min(parseInt(req.query.limit || '20', 10), 100);
+  const data = await revenueService.listPayments({
+    page,
+    limit,
+    method: req.query.method,
+    kind: req.query.kind,
+    status: req.query.status,
+  });
+  res.json(data);
+});
+
+exports.revenue = asyncHandler(async (req, res) => {
+  const data = await revenueService.overview(req.query.range || 'month');
   res.json(data);
 });
