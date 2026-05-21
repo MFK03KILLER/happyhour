@@ -5,7 +5,11 @@ import client from '../../api/client';
 const items = ref([]);
 const loading = ref(true);
 const showForm = ref(false);
-const form = ref({ name: '', description: '', contactEmail: '', logoUrl: '' });
+const form = ref({
+  name: '', description: '', contactEmail: '', logoUrl: '',
+  ownerFullName: '', ownerEmail: '', ownerPassword: '',
+});
+const lastCreated = ref(null);
 
 async function load() {
   loading.value = true;
@@ -16,9 +20,16 @@ async function load() {
 }
 
 async function save() {
-  await client.post('/admin/vendors', form.value);
+  const payload = { ...form.value };
+  if (!payload.ownerEmail) {
+    delete payload.ownerEmail; delete payload.ownerPassword; delete payload.ownerFullName;
+  }
+  const { data } = await client.post('/admin/vendors', payload);
+  if (data.owner) {
+    lastCreated.value = { email: form.value.ownerEmail, password: form.value.ownerPassword, name: data.vendor.name };
+  }
   showForm.value = false;
-  form.value = { name: '', description: '', contactEmail: '', logoUrl: '' };
+  form.value = { name: '', description: '', contactEmail: '', logoUrl: '', ownerFullName: '', ownerEmail: '', ownerPassword: '' };
   await load();
 }
 
@@ -26,6 +37,13 @@ async function del(id) {
   if (!confirm('Delete vendor?')) return;
   await client.delete(`/admin/vendors/${id}`);
   await load();
+}
+
+function genPwd() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let p = '';
+  for (let i = 0; i < 12; i++) p += chars.charAt(Math.floor(Math.random() * chars.length));
+  form.value.ownerPassword = p;
 }
 
 onMounted(load);
@@ -36,9 +54,20 @@ onMounted(load);
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Vendors</h1>
-        <p class="text-ink-500 mt-1">Parent companies / chains</p>
+        <p class="text-ink-500 mt-1">Parent companies / brands</p>
       </div>
       <button @click="showForm = true" class="ios-button-primary">+ New vendor</button>
+    </div>
+
+    <div v-if="lastCreated" class="mt-6 ios-card p-5 bg-teal-50 border border-teal-600/30">
+      <div class="font-bold text-teal-700">Vendor + owner created!</div>
+      <p class="text-sm text-ink-700 mt-1">Deliver these credentials to <strong>{{ lastCreated.name }}</strong>:</p>
+      <div class="mt-3 font-mono text-sm space-y-1">
+        <div><span class="text-ink-500">Login:</span> {{ lastCreated.email }}</div>
+        <div><span class="text-ink-500">Password:</span> {{ lastCreated.password }}</div>
+      </div>
+      <p class="text-xs text-ink-500 mt-3">They'll be redirected to the Vendor console on login and can manage their merchants, coupons, and team.</p>
+      <button @click="lastCreated = null" class="text-sm text-teal-700 font-semibold mt-3">Dismiss</button>
     </div>
 
     <div v-if="loading" class="mt-6 space-y-3">
@@ -57,17 +86,28 @@ onMounted(load);
     </div>
 
     <div v-if="showForm" class="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-0 md:p-6">
-      <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-md shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+      <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-md shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <div class="text-xl font-bold">New vendor</div>
           <button @click="showForm = false" class="text-ink-500">Cancel</button>
         </div>
         <form @submit.prevent="save" class="space-y-3">
-          <input v-model="form.name" class="input" placeholder="Vendor name" required />
+          <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider">Brand info</div>
+          <input v-model="form.name" class="input" placeholder="Vendor name (e.g. Pizza My Heart)" required />
           <input v-model="form.description" class="input" placeholder="Short description" />
           <input v-model="form.contactEmail" type="email" class="input" placeholder="Contact email" />
           <input v-model="form.logoUrl" type="url" class="input" placeholder="Logo URL" />
-          <button type="submit" class="ios-button-primary w-full">Create</button>
+
+          <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider mt-4 pt-3 border-t border-cream-200">Owner account (optional)</div>
+          <p class="text-xs text-ink-500">Creates a vendor user with full permissions. Deliver creds to the business owner.</p>
+          <input v-model="form.ownerFullName" class="input" placeholder="Owner name" />
+          <input v-model="form.ownerEmail" type="email" class="input" placeholder="Owner email (their login)" />
+          <div class="flex gap-2">
+            <input v-model="form.ownerPassword" type="text" class="input flex-1" placeholder="Password" minlength="8" />
+            <button type="button" @click="genPwd" class="ios-card px-3 text-sm font-semibold text-teal-700 active:scale-95">Generate</button>
+          </div>
+
+          <button type="submit" class="ios-button-primary w-full mt-2">Create vendor</button>
         </form>
       </div>
     </div>

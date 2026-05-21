@@ -16,8 +16,9 @@ async function submit() {
   try {
     const user = await auth.login(email.value, password.value);
     if (user.role === 'admin') router.push('/admin');
+    else if (user.role === 'vendor') router.push('/vendor');
     else if (user.role === 'merchant_staff') router.push('/');
-    else { error.value = 'This app is for merchants and admins only.'; await auth.logout(); }
+    else { error.value = 'This app is for merchants, vendors, and admins only.'; await auth.logout(); }
   } catch (e) {
     error.value = e.response?.data?.error?.message || 'Login failed';
   } finally {

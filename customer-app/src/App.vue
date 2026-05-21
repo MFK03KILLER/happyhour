@@ -2,20 +2,30 @@
 import { useRoute } from 'vue-router';
 import { computed } from 'vue';
 import BottomTabBar from './components/BottomTabBar.vue';
+import DesktopFrame from './components/DesktopFrame.vue';
 
 const route = useRoute();
-const hideTabs = computed(() => ['/login', '/register'].includes(route.path) || route.path.includes('/redeem') || route.path.includes('/orders/'));
+const hideTabs = computed(() => {
+  if (['/login', '/register', '/welcome', '/subscribe'].includes(route.path)) return true;
+  if (route.path.startsWith('/coupons/')) return true;
+  if (route.path.includes('/redeem')) return true;
+  if (route.path.includes('/orders/')) return true;
+  return false;
+});
+const isLanding = computed(() => route.path === '/welcome');
 </script>
 
 <template>
-  <div class="min-h-screen bg-cream-100 text-ink-900 flex flex-col">
-    <router-view v-slot="{ Component }">
-      <transition name="page" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
-    <BottomTabBar v-if="!hideTabs" />
-  </div>
+  <DesktopFrame :landing="isLanding">
+    <div class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
+      <router-view v-slot="{ Component }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+      <BottomTabBar v-if="!hideTabs" />
+    </div>
+  </DesktopFrame>
 </template>
 
 <style scoped>

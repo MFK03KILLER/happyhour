@@ -7,6 +7,17 @@ const client = axios.create({
   timeout: 15000,
 });
 
+function clearSession() {
+  localStorage.removeItem('hh_access_token');
+  localStorage.removeItem('hh_refresh_token');
+}
+
+function redirectToLogin() {
+  if (window.location.pathname !== '/welcome' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+    window.location.href = '/welcome';
+  }
+}
+
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('hh_access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -27,7 +38,11 @@ client.interceptors.response.use(
     const original = error.config;
     if (error.response && error.response.status === 401 && !original._retry) {
       const refreshToken = localStorage.getItem('hh_refresh_token');
-      if (!refreshToken) return Promise.reject(error);
+      if (!refreshToken) {
+        clearSession();
+        redirectToLogin();
+        return Promise.reject(error);
+      }
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           pendingRequests.push((err, token) => {
@@ -48,9 +63,8 @@ client.interceptors.response.use(
         return client(original);
       } catch (err) {
         flushQueue(err, null);
-        localStorage.removeItem('hh_access_token');
-        localStorage.removeItem('hh_refresh_token');
-        window.location.href = '/login';
+        clearSession();
+        redirectToLogin();
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

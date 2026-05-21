@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['admin', 'vendor', 'merchant_staff', 'customer'], required: true, index: true },
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   merchantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' },
+  permissions: {
+    type: [String],
+    enum: ['manage_coupons', 'view_stats', 'manage_team', 'scan_only', 'manage_merchants'],
+    default: [],
+  },
   status: { type: String, enum: ['active', 'suspended', 'pending'], default: 'active' },
   lastLoginAt: Date,
   failedLoginAttempts: { type: Number, default: 0 },

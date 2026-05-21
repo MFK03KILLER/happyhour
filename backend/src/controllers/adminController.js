@@ -13,9 +13,27 @@ exports.listVendors = asyncHandler(async (req, res) => {
   res.json(result);
 });
 exports.createVendor = asyncHandler(async (req, res) => {
-  const v = await vendorService.create(req.body);
+  const { ownerEmail, ownerPassword, ownerFullName, ...vendorData } = req.body;
+  const v = await vendorService.create(vendorData);
+  let owner = null;
+  if (ownerEmail && ownerPassword) {
+    const existing = await userRepo.findByEmail(ownerEmail);
+    if (existing) throw new ConflictError('Owner email already in use');
+    const passwordHash = await bcrypt.hash(ownerPassword, 12);
+    owner = await userRepo.create({
+      email: ownerEmail,
+      passwordHash,
+      fullName: ownerFullName || `${vendorData.name} Owner`,
+      role: 'vendor',
+      vendorId: v._id,
+      permissions: ['manage_coupons', 'view_stats', 'manage_team', 'manage_merchants'],
+      status: 'active',
+    });
+    v.ownerUserId = owner._id;
+    await v.save();
+  }
   await auditService.log({ actorUserId: req.user._id, action: 'vendor.create', targetType: 'Vendor', targetId: v._id.toString(), after: v, req });
-  res.status(201).json(v);
+  res.status(201).json({ vendor: v, owner });
 });
 exports.updateVendor = asyncHandler(async (req, res) => {
   const before = await vendorService.getById(req.params.id);

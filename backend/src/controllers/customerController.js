@@ -23,6 +23,14 @@ exports.purchase = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
+exports.claim = asyncHandler(async (req, res) => {
+  const result = await couponService.claim({
+    customerId: req.user._id,
+    couponId: req.params.id,
+  });
+  res.status(201).json(result);
+});
+
 exports.wallet = asyncHandler(async (req, res) => {
   const items = await purchasedRepo.findByCustomer(req.user._id);
   res.json({ items });

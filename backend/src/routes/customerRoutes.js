@@ -1,11 +1,44 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/customerController');
+const subCtrl = require('../controllers/subscriptionController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { purchaseSchema, browseQuerySchema, rateSchema } = require('../validators/customerValidators');
 const { writeLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate(), authorize('customer'));
+
+/**
+ * @openapi
+ * /customer/subscription:
+ *   get:
+ *     tags: [Customer]
+ *     summary: Get my subscription
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/subscription', subCtrl.me);
+
+/**
+ * @openapi
+ * /customer/subscription/subscribe:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Subscribe to a plan
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/subscription/subscribe', writeLimiter, subCtrl.subscribe);
+
+/**
+ * @openapi
+ * /customer/subscription/cancel:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Cancel subscription at period end
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/subscription/cancel', writeLimiter, subCtrl.cancel);
+
+router.post('/subscription/resume', writeLimiter, subCtrl.resume);
 
 /**
  * @openapi
@@ -60,6 +93,16 @@ router.get('/coupons/:id', ctrl.detail);
  *                 enum: [apple_pay, google_pay, card, paypal]
  */
 router.post('/coupons/:id/purchase', writeLimiter, validate(purchaseSchema), ctrl.purchase);
+
+/**
+ * @openapi
+ * /customer/coupons/{id}/claim:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Claim a coupon (subscription required)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/coupons/:id/claim', writeLimiter, ctrl.claim);
 
 /**
  * @openapi

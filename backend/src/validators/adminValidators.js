@@ -7,6 +7,9 @@ const vendorSchema = z.object({
   description: z.string().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
+  ownerEmail: z.string().email().optional(),
+  ownerPassword: z.string().min(8).optional(),
+  ownerFullName: z.string().optional(),
   billingAddress: z.object({
     street: z.string().optional(),
     city: z.string().optional(),
@@ -63,6 +66,7 @@ const createUserSchema = z.object({
   role: z.enum(['admin', 'vendor', 'merchant_staff', 'customer']),
   vendorId: z.string().optional(),
   merchantId: z.string().optional(),
+  permissions: z.array(z.enum(['manage_coupons', 'view_stats', 'manage_team', 'scan_only', 'manage_merchants'])).optional(),
   phone: z.string().optional(),
 });
 

@@ -5,6 +5,13 @@ import LoginView from '../views/Login.vue';
 import ScanView from '../views/Scan.vue';
 import HistoryView from '../views/History.vue';
 import StatsView from '../views/Stats.vue';
+import MerchantSettings from '../views/MerchantSettings.vue';
+
+import VendorLayout from '../views/vendor/VendorLayout.vue';
+import VendorDashboard from '../views/vendor/VendorDashboard.vue';
+import VendorMerchants from '../views/vendor/VendorMerchants.vue';
+import VendorCoupons from '../views/vendor/VendorCoupons.vue';
+import VendorTeam from '../views/vendor/VendorTeam.vue';
 
 import AdminLayout from '../views/admin/AdminLayout.vue';
 import AdminDashboard from '../views/admin/AdminDashboard.vue';
@@ -19,6 +26,18 @@ const routes = [
   { path: '/', component: ScanView, meta: { roles: ['merchant_staff'] } },
   { path: '/history', component: HistoryView, meta: { roles: ['merchant_staff'] } },
   { path: '/stats', component: StatsView, meta: { roles: ['merchant_staff'] } },
+  { path: '/settings', component: MerchantSettings, meta: { roles: ['merchant_staff'] } },
+  {
+    path: '/vendor',
+    component: VendorLayout,
+    meta: { roles: ['vendor'] },
+    children: [
+      { path: '', component: VendorDashboard },
+      { path: 'merchants', component: VendorMerchants },
+      { path: 'coupons', component: VendorCoupons },
+      { path: 'team', component: VendorTeam },
+    ],
+  },
   {
     path: '/admin',
     component: AdminLayout,
@@ -43,6 +62,7 @@ router.beforeEach(async (to) => {
   if (!auth.user) { try { await auth.fetchMe(); } catch { return { path: '/login' }; } }
   if (to.meta.roles && !to.meta.roles.includes(auth.user.role)) {
     if (auth.user.role === 'admin') return { path: '/admin' };
+    if (auth.user.role === 'vendor') return { path: '/vendor' };
     if (auth.user.role === 'merchant_staff') return { path: '/' };
     return { path: '/login' };
   }

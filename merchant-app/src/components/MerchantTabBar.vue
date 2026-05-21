@@ -7,6 +7,7 @@ const tabs = [
   { to: '/', label: 'Scan', icon: 'scan' },
   { to: '/history', label: 'History', icon: 'list' },
   { to: '/stats', label: 'Stats', icon: 'chart' },
+  { to: '/settings', label: 'Store', icon: 'store' },
 ];
 function isActive(to) { return to === '/' ? route.path === '/' : route.path.startsWith(to); }
 </script>
@@ -24,6 +25,7 @@ function isActive(to) { return to === '/' ? route.path === '/' : route.path.star
         <svg v-if="t.icon==='scan'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M21 7V5a2 2 0 0 0-2-2h-2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 12h18"/></svg>
         <svg v-if="t.icon==='list'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
         <svg v-if="t.icon==='chart'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 19V5M4 19h16M8 16V11M12 16V8M16 16v-3"/></svg>
+        <svg v-if="t.icon==='store'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 9V7l2-4h12l2 4v2"/><path d="M4 9a3 3 0 0 0 6 0 3 3 0 0 0 4 0 3 3 0 0 0 6 0"/><path d="M5 9v11h14V9"/></svg>
         <span class="text-[10px] font-medium">{{ t.label }}</span>
       </button>
     </div>

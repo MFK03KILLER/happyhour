@@ -15,7 +15,12 @@ async function submit() {
   loading.value = true;
   error.value = '';
   try {
-    await auth.login(email.value, password.value);
+    const user = await auth.login(email.value, password.value);
+    if (user.role !== 'customer') {
+      error.value = 'This app is for customers. Use the merchant console instead.';
+      await auth.logout();
+      return;
+    }
     router.push('/');
   } catch (e) {
     error.value = e.response?.data?.error?.message || 'Login failed';

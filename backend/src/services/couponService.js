@@ -1,6 +1,7 @@
 const couponRepo = require('../repositories/couponRepository');
 const purchasedRepo = require('../repositories/purchasedCouponRepository');
 const paymentService = require('./paymentService');
+const subscriptionService = require('./subscriptionService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 async function browse({ category, city, search, page = 1, limit = 20 }) {
@@ -26,6 +27,21 @@ async function getById(id) {
   const coupon = await couponRepo.findById(id);
   if (!coupon) throw new NotFoundError('Coupon not found');
   return coupon;
+}
+
+async function claim({ customerId, couponId }) {
+  const coupon = await couponRepo.findById(couponId);
+  if (!coupon) throw new NotFoundError('Coupon not found');
+  if (coupon.status !== 'active') throw new BadRequestError('Coupon not available');
+  if (coupon.validUntil < new Date()) throw new BadRequestError('Coupon expired');
+  await subscriptionService.ensureActive(customerId);
+  const purchased = await purchasedRepo.create({
+    customerId,
+    couponId: coupon._id,
+    usesRemaining: coupon.maxUsesPerCustomer,
+    expiresAt: coupon.validUntil,
+  });
+  return { purchased, coupon };
 }
 
 async function purchase({ customerId, couponId, paymentMethod }) {
@@ -65,4 +81,4 @@ async function listCoupons(filter, opts) {
   return { items: await couponRepo.list(filter, opts), total: await couponRepo.count(filter) };
 }
 
-module.exports = { browse, getById, purchase, createCoupon, updateCoupon, deleteCoupon, listCoupons };
+module.exports = { browse, getById, claim, purchase, createCoupon, updateCoupon, deleteCoupon, listCoupons };

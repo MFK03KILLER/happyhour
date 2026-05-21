@@ -33,4 +33,15 @@ function authorize(...allowedRoles) {
   };
 }
 
-module.exports = { authenticate, authorize };
+function requirePermission(...required) {
+  return (req, res, next) => {
+    if (!req.user) return next(new UnauthorizedError());
+    if (req.user.role === 'admin') return next();
+    const perms = req.user.permissions || [];
+    const ok = required.every((p) => perms.includes(p));
+    if (!ok) return next(new ForbiddenError('Missing required permission'));
+    next();
+  };
+}
+
+module.exports = { authenticate, authorize, requirePermission };

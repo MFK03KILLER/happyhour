@@ -2,44 +2,50 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
 
 const route = useRoute();
 const router = useRouter();
 const coupon = ref(null);
 const loading = ref(true);
-const showPay = ref(false);
-const purchasing = ref(false);
+const claiming = ref(false);
+const subscription = ref(null);
 
 onMounted(async () => {
   try {
-    const { data } = await client.get(`/customer/coupons/${route.params.id}`);
-    coupon.value = data;
+    const [c, s] = await Promise.all([
+      client.get(`/customer/coupons/${route.params.id}`),
+      client.get('/customer/subscription').catch(() => ({ data: { subscription: null } })),
+    ]);
+    coupon.value = c.data;
+    subscription.value = s.data.subscription;
   } finally {
     loading.value = false;
   }
 });
 
-async function onConfirm(paymentMethod) {
-  purchasing.value = true;
+function isSubscribed() {
+  const s = subscription.value;
+  return s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date();
+}
+
+async function claim() {
+  if (!isSubscribed()) {
+    router.push('/subscribe');
+    return;
+  }
+  claiming.value = true;
   try {
-    await client.post(`/customer/coupons/${coupon.value._id}/purchase`, { paymentMethod });
-    showPay.value = false;
+    await client.post(`/customer/coupons/${coupon.value._id}/claim`);
     router.push('/wallet');
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Purchase failed');
+    alert(e.response?.data?.error?.message || 'Could not claim');
   } finally {
-    purchasing.value = false;
+    claiming.value = false;
   }
 }
 
-function vendorName() {
-  return coupon.value?.vendorId?.name || '';
-}
-function locations() {
-  const ms = coupon.value?.merchantIds || [];
-  return ms.slice(0, 4);
-}
+function vendorName() { return coupon.value?.vendorId?.name || ''; }
+function locations() { const ms = coupon.value?.merchantIds || []; return ms.slice(0, 4); }
 </script>
 
 <template>
@@ -48,7 +54,7 @@ function locations() {
     <div class="relative">
       <img :src="coupon.heroImageUrl" :alt="coupon.title" class="w-full h-80 object-cover" />
       <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent"></div>
-      <button @click="$router.back()" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
+      <button @click="router.back()" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="absolute -bottom-6 left-5 right-5">
@@ -95,22 +101,30 @@ function locations() {
     </div>
 
     <div class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-xs text-ink-500">Total</div>
-        <div class="text-2xl font-bold text-teal-700">{{ coupon.priceUSD > 0 ? `$${coupon.priceUSD.toFixed(2)}` : 'Free' }}</div>
+      <div v-if="isSubscribed()" class="flex items-center justify-between mb-2">
+        <div>
+          <div class="text-xs text-ink-500">Member price</div>
+          <div class="text-2xl font-bold text-teal-700">Free</div>
+        </div>
+        <div class="text-xs text-ink-500 text-right">
+          <span class="chip bg-teal-50 text-teal-700">All access</span>
+        </div>
       </div>
-      <button @click="showPay = true" class="ios-button-primary w-full text-base">
-        {{ coupon.priceUSD > 0 ? `Unlock for $${coupon.priceUSD.toFixed(2)}` : 'Claim for free' }}
+      <div v-else class="flex items-center justify-between mb-2">
+        <div>
+          <div class="text-xs text-ink-500">Member-only</div>
+          <div class="text-base font-bold">Subscribe to unlock</div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-ink-300">From</div>
+          <div class="text-lg font-bold text-teal-700">$4.99/mo</div>
+        </div>
+      </div>
+      <button @click="claim" class="ios-button-primary w-full text-base" :disabled="claiming">
+        <span v-if="claiming">Claiming…</span>
+        <span v-else-if="isSubscribed()">Claim coupon</span>
+        <span v-else>Become a member</span>
       </button>
     </div>
-
-    <ApplePaySheet
-      v-if="showPay"
-      :amount="coupon.priceUSD"
-      :merchant-name="vendorName()"
-      :item-name="coupon.title"
-      @confirm="onConfirm"
-      @close="showPay = false"
-    />
   </div>
 </template>
