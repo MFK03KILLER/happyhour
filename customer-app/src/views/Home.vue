@@ -3,29 +3,40 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
+import { useFlagsStore } from '../stores/flags';
 import CouponCard from '../components/CouponCard.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
+const flags = useFlagsStore();
 const featured = ref([]);
+const surpriseBags = ref([]);
 const categories = ref([]);
 const loading = ref(true);
 
 onMounted(async () => {
+  await flags.load();
+  const calls = [
+    client.get('/customer/coupons/browse?limit=8'),
+    client.get('/public/categories'),
+  ];
+  if (flags.isOn('surprise_bag')) {
+    calls.push(client.get('/customer/surprise-bags?limit=6').catch(() => ({ data: { items: [] } })));
+  }
   try {
-    const [c, cats] = await Promise.all([
-      client.get('/customer/coupons/browse?limit=8'),
-      client.get('/public/categories'),
-    ]);
+    const [c, cats, bags] = await Promise.all(calls);
     featured.value = c.data.items;
     categories.value = cats.data.items;
+    if (bags) surpriseBags.value = bags.data.items;
   } finally {
     loading.value = false;
   }
 });
 
 function go(c) { router.push(`/coupons/${c._id}`); }
+function goBag(c) { router.push(`/surprise-bag/${c._id}`); }
 function browseCategory(slug) { router.push(`/browse?category=${slug}`); }
+function savings(c) { if (!c.originalValueUSD || !c.priceUSD) return null; return Math.round(100 - (c.priceUSD / c.originalValueUSD) * 100); }
 </script>
 
 <template>
@@ -52,6 +63,37 @@ function browseCategory(slug) { router.push(`/browse?category=${slug}`); }
             Explore offers →
           </button>
         </div>
+      </div>
+    </section>
+
+    <section v-if="flags.isOn('surprise_bag') && surpriseBags.length" class="mt-8">
+      <div class="flex items-center justify-between px-5 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🔥</span>
+          <h2 class="text-lg font-bold">Tonight's Deals</h2>
+        </div>
+        <button @click="$router.push('/tonight')" class="text-sm font-semibold text-coral-600">See all</button>
+      </div>
+      <div class="flex gap-3 px-5 overflow-x-auto scroll-no-bar pb-1">
+        <button v-for="c in surpriseBags" :key="c._id" @click="goBag(c)"
+          class="flex-shrink-0 w-56 rounded-2xl overflow-hidden bg-white shadow-soft active:scale-95 transition text-left">
+          <div class="relative aspect-[16/10] bg-cream-200">
+            <img v-if="c.heroImageUrl" :src="c.heroImageUrl" class="w-full h-full object-cover" :alt="c.title" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
+            <div class="absolute top-2 left-2 flex gap-1">
+              <span v-if="savings(c)" class="chip bg-coral-500 text-white text-[10px]">-{{ savings(c) }}%</span>
+              <span v-if="c.inventoryRemaining != null" class="chip bg-white/95 text-ink-900 text-[10px]">{{ c.inventoryRemaining }} left</span>
+            </div>
+          </div>
+          <div class="p-3">
+            <div class="text-[10px] uppercase font-semibold text-ink-500 tracking-wider truncate">{{ c.vendorId?.name }}</div>
+            <div class="font-bold text-sm leading-tight truncate">{{ c.title }}</div>
+            <div class="flex items-baseline justify-between mt-2">
+              <div class="text-base font-bold text-teal-700">${{ c.priceUSD.toFixed(2) }}</div>
+              <div v-if="c.originalValueUSD" class="text-[10px] text-ink-300 line-through">${{ c.originalValueUSD.toFixed(2) }}</div>
+            </div>
+          </div>
+        </button>
       </div>
     </section>
 

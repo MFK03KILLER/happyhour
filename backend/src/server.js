@@ -6,6 +6,8 @@ const buildApp = require('./app');
 async function start() {
   try {
     await connectDB();
+    const flagService = require('./services/featureFlagService');
+    await flagService.syncRegistry();
     const app = buildApp();
     app.listen(env.PORT, () => {
       logger.info(`Happy Hour API running on http://localhost:${env.PORT}`);

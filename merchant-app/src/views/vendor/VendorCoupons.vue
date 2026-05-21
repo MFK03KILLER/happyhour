@@ -1,27 +1,40 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import client from '../../api/client';
 import { useAuthStore } from '../../stores/auth';
+import { useFlagsStore } from '../../stores/flags';
 
 const auth = useAuthStore();
+const flags = useFlagsStore();
 const items = ref([]);
 const merchants = ref([]);
 const loading = ref(true);
 const showForm = ref(false);
 const form = ref({
+  offerKind: 'member_perk',
   title: '', subtitle: '', description: '',
   heroImageUrl: '', offerType: 'BUNDLE', priceUSD: 0,
   maxUsesPerCustomer: 1, categorySlug: 'restaurants',
   merchantIds: [],
   validFrom: new Date().toISOString().slice(0, 10),
   validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  originalValueUSD: null,
+  inventoryCount: null,
+  pickupWindowStart: '',
+  pickupWindowEnd: '',
+  deliveryAvailable: false,
+  deliveryFeeUSD: 0,
+  requiredPlanTier: 'lite',
 });
+
+const isSurpriseBag = computed(() => form.value.offerKind === 'surprise_bag');
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
 
 async function load() {
   loading.value = true;
   try {
+    await flags.load();
     const [c, m] = await Promise.all([
       client.get('/vendor/coupons'),
       client.get('/vendor/merchants'),
@@ -32,7 +45,14 @@ async function load() {
 }
 
 async function save() {
-  await client.post('/vendor/coupons', form.value);
+  const payload = { ...form.value };
+  if (payload.offerKind === 'surprise_bag') {
+    payload.validFrom = payload.pickupWindowStart;
+    payload.validUntil = payload.pickupWindowEnd;
+    payload.maxUsesPerCustomer = 1;
+    payload.offerType = 'BUNDLE';
+  }
+  await client.post('/vendor/coupons', payload);
   showForm.value = false;
   await load();
 }
@@ -81,6 +101,21 @@ onMounted(load);
           <button @click="showForm = false" class="text-ink-500">Cancel</button>
         </div>
         <form @submit.prevent="save" class="space-y-3">
+          <div v-if="flags.isOn('surprise_bag')" class="grid grid-cols-2 gap-2">
+            <button type="button" @click="form.offerKind = 'member_perk'"
+              class="rounded-2xl p-3 border-2 transition active:scale-95 text-left"
+              :class="form.offerKind === 'member_perk' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
+              <div class="font-bold text-sm">Member Perk</div>
+              <div class="text-[10px] text-ink-500">BOGO / % off · Subscriber-only</div>
+            </button>
+            <button type="button" @click="form.offerKind = 'surprise_bag'"
+              class="rounded-2xl p-3 border-2 transition active:scale-95 text-left"
+              :class="form.offerKind === 'surprise_bag' ? 'border-coral-500 bg-coral-500/10' : 'border-ink-300/20 bg-white'">
+              <div class="font-bold text-sm">🔥 Surprise Bag</div>
+              <div class="text-[10px] text-ink-500">Limited stock · Pay per item</div>
+            </button>
+          </div>
+
           <input v-model="form.title" class="input" placeholder="Title (e.g. Morning Slices)" required />
           <input v-model="form.subtitle" class="input" placeholder="Short subtitle" />
           <textarea v-model="form.description" class="input" rows="3" placeholder="Description"></textarea>
@@ -102,13 +137,32 @@ onMounted(load);
             </select>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <input v-model.number="form.priceUSD" type="number" min="0" step="0.5" class="input" placeholder="Price USD (0 = free for members)" />
-            <input v-model.number="form.maxUsesPerCustomer" type="number" min="1" class="input" placeholder="Max uses per customer" />
+            <input v-model.number="form.priceUSD" type="number" min="0" step="0.5" class="input" :placeholder="isSurpriseBag ? 'Sale price USD' : 'Price USD (0 = free)'" />
+            <input v-if="!isSurpriseBag" v-model.number="form.maxUsesPerCustomer" type="number" min="1" class="input" placeholder="Max uses per customer" />
+            <input v-else v-model.number="form.originalValueUSD" type="number" min="0" step="0.5" class="input" placeholder="Original value USD" />
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <input v-model="form.validFrom" type="date" class="input" />
-            <input v-model="form.validUntil" type="date" class="input" />
-          </div>
+
+          <template v-if="isSurpriseBag">
+            <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider pt-2">Inventory & pickup</div>
+            <input v-model.number="form.inventoryCount" type="number" min="1" class="input" placeholder="How many bags available" required />
+            <div class="grid grid-cols-2 gap-2">
+              <input v-model="form.pickupWindowStart" type="datetime-local" class="input" placeholder="Pickup start" required />
+              <input v-model="form.pickupWindowEnd" type="datetime-local" class="input" placeholder="Pickup end" required />
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="form.deliveryAvailable" />
+              Offer delivery
+            </label>
+            <input v-if="form.deliveryAvailable" v-model.number="form.deliveryFeeUSD" type="number" min="0" step="0.5" class="input" placeholder="Delivery fee USD" />
+          </template>
+
+          <template v-else>
+            <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider pt-2">Validity</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input v-model="form.validFrom" type="date" class="input" />
+              <input v-model="form.validUntil" type="date" class="input" />
+            </div>
+          </template>
           <div>
             <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider mb-2">Valid at locations (leave empty = all)</div>
             <div class="space-y-2 max-h-40 overflow-y-auto">

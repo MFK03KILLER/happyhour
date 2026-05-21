@@ -1,8 +1,11 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/publicController');
+const flagCtrl = require('../controllers/featureFlagController');
 const { publicLimiter } = require('../middlewares/rateLimit');
 
 router.use(publicLimiter);
+
+router.get('/features', flagCtrl.publicFlags);
 
 /**
  * @openapi

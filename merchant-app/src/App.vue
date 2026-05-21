@@ -1,11 +1,14 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAuthStore } from './stores/auth';
+import { useFlagsStore } from './stores/flags';
 import MerchantTabBar from './components/MerchantTabBar.vue';
 
 const route = useRoute();
 const auth = useAuthStore();
+const flagsStore = useFlagsStore();
+onMounted(() => flagsStore.load());
 const showTabs = computed(() => auth.isMerchantStaff && route.path !== '/login');
 </script>
 

@@ -1,11 +1,15 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/adminController');
+const flagCtrl = require('../controllers/featureFlagController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { writeLimiter } = require('../middlewares/rateLimit');
 const { vendorSchema, merchantSchema, couponSchema, createUserSchema } = require('../validators/adminValidators');
 
 router.use(authenticate(), authorize('admin'));
+
+router.get('/features', flagCtrl.listAdmin);
+router.patch('/features/:key', writeLimiter, flagCtrl.toggle);
 
 /**
  * @openapi

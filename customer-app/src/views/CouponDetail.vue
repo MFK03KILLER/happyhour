@@ -2,6 +2,15 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
+import { useFlagsStore } from '../stores/flags';
+import { directionsUrl } from '../composables/useMapLink';
+
+const flags = useFlagsStore();
+function openDirections(m) {
+  if (!m?.address) return;
+  const url = directionsUrl({ lat: m.address.lat, lng: m.address.lng, label: m.name });
+  if (url) window.open(url, '_blank');
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -90,6 +99,10 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
               <div class="font-semibold">{{ m.name }}</div>
               <div class="text-sm text-ink-500 truncate">{{ m.address?.street }}, {{ m.address?.city }}, {{ m.address?.state }}</div>
             </div>
+            <button v-if="flags.isOn('maps') && m.address?.lat" @click="openDirections(m)"
+              class="bg-teal-50 text-teal-700 rounded-full px-3 py-1.5 text-xs font-bold flex-shrink-0 active:scale-95">
+              Directions
+            </button>
           </div>
         </div>
       </div>

@@ -5,8 +5,25 @@ const redemptionService = require('../services/redemptionService');
 const purchasedRepo = require('../repositories/purchasedCouponRepository');
 
 exports.browse = asyncHandler(async (req, res) => {
-  const result = await couponService.browse(req.query);
+  const query = { ...req.query };
+  if (!query.kind) query.kind = 'member_perk';
+  const result = await couponService.browse(query);
   res.json(result);
+});
+
+exports.surpriseBags = asyncHandler(async (req, res) => {
+  const result = await couponService.browse({ ...req.query, kind: 'surprise_bag' });
+  res.json(result);
+});
+
+exports.purchaseSurpriseBag = asyncHandler(async (req, res) => {
+  const result = await couponService.purchaseSurpriseBag({
+    customerId: req.user._id,
+    couponId: req.params.id,
+    paymentMethod: req.body.paymentMethod,
+    fulfillment: req.body.fulfillment || 'pickup',
+  });
+  res.status(201).json(result);
 });
 
 exports.detail = asyncHandler(async (req, res) => {

@@ -3,6 +3,7 @@ const ctrl = require('../controllers/customerController');
 const subCtrl = require('../controllers/subscriptionController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
+const requireFeature = require('../middlewares/featureFlag');
 const { purchaseSchema, browseQuerySchema, rateSchema } = require('../validators/customerValidators');
 const { writeLimiter } = require('../middlewares/rateLimit');
 
@@ -65,6 +66,26 @@ router.post('/subscription/resume', writeLimiter, subCtrl.resume);
  *         schema: { type: integer }
  */
 router.get('/coupons/browse', validate(browseQuerySchema, 'query'), ctrl.browse);
+
+/**
+ * @openapi
+ * /customer/surprise-bags:
+ *   get:
+ *     tags: [Customer]
+ *     summary: Browse Surprise Bags (today's leftovers/last-minute deals)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/surprise-bags', requireFeature('surprise_bag'), validate(browseQuerySchema, 'query'), ctrl.surpriseBags);
+
+/**
+ * @openapi
+ * /customer/surprise-bags/{id}/buy:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Buy a Surprise Bag (no subscription required)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/surprise-bags/:id/buy', requireFeature('surprise_bag'), writeLimiter, validate(purchaseSchema), ctrl.purchaseSurpriseBag);
 
 /**
  * @openapi

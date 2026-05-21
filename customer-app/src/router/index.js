@@ -16,6 +16,9 @@ import SubscribeView from '../views/Subscribe.vue';
 import PaymentMethodsView from '../views/PaymentMethods.vue';
 import NotificationsView from '../views/Notifications.vue';
 import HelpView from '../views/Help.vue';
+import TonightsDealsView from '../views/TonightsDeals.vue';
+import SurpriseBagDetailView from '../views/SurpriseBagDetail.vue';
+import MapView from '../views/MapView.vue';
 
 const routes = [
   { path: '/welcome', component: LandingView, meta: { public: true } },
@@ -24,6 +27,9 @@ const routes = [
   { path: '/', component: HomeView },
   { path: '/subscribe', component: SubscribeView },
   { path: '/browse', component: BrowseView },
+  { path: '/tonight', component: TonightsDealsView },
+  { path: '/surprise-bag/:id', component: SurpriseBagDetailView },
+  { path: '/map', component: MapView },
   { path: '/coupons/:id', component: CouponDetailView },
   { path: '/wallet', component: WalletView },
   { path: '/wallet/:purchasedId/redeem', component: RedeemView },

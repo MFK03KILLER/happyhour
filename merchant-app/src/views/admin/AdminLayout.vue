@@ -15,6 +15,7 @@ const items = [
   { to: '/admin/merchants', label: 'Merchants', icon: 'store' },
   { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
   { to: '/admin/users', label: 'Users', icon: 'users' },
+  { to: '/admin/features', label: 'Features', icon: 'flag' },
   { to: '/admin/audit', label: 'Audit log', icon: 'log' },
 ];
 
@@ -51,6 +52,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           <svg v-if="i.icon==='log'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
           <svg v-if="i.icon==='dollar'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <svg v-if="i.icon==='card'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+          <svg v-if="i.icon==='flag'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 22V4M5 4h13l-2 5 2 5H5"/></svg>
           {{ i.label }}
         </router-link>
       </nav>
