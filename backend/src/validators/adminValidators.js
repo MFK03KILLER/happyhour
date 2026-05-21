@@ -7,7 +7,7 @@ const vendorSchema = z.object({
   description: z.string().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
-  ownerEmail: z.string().email().optional(),
+  ownerPhone: z.string().min(8).max(20).optional(),
   ownerPassword: z.string().min(8).optional(),
   ownerFullName: z.string().optional(),
   billingAddress: z.object({
@@ -68,14 +68,14 @@ const couponSchema = z.object({
 });
 
 const createUserSchema = z.object({
-  email: z.string().email(),
+  phone: z.string().min(8).max(20),
   password: z.string().min(8),
   fullName: z.string().min(2),
   role: z.enum(['admin', 'vendor', 'merchant_staff', 'customer']),
   vendorId: z.string().optional(),
   merchantId: z.string().optional(),
   permissions: z.array(z.enum(['manage_coupons', 'view_stats', 'manage_team', 'scan_only', 'manage_merchants'])).optional(),
-  phone: z.string().optional(),
+  email: z.string().email().optional(),
 });
 
 module.exports = { vendorSchema, merchantSchema, couponSchema, createUserSchema };

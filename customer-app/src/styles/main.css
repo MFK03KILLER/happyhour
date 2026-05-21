@@ -9,12 +9,11 @@
 
 html, body, #app { height: 100%; }
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #FBF6EE;
   color: #0F172A;
-  letter-spacing: -0.01em;
   overscroll-behavior-y: contain;
 }
 

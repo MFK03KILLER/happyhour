@@ -3,17 +3,17 @@ const paymentRepo = require('../repositories/paymentRepository');
 const env = require('../config/env');
 const { BadRequestError } = require('../utils/errors');
 
-const MOCK_CARDS = {
-  apple_pay: { brand: 'Visa', last4: '4242' },
-  google_pay: { brand: 'Mastercard', last4: '5555' },
-  card: { brand: 'Amex', last4: '0005' },
-  paypal: { brand: 'PayPal', last4: 'PP' },
+const GATEWAYS = {
+  zibal: { brand: 'زیبال', last4: 'ZBL' },
+  zarinpal: { brand: 'زرین‌پال', last4: 'ZRP' },
+  saman: { brand: 'سامان', last4: 'SMN' },
+  card_to_card: { brand: 'کارت به کارت', last4: 'C2C' },
 };
 
 async function processMockPayment({ customerId, amountUSD, method, context }) {
-  if (!env.MOCK_PAYMENTS) throw new BadRequestError('Real payments not enabled in demo');
-  if (!MOCK_CARDS[method]) throw new BadRequestError('Unsupported payment method');
-  const card = MOCK_CARDS[method];
+  if (!env.MOCK_PAYMENTS) throw new BadRequestError('پرداخت واقعی در حالت دمو فعال نیست');
+  if (!GATEWAYS[method]) throw new BadRequestError('درگاه پرداخت پشتیبانی نمی‌شود');
+  const card = GATEWAYS[method];
   const payment = await paymentRepo.create({
     customerId,
     amountUSD,

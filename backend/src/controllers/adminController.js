@@ -14,21 +14,23 @@ exports.listVendors = asyncHandler(async (req, res) => {
   res.json(result);
 });
 exports.createVendor = asyncHandler(async (req, res) => {
-  const { ownerEmail, ownerPassword, ownerFullName, ...vendorData } = req.body;
+  const User = require('../models/User');
+  const { ownerPhone, ownerPassword, ownerFullName, ...vendorData } = req.body;
   const v = await vendorService.create(vendorData);
   let owner = null;
-  if (ownerEmail && ownerPassword) {
-    const existing = await userRepo.findByEmail(ownerEmail);
-    if (existing) throw new ConflictError('Owner email already in use');
+  if (ownerPhone && ownerPassword) {
+    const existing = await User.findOne({ phone: ownerPhone });
+    if (existing) throw new ConflictError('شماره موبایل قبلاً ثبت شده است');
     const passwordHash = await bcrypt.hash(ownerPassword, 12);
     owner = await userRepo.create({
-      email: ownerEmail,
+      phone: ownerPhone,
       passwordHash,
-      fullName: ownerFullName || `${vendorData.name} Owner`,
+      fullName: ownerFullName || `مدیر ${vendorData.name}`,
       role: 'vendor',
       vendorId: v._id,
       permissions: ['manage_coupons', 'view_stats', 'manage_team', 'manage_merchants'],
       status: 'active',
+      phoneVerifiedAt: new Date(),
     });
     v.ownerUserId = owner._id;
     await v.save();
@@ -90,10 +92,11 @@ exports.deleteCoupon = asyncHandler(async (req, res) => {
 });
 
 exports.createUser = asyncHandler(async (req, res) => {
-  const exists = await userRepo.findByEmail(req.body.email);
-  if (exists) throw new ConflictError('Email already in use');
+  const User = require('../models/User');
+  const exists = await User.findOne({ phone: req.body.phone });
+  if (exists) throw new ConflictError('شماره موبایل قبلاً ثبت شده است');
   const passwordHash = await bcrypt.hash(req.body.password, 12);
-  const user = await userRepo.create({ ...req.body, passwordHash });
+  const user = await userRepo.create({ ...req.body, passwordHash, phoneVerifiedAt: new Date() });
   await auditService.log({ actorUserId: req.user._id, action: 'user.create', targetType: 'User', targetId: user._id.toString(), after: user, req });
   res.status(201).json(user);
 });

@@ -2,122 +2,116 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
+import IranPaySheet from '../components/IranPaySheet.vue';
+import { toman } from '../composables/useFormat';
 
 const router = useRouter();
-const plan = ref('monthly');
-const sub = ref(null);
-const showPay = ref(false);
+const selectedPlan = ref('monthly');
+const subscription = ref(null);
 const loading = ref(true);
+const showPay = ref(false);
+
+const plans = {
+  monthly: { label: 'ماهانه', amount: 299000, perMonth: 299000, period: 'ماه' },
+  yearly: { label: 'سالانه', amount: 2990000, perMonth: 249000, period: 'سال', save: '۱۷٪ صرفه‌جویی' },
+};
 
 onMounted(async () => {
   try {
     const { data } = await client.get('/customer/subscription');
-    sub.value = data.subscription;
+    subscription.value = data.subscription;
   } finally { loading.value = false; }
 });
 
-async function onConfirm(paymentMethod) {
+function isActive() {
+  const s = subscription.value;
+  return s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date();
+}
+
+async function onConfirm(method) {
   try {
-    const { data } = await client.post('/customer/subscription/subscribe', { plan: plan.value, paymentMethod });
-    sub.value = data.subscription;
+    await client.post('/customer/subscription/subscribe', { plan: selectedPlan.value, paymentMethod: method });
     showPay.value = false;
     router.push('/');
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Subscription failed');
+    alert(e.response?.data?.error?.message || 'پرداخت ناموفق بود');
   }
 }
 
-async function cancelSub() {
-  if (!confirm('Cancel at end of period?')) return;
-  const { data } = await client.post('/customer/subscription/cancel');
-  sub.value = data;
+async function cancel() {
+  if (!confirm('عضویت تا پایان دوره فعلی فعال می‌ماند. آیا مطمئنید؟')) return;
+  await client.post('/customer/subscription/cancel');
+  const { data } = await client.get('/customer/subscription');
+  subscription.value = data.subscription;
 }
-async function resumeSub() {
-  const { data } = await client.post('/customer/subscription/resume');
-  sub.value = data;
-}
-
-const monthlyPrice = 4.99;
-const yearlyPrice = 41.99;
 </script>
 
 <template>
-  <div class="min-h-screen pb-12 safe-top">
+  <div class="min-h-screen safe-top pb-32">
     <header class="px-5 pt-4 flex items-center">
-      <button @click="router.back()" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      <button @click="router.back()" class="w-10 h-10 -mr-2 rounded-full flex items-center justify-center active:bg-cream-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
       </button>
-      <div class="flex-1 text-center font-semibold -ml-8">Membership</div>
+      <div class="flex-1 text-center font-semibold -mr-8">عضویت</div>
     </header>
 
-    <div v-if="loading" class="px-5 mt-10"><div class="h-64 bg-cream-200 rounded-3xl animate-pulse"></div></div>
+    <div v-if="loading" class="p-6"><div class="h-72 bg-cream-200 rounded-3xl animate-pulse"></div></div>
 
-    <div v-else-if="sub && sub.status === 'active' && new Date(sub.currentPeriodEnd) > new Date()" class="px-5 mt-6 space-y-5">
-      <div class="rounded-3xl bg-gradient-to-br from-teal-600 to-teal-800 text-white p-6 shadow-lift relative overflow-hidden">
-        <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
-        <span class="chip bg-white/15 text-white">Active</span>
-        <div class="mt-3 text-3xl font-bold">All Access</div>
-        <div class="opacity-90 mt-1 capitalize">{{ sub.plan }} plan — ${{ sub.amountUSD.toFixed(2) }}</div>
-        <div class="mt-4 text-sm opacity-90">
-          Next billing: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
-        </div>
-        <div v-if="sub.cancelAtPeriodEnd" class="mt-2 text-sm bg-coral-500/30 rounded-xl px-3 py-2">
-          Cancelling on {{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric' }) }}
-        </div>
-      </div>
-
-      <button v-if="!sub.cancelAtPeriodEnd" @click="cancelSub" class="ios-card w-full p-4 text-coral-600 font-semibold active:bg-cream-100 text-center">
-        Cancel subscription
-      </button>
-      <button v-else @click="resumeSub" class="ios-button-primary w-full">Resume subscription</button>
-    </div>
-
-    <div v-else class="px-5 mt-4">
-      <div class="text-center">
-        <h1 class="text-3xl font-bold tracking-tight">One subscription. <br/>Every offer.</h1>
-        <p class="text-ink-500 mt-2">Unlock unlimited claims at 200+ local spots.</p>
-      </div>
-
-      <div class="mt-6 flex justify-center">
-        <div class="inline-flex bg-cream-200 rounded-full p-1">
-          <button @click="plan='monthly'" class="px-5 py-2 rounded-full text-sm font-semibold transition" :class="plan==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">Monthly</button>
-          <button @click="plan='yearly'" class="px-5 py-2 rounded-full text-sm font-semibold transition" :class="plan==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly · save 30%</button>
-        </div>
-      </div>
-
-      <div class="mt-6 ios-card p-6 relative overflow-hidden">
-        <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-coral-500/10"></div>
-        <div class="relative">
-          <div class="flex items-center justify-between">
-            <span class="chip bg-coral-500 text-white">Most popular</span>
-            <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">All access</span>
-          </div>
-          <div class="mt-4 flex items-baseline gap-1">
-            <span class="text-5xl font-bold tracking-tight">${{ plan==='monthly' ? monthlyPrice.toFixed(2) : yearlyPrice.toFixed(2) }}</span>
-            <span class="text-ink-500">/ {{ plan==='monthly' ? 'mo' : 'yr' }}</span>
-          </div>
-          <ul class="mt-6 space-y-2.5 text-sm">
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Unlimited coupon claims</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> 200+ local merchants</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Apple Pay, Google Pay, card</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Cancel anytime</li>
-          </ul>
-          <button @click="showPay = true" class="ios-button-primary w-full mt-6">
-            Subscribe for ${{ plan==='monthly' ? monthlyPrice.toFixed(2) : yearlyPrice.toFixed(2) }}
+    <template v-else>
+      <div v-if="isActive()" class="px-5 mt-6">
+        <div class="ios-card p-6 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
+          <div class="text-xs uppercase tracking-wider opacity-80 font-semibold">عضویت فعال</div>
+          <div class="text-2xl font-bold mt-2">شما عضو هپی‌اَور هستید 🎉</div>
+          <div class="text-sm opacity-90 mt-2">تا {{ new Date(subscription.currentPeriodEnd).toLocaleDateString('fa-IR') }} اعتبار دارد</div>
+          <button v-if="!subscription.cancelAtPeriodEnd" @click="cancel" class="mt-4 bg-white/15 text-white rounded-full px-4 py-2 text-sm font-semibold active:scale-95">
+            لغو عضویت
           </button>
-          <div class="text-center text-xs text-ink-300 mt-2">7-day money-back guarantee</div>
+          <div v-else class="mt-3 text-xs bg-white/15 rounded-full inline-block px-3 py-1">لغو در پایان دوره</div>
         </div>
       </div>
-    </div>
 
-    <ApplePaySheet
-      v-if="showPay"
-      :amount="plan==='monthly' ? monthlyPrice : yearlyPrice"
-      merchant-name="Happy Hour"
-      :item-name="`${plan === 'monthly' ? 'Monthly' : 'Yearly'} membership`"
-      @confirm="onConfirm"
-      @close="showPay = false"
-    />
+      <div v-else class="px-5 mt-6">
+        <div class="text-center">
+          <h1 class="text-3xl font-bold">دسترسی نامحدود</h1>
+          <p class="text-ink-500 mt-2">به صدها رستوران و کافه با یک عضویت ساده</p>
+        </div>
+
+        <div class="mt-6 grid grid-cols-2 gap-3">
+          <button @click="selectedPlan = 'monthly'" class="rounded-3xl p-5 border-2 transition active:scale-95 text-right" :class="selectedPlan === 'monthly' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
+            <div class="font-bold">ماهانه</div>
+            <div class="mt-2 text-xl font-bold">{{ toman(plans.monthly.amount) }}</div>
+            <div class="text-xs text-ink-500 mt-1">هر ماه</div>
+          </button>
+          <button @click="selectedPlan = 'yearly'" class="rounded-3xl p-5 border-2 transition active:scale-95 text-right relative" :class="selectedPlan === 'yearly' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
+            <span class="chip absolute -top-2 left-3 bg-coral-500 text-white text-[10px]">{{ plans.yearly.save }}</span>
+            <div class="font-bold">سالانه</div>
+            <div class="mt-2 text-xl font-bold">{{ toman(plans.yearly.perMonth) }}</div>
+            <div class="text-xs text-ink-500 mt-1">معادل ماهانه</div>
+          </button>
+        </div>
+
+        <div class="mt-6 ios-card p-5">
+          <ul class="space-y-3 text-sm">
+            <li class="flex items-center gap-3"><span class="text-teal-600 text-lg">✓</span> دسترسی نامحدود به همه کوپن‌ها</li>
+            <li class="flex items-center gap-3"><span class="text-teal-600 text-lg">✓</span> پاکت‌های شگفتی با تخفیف بالا</li>
+            <li class="flex items-center gap-3"><span class="text-teal-600 text-lg">✓</span> لغو در هر زمان</li>
+            <li class="flex items-center gap-3"><span class="text-teal-600 text-lg">✓</span> پشتیبانی ۲۴/۷</li>
+          </ul>
+        </div>
+
+        <div class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <div class="text-xs text-ink-500">مبلغ کل</div>
+              <div class="text-2xl font-bold text-teal-700">{{ toman(plans[selectedPlan].amount) }}</div>
+            </div>
+            <div class="text-xs text-ink-500 text-left">پلن {{ plans[selectedPlan].label }}</div>
+          </div>
+          <button @click="showPay = true" class="ios-button-primary w-full">عضو شدن</button>
+        </div>
+      </div>
+    </template>
+
+    <IranPaySheet v-if="showPay" :amount="plans[selectedPlan].amount" merchant-name="هپی‌اَور" :item-name="`عضویت ${plans[selectedPlan].label}`" @confirm="onConfirm" @close="showPay = false" />
   </div>
 </template>

@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
+import IranPaySheet from '../components/IranPaySheet.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -121,7 +121,7 @@ function savings() {
       <button @click="showPay = true" class="ios-button-primary w-full text-base">Reserve for ${{ total.toFixed(2) }}</button>
     </div>
 
-    <ApplePaySheet
+    <IranPaySheet
       v-if="showPay"
       :amount="total"
       :merchant-name="vendor()"

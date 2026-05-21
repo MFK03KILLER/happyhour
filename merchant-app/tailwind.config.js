@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Inter', 'SF Pro Display', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'SF Pro Text', 'system-ui', 'sans-serif'],
+        display: ['Vazirmatn', 'Tahoma', 'system-ui', 'sans-serif'],
+        sans: ['Vazirmatn', 'Tahoma', 'system-ui', 'sans-serif'],
       },
       colors: {
         teal: {

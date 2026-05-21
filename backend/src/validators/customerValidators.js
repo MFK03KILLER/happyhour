@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const purchaseSchema = z.object({
-  paymentMethod: z.enum(['apple_pay', 'google_pay', 'card', 'paypal']),
+  paymentMethod: z.enum(['zibal', 'zarinpal', 'saman', 'card_to_card']),
   fulfillment: z.enum(['pickup', 'delivery']).optional(),
 });
 

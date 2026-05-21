@@ -14,8 +14,8 @@ export const useAuthStore = defineStore('auth', {
     isVendor: (s) => s.user?.role === 'vendor',
   },
   actions: {
-    async login(email, password) {
-      const { data } = await client.post('/auth/login', { email, password });
+    async login(phone, password) {
+      const { data } = await client.post('/auth/login', { phone, password });
       this.user = data.user;
       this.accessToken = data.accessToken;
       this.refreshToken = data.refreshToken;

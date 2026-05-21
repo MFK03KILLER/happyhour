@@ -9,12 +9,12 @@ const flags = useFlagsStore();
 
 const tabs = computed(() => {
   const base = [
-    { to: '/', label: 'Home', icon: 'home' },
-    { to: '/browse', label: 'Browse', icon: 'search' },
+    { to: '/', label: 'خانه', icon: 'home' },
+    { to: '/browse', label: 'تخفیف‌ها', icon: 'search' },
   ];
-  if (flags.isOn('maps')) base.push({ to: '/map', label: 'Map', icon: 'map' });
-  base.push({ to: '/wallet', label: 'Wallet', icon: 'wallet' });
-  base.push({ to: '/profile', label: 'Profile', icon: 'profile' });
+  if (flags.isOn('maps')) base.push({ to: '/map', label: 'نقشه', icon: 'map' });
+  base.push({ to: '/wallet', label: 'کیف من', icon: 'wallet' });
+  base.push({ to: '/profile', label: 'حساب', icon: 'profile' });
   return base;
 });
 
@@ -43,7 +43,7 @@ function go(to) {
         <svg v-if="t.icon==='map'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
         <svg v-if="t.icon==='wallet'" class="w-6 h-6" :fill="isActive(t.to) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/><circle cx="17" cy="14" r="1.4"/></svg>
         <svg v-if="t.icon==='profile'" class="w-6 h-6" :fill="isActive(t.to) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-        <span class="text-[10px] font-medium" :class="isActive(t.to) ? 'opacity-100' : 'opacity-80'">{{ t.label }}</span>
+        <span class="text-[10px] font-medium">{{ t.label }}</span>
       </button>
     </div>
   </nav>

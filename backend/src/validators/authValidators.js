@@ -1,14 +1,17 @@
 const { z } = require('zod');
 
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-  fullName: z.string().min(2).max(100),
-  phone: z.string().optional(),
+const requestOtpSchema = z.object({
+  phone: z.string().min(8).max(20),
+});
+
+const verifyOtpSchema = z.object({
+  phone: z.string().min(8).max(20),
+  code: z.string().length(6),
+  fullName: z.string().min(2).max(100).optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  phone: z.string().min(8).max(20),
   password: z.string().min(1).max(128),
 });
 
@@ -16,9 +19,4 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(10),
 });
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(128),
-});
-
-module.exports = { registerSchema, loginSchema, refreshSchema, changePasswordSchema };
+module.exports = { requestOtpSchema, verifyOtpSchema, loginSchema, refreshSchema };

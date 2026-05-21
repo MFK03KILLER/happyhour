@@ -12,13 +12,12 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (s) => !!s.accessToken,
   },
   actions: {
-    async login(email, password) {
-      const { data } = await client.post('/auth/login', { email, password });
-      this.setSession(data);
-      return data.user;
+    async requestOtp(phone) {
+      const { data } = await client.post('/auth/otp/request', { phone });
+      return data;
     },
-    async register(payload) {
-      const { data } = await client.post('/auth/register', payload);
+    async verifyOtp({ phone, code, fullName }) {
+      const { data } = await client.post('/auth/otp/verify', { phone, code, fullName });
       this.setSession(data);
       return data.user;
     },
