@@ -74,51 +74,43 @@ function savings() {
       <p class="text-ink-700 leading-relaxed">{{ bag.description || bag.subtitle }}</p>
 
       <div v-if="pickupWindow()" class="ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Pickup window</div>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">بازه تحویل</div>
         <div class="font-bold text-lg mt-1">{{ pickupWindow() }}</div>
-        <div class="text-sm text-ink-500 mt-1">Arrive within this window to collect your bag.</div>
+        <div class="text-sm text-ink-500 mt-1">در این بازه برای دریافت پاکت مراجعه کنید.</div>
       </div>
 
       <div v-if="bag.deliveryAvailable" class="ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-3">Get it</div>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-3">روش دریافت</div>
         <div class="grid grid-cols-2 gap-3">
-          <button
-            @click="fulfillment = 'pickup'"
-            class="rounded-2xl p-4 border-2 transition active:scale-95 text-left"
-            :class="fulfillment === 'pickup' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'"
-          >
-            <div class="font-bold">Pickup</div>
-            <div class="text-xs text-ink-500 mt-1">Free</div>
+          <button @click="fulfillment = 'pickup'" class="rounded-2xl p-4 border-2 transition active:scale-95 text-right" :class="fulfillment === 'pickup' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
+            <div class="font-bold">حضوری</div>
+            <div class="text-xs text-ink-500 mt-1">رایگان</div>
           </button>
-          <button
-            @click="fulfillment = 'delivery'"
-            class="rounded-2xl p-4 border-2 transition active:scale-95 text-left"
-            :class="fulfillment === 'delivery' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'"
-          >
-            <div class="font-bold">Delivery</div>
-            <div class="text-xs text-ink-500 mt-1">+${{ (bag.deliveryFeeUSD || 0).toFixed(2) }}</div>
+          <button @click="fulfillment = 'delivery'" class="rounded-2xl p-4 border-2 transition active:scale-95 text-right" :class="fulfillment === 'delivery' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
+            <div class="font-bold">ارسال به مقصد</div>
+            <div class="text-xs text-ink-500 mt-1">{{ Math.round(bag.deliveryFeeUSD || 0).toLocaleString('fa-IR') }} تومان +</div>
           </button>
         </div>
       </div>
 
       <div class="ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Terms</div>
-        <p class="mt-2 text-sm text-ink-700">{{ bag.termsAndConditions || 'Surprise contents — limited quantity. No refunds once picked up.' }}</p>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">شرایط</div>
+        <p class="mt-2 text-sm text-ink-700">{{ bag.termsAndConditions || 'محتوای پاکت سورپرایز — تعداد محدود. پس از تحویل، قابل بازگشت نیست.' }}</p>
       </div>
     </div>
 
     <div class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
       <div class="flex items-center justify-between mb-2">
         <div>
-          <div class="text-xs text-ink-500">Total</div>
-          <div class="text-2xl font-bold text-teal-700">${{ total.toFixed(2) }}</div>
+          <div class="text-xs text-ink-500">مبلغ کل</div>
+          <div class="text-2xl font-bold text-teal-700">{{ Math.round(total).toLocaleString('fa-IR') }} تومان</div>
         </div>
-        <div v-if="bag.originalValueUSD" class="text-right">
-          <div class="text-xs text-ink-500">Worth</div>
-          <div class="text-sm text-ink-300 line-through">${{ bag.originalValueUSD.toFixed(2) }}</div>
+        <div v-if="bag.originalValueUSD" class="text-left">
+          <div class="text-xs text-ink-500">قیمت اصلی</div>
+          <div class="text-sm text-ink-300 line-through">{{ Math.round(bag.originalValueUSD).toLocaleString('fa-IR') }} تومان</div>
         </div>
       </div>
-      <button @click="showPay = true" class="ios-button-primary w-full text-base">Reserve for ${{ total.toFixed(2) }}</button>
+      <button @click="showPay = true" class="ios-button-primary w-full text-base">رزرو با {{ Math.round(total).toLocaleString('fa-IR') }} تومان</button>
     </div>
 
     <IranPaySheet

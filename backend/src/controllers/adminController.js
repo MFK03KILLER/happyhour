@@ -105,6 +105,25 @@ exports.listUsers = asyncHandler(async (req, res) => {
   res.json({ items, total: items.length });
 });
 
+exports.updateUser = asyncHandler(async (req, res) => {
+  const data = { ...req.body };
+  if (data.password) {
+    data.passwordHash = await bcrypt.hash(data.password, 12);
+    delete data.password;
+  }
+  const updated = await userRepo.update(req.params.id, data);
+  if (!updated) throw new (require('../utils/errors').NotFoundError)('User not found');
+  await auditService.log({ actorUserId: req.user._id, action: 'user.update', targetType: 'User', targetId: updated._id.toString(), after: updated, req });
+  res.json(updated);
+});
+
+exports.deleteUser = asyncHandler(async (req, res) => {
+  const deleted = await userRepo.delete(req.params.id);
+  if (!deleted) throw new (require('../utils/errors').NotFoundError)('User not found');
+  await auditService.log({ actorUserId: req.user._id, action: 'user.delete', targetType: 'User', targetId: req.params.id, before: deleted, req });
+  res.status(204).end();
+});
+
 exports.overview = asyncHandler(async (req, res) => {
   const [base, money] = await Promise.all([
     statsService.adminOverview(),

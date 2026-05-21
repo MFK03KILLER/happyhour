@@ -1,49 +1,45 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const mobileOpen = ref(false);
 
 const items = [
-  { to: '/admin', label: 'Dashboard', icon: 'home' },
-  { to: '/admin/revenue', label: 'Revenue', icon: 'dollar' },
-  { to: '/admin/payments', label: 'Payments', icon: 'card' },
-  { to: '/admin/vendors', label: 'Vendors', icon: 'building' },
-  { to: '/admin/merchants', label: 'Merchants', icon: 'store' },
-  { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
-  { to: '/admin/users', label: 'Users', icon: 'users' },
-  { to: '/admin/features', label: 'Features', icon: 'flag' },
-  { to: '/admin/audit', label: 'Audit log', icon: 'log' },
+  { to: '/admin', label: 'داشبورد', icon: 'home' },
+  { to: '/admin/revenue', label: 'درآمد', icon: 'dollar' },
+  { to: '/admin/payments', label: 'پرداخت‌ها', icon: 'card' },
+  { to: '/admin/vendors', label: 'بیزنس‌ها', icon: 'building' },
+  { to: '/admin/merchants', label: 'شعب', icon: 'store' },
+  { to: '/admin/coupons', label: 'کوپن‌ها', icon: 'tag' },
+  { to: '/admin/users', label: 'کاربران', icon: 'users' },
+  { to: '/admin/features', label: 'فیچرها', icon: 'flag' },
+  { to: '/admin/audit', label: 'گزارش رویدادها', icon: 'log' },
 ];
 
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);
 
 async function doLogout() { await auth.logout(); router.push('/login'); }
+function go(to) { router.push(to); mobileOpen.value = false; }
 </script>
 
 <template>
   <div class="min-h-screen bg-cream-100 flex">
-    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-cream-200 safe-top">
+    <aside class="hidden md:flex flex-col w-64 bg-white border-l border-cream-200 safe-top">
       <div class="px-5 py-4 flex items-center gap-2 border-b border-cream-200">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-white">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 8l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
         </div>
         <div>
-          <div class="font-bold">Happy Hour Admin</div>
-          <div class="text-[11px] text-ink-500">{{ auth.user?.email }}</div>
+          <div class="font-bold">پنل مدیریت</div>
+          <div class="text-[11px] text-ink-500" dir="ltr">{{ auth.user?.phone }}</div>
         </div>
       </div>
-      <nav class="flex-1 p-3 space-y-1">
-        <router-link
-          v-for="i in items"
-          :key="i.to"
-          :to="i.to"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition"
-          :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700 hover:bg-cream-100'"
-        >
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+        <router-link v-for="i in items" :key="i.to" :to="i.to" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition" :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700 hover:bg-cream-100'">
           <svg v-if="i.icon==='home'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 12 12 3l9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg>
           <svg v-if="i.icon==='building'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h6M9 11h6M9 15h6"/></svg>
           <svg v-if="i.icon==='store'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 9V7l2-4h12l2 4v2"/><path d="M4 9a3 3 0 0 0 6 0 3 3 0 0 0 4 0 3 3 0 0 0 6 0"/><path d="M5 9v11h14V9"/></svg>
@@ -57,24 +53,30 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </nav>
       <div class="p-3 border-t border-cream-200">
-        <button @click="doLogout" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">
-          Sign out
+        <button @click="doLogout" class="w-full text-right px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">
+          خروج از حساب
         </button>
       </div>
     </aside>
 
     <main class="flex-1 min-w-0">
       <header class="md:hidden safe-top px-5 pb-3 pt-3 bg-white border-b border-cream-200 flex items-center justify-between">
+        <button @click="mobileOpen = !mobileOpen" class="text-ink-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="font-bold">{{ current.label }}</div>
-        <button @click="doLogout" class="text-xs text-coral-600 font-semibold">Sign out</button>
+        <button @click="doLogout" class="text-xs text-coral-600 font-semibold">خروج</button>
       </header>
 
-      <div class="md:hidden flex gap-2 px-5 py-3 overflow-x-auto scroll-no-bar bg-white border-b border-cream-200">
-        <router-link
-          v-for="i in items" :key="i.to" :to="i.to"
-          class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
-          :class="route.path === i.to ? 'bg-teal-600 text-white' : 'bg-cream-100 text-ink-700'"
-        >{{ i.label }}</router-link>
+      <div v-if="mobileOpen" class="md:hidden fixed inset-0 z-50 bg-black/40" @click="mobileOpen = false">
+        <div class="absolute top-0 right-0 bottom-0 w-72 bg-white safe-top p-4 overflow-y-auto" @click.stop>
+          <div class="font-bold text-lg mb-4">پنل مدیریت</div>
+          <nav class="space-y-1">
+            <button v-for="i in items" :key="i.to" @click="go(i.to)" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition text-right" :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700'">
+              {{ i.label }}
+            </button>
+          </nav>
+        </div>
       </div>
 
       <router-view />

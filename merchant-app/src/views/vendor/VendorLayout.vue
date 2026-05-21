@@ -8,16 +8,13 @@ const router = useRouter();
 const auth = useAuthStore();
 
 const items = [
-  { to: '/vendor', label: 'Dashboard', icon: 'home', perm: null },
-  { to: '/vendor/merchants', label: 'Locations', icon: 'store', perm: null },
-  { to: '/vendor/coupons', label: 'Coupons', icon: 'tag', perm: null },
-  { to: '/vendor/team', label: 'Team', icon: 'users', perm: 'manage_team' },
+  { to: '/vendor', label: 'داشبورد', icon: 'home', perm: null },
+  { to: '/vendor/merchants', label: 'شعب', icon: 'store', perm: null },
+  { to: '/vendor/coupons', label: 'کوپن‌ها', icon: 'tag', perm: null },
+  { to: '/vendor/team', label: 'تیم', icon: 'users', perm: 'manage_team' },
 ];
 
-function can(perm) {
-  if (!perm) return true;
-  return (auth.user?.permissions || []).includes(perm);
-}
+function can(perm) { if (!perm) return true; return (auth.user?.permissions || []).includes(perm); }
 
 const visibleItems = computed(() => items.filter((i) => can(i.perm)));
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);
@@ -27,23 +24,18 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
 
 <template>
   <div class="min-h-screen bg-cream-100 flex">
-    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-cream-200 safe-top">
+    <aside class="hidden md:flex flex-col w-64 bg-white border-l border-cream-200 safe-top">
       <div class="px-5 py-4 flex items-center gap-2 border-b border-cream-200">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-white">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 8l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
         </div>
         <div>
-          <div class="font-bold">Vendor Console</div>
-          <div class="text-[11px] text-ink-500">{{ auth.user?.email }}</div>
+          <div class="font-bold">پنل بیزنس</div>
+          <div class="text-[11px] text-ink-500" dir="ltr">{{ auth.user?.phone }}</div>
         </div>
       </div>
       <nav class="flex-1 p-3 space-y-1">
-        <router-link
-          v-for="i in visibleItems"
-          :key="i.to" :to="i.to"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition"
-          :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700 hover:bg-cream-100'"
-        >
+        <router-link v-for="i in visibleItems" :key="i.to" :to="i.to" class="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition" :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700 hover:bg-cream-100'">
           <svg v-if="i.icon==='home'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 12 12 3l9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg>
           <svg v-if="i.icon==='store'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 9V7l2-4h12l2 4v2"/><path d="M4 9a3 3 0 0 0 6 0 3 3 0 0 0 4 0 3 3 0 0 0 6 0"/><path d="M5 9v11h14V9"/></svg>
           <svg v-if="i.icon==='tag'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m20 13-7 7-9-9V4h7l9 9z"/><circle cx="8" cy="8" r="1.5"/></svg>
@@ -52,19 +44,17 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </nav>
       <div class="p-3 border-t border-cream-200">
-        <button @click="doLogout" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">Sign out</button>
+        <button @click="doLogout" class="w-full text-right px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">خروج</button>
       </div>
     </aside>
 
     <main class="flex-1 min-w-0">
       <header class="md:hidden safe-top px-5 pb-3 pt-3 bg-white border-b border-cream-200 flex items-center justify-between">
         <div class="font-bold">{{ current.label }}</div>
-        <button @click="doLogout" class="text-xs text-coral-600 font-semibold">Sign out</button>
+        <button @click="doLogout" class="text-xs text-coral-600 font-semibold">خروج</button>
       </header>
       <div class="md:hidden flex gap-2 px-5 py-3 overflow-x-auto scroll-no-bar bg-white border-b border-cream-200">
-        <router-link v-for="i in visibleItems" :key="i.to" :to="i.to"
-          class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
-          :class="route.path === i.to ? 'bg-teal-600 text-white' : 'bg-cream-100 text-ink-700'">
+        <router-link v-for="i in visibleItems" :key="i.to" :to="i.to" class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" :class="route.path === i.to ? 'bg-teal-600 text-white' : 'bg-cream-100 text-ink-700'">
           {{ i.label }}
         </router-link>
       </div>

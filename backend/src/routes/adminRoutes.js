@@ -141,5 +141,7 @@ router.delete('/coupons/:id', writeLimiter, ctrl.deleteCoupon);
  */
 router.get('/users', ctrl.listUsers);
 router.post('/users', writeLimiter, validate(createUserSchema), ctrl.createUser);
+router.put('/users/:id', writeLimiter, ctrl.updateUser);
+router.delete('/users/:id', writeLimiter, ctrl.deleteUser);
 
 module.exports = router;

@@ -4,10 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute();
 const router = useRouter();
 const tabs = [
-  { to: '/', label: 'Scan', icon: 'scan' },
-  { to: '/history', label: 'History', icon: 'list' },
-  { to: '/stats', label: 'Stats', icon: 'chart' },
-  { to: '/settings', label: 'Store', icon: 'store' },
+  { to: '/', label: 'اسکن', icon: 'scan' },
+  { to: '/history', label: 'تاریخچه', icon: 'list' },
+  { to: '/stats', label: 'آمار', icon: 'chart' },
+  { to: '/settings', label: 'تنظیمات', icon: 'store' },
 ];
 function isActive(to) { return to === '/' ? route.path === '/' : route.path.startsWith(to); }
 </script>

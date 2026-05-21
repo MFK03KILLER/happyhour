@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import client from '../../api/client';
+import { toman, persianDateTime, persianNumber, methodLabel, statusLabel } from '../../composables/useFormat';
 
 const items = ref([]);
 const total = ref(0);
@@ -26,25 +27,10 @@ onMounted(load);
 watch(filters, load, { deep: true });
 watch(page, load);
 
-function fmt(n) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0); }
-function fmtDate(d) {
-  return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-function methodLabel(m) {
-  return { apple_pay: 'Apple Pay', google_pay: 'Google Pay', card: 'Card', paypal: 'PayPal' }[m] || m;
-}
-function methodColor(m) {
-  return { apple_pay: 'bg-black/10 text-ink-900', google_pay: 'bg-blue-100 text-blue-700', card: 'bg-purple-100 text-purple-700', paypal: 'bg-yellow-100 text-yellow-700' }[m] || 'bg-cream-200 text-ink-700';
-}
-function kindLabel(k) {
-  return { subscription: 'Subscription', coupon_purchase: 'Coupon purchase', other: 'Other' }[k] || 'Other';
-}
-function kindColor(k) {
-  return { subscription: 'bg-teal-50 text-teal-700', coupon_purchase: 'bg-coral-500/10 text-coral-600', other: 'bg-cream-200 text-ink-700' }[k] || 'bg-cream-200 text-ink-700';
-}
-function statusColor(s) {
-  return { succeeded: 'bg-green-100 text-green-700', failed: 'bg-coral-500/10 text-coral-600', refunded: 'bg-cream-200 text-ink-500' }[s] || 'bg-cream-200 text-ink-500';
-}
+function kindLabel(k) { return { subscription: 'عضویت', coupon_purchase: 'خرید کوپن', other: 'سایر' }[k] || 'سایر'; }
+function kindColor(k) { return { subscription: 'bg-teal-50 text-teal-700', coupon_purchase: 'bg-coral-500/10 text-coral-600', other: 'bg-cream-200 text-ink-700' }[k] || 'bg-cream-200 text-ink-700'; }
+function methodColor(m) { return { zibal: 'bg-teal-50 text-teal-700', zarinpal: 'bg-yellow-100 text-yellow-700', saman: 'bg-blue-100 text-blue-700', card_to_card: 'bg-cream-200 text-ink-700' }[m] || 'bg-cream-200 text-ink-700'; }
+function statusColor(s) { return { succeeded: 'bg-green-100 text-green-700', failed: 'bg-coral-500/10 text-coral-600', refunded: 'bg-cream-200 text-ink-500' }[s] || 'bg-cream-200 text-ink-500'; }
 function totalPages() { return Math.max(1, Math.ceil(total.value / limit)); }
 </script>
 
@@ -52,64 +38,64 @@ function totalPages() { return Math.max(1, Math.ceil(total.value / limit)); }
   <div class="p-5 md:p-8">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Payments</h1>
-        <p class="text-ink-500 mt-1">All transactions across the platform</p>
+        <h1 class="text-2xl md:text-3xl font-bold">پرداخت‌ها</h1>
+        <p class="text-ink-500 mt-1">تراکنش‌های کل پلتفرم</p>
       </div>
-      <div class="text-sm text-ink-500">{{ total }} total</div>
+      <div class="text-sm text-ink-500">{{ persianNumber(total) }} تراکنش</div>
     </div>
 
     <div class="mt-6 ios-card p-4 flex flex-wrap gap-3">
       <select v-model="filters.method" class="input md:max-w-[200px]">
-        <option value="">All methods</option>
-        <option value="apple_pay">Apple Pay</option>
-        <option value="google_pay">Google Pay</option>
-        <option value="card">Card</option>
-        <option value="paypal">PayPal</option>
+        <option value="">همه درگاه‌ها</option>
+        <option value="zibal">زیبال</option>
+        <option value="zarinpal">زرین‌پال</option>
+        <option value="saman">بانک سامان</option>
+        <option value="card_to_card">کارت به کارت</option>
       </select>
       <select v-model="filters.kind" class="input md:max-w-[200px]">
-        <option value="">All kinds</option>
-        <option value="subscription">Subscriptions</option>
-        <option value="coupon_purchase">Coupon purchases</option>
-        <option value="other">Other</option>
+        <option value="">همه انواع</option>
+        <option value="subscription">عضویت</option>
+        <option value="coupon_purchase">خرید کوپن</option>
+        <option value="other">سایر</option>
       </select>
       <select v-model="filters.status" class="input md:max-w-[200px]">
-        <option value="">All statuses</option>
-        <option value="succeeded">Succeeded</option>
-        <option value="failed">Failed</option>
-        <option value="refunded">Refunded</option>
+        <option value="">همه وضعیت‌ها</option>
+        <option value="succeeded">موفق</option>
+        <option value="failed">ناموفق</option>
+        <option value="refunded">بازپرداخت</option>
       </select>
     </div>
 
     <div v-if="loading" class="mt-6 space-y-3">
       <div v-for="i in 8" :key="i" class="ios-card h-16 animate-pulse"></div>
     </div>
-    <div v-else-if="items.length === 0" class="mt-12 text-center text-ink-500">No payments match.</div>
+    <div v-else-if="items.length === 0" class="mt-12 text-center text-ink-500">پرداختی یافت نشد.</div>
     <div v-else class="mt-6">
       <div class="hidden md:block ios-card overflow-hidden">
         <table class="w-full text-sm">
-          <thead class="bg-cream-100 text-left">
+          <thead class="bg-cream-100 text-right">
             <tr>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">When</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">Customer</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">Kind</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">Item</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">Method</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider">Status</th>
-              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase tracking-wider text-right">Amount</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">تاریخ</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">مشتری</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">نوع</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">عنوان</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">درگاه</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase">وضعیت</th>
+              <th class="px-4 py-3 font-semibold text-ink-500 text-xs uppercase text-left">مبلغ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-cream-200">
             <tr v-for="p in items" :key="p._id" class="hover:bg-cream-100/50">
-              <td class="px-4 py-3 text-ink-700">{{ fmtDate(p.createdAt) }}</td>
+              <td class="px-4 py-3 text-ink-700">{{ persianDateTime(p.createdAt) }}</td>
               <td class="px-4 py-3">
                 <div class="font-semibold">{{ p.customerId?.fullName }}</div>
-                <div class="text-xs text-ink-500">{{ p.customerId?.email }}</div>
+                <div class="text-xs text-ink-500" dir="ltr">{{ p.customerId?.phone }}</div>
               </td>
               <td class="px-4 py-3"><span class="chip" :class="kindColor(p.context?.kind)">{{ kindLabel(p.context?.kind) }}</span></td>
               <td class="px-4 py-3 text-ink-700 truncate max-w-[200px]">{{ p.context?.label || '—' }}</td>
-              <td class="px-4 py-3"><span class="chip" :class="methodColor(p.method)">{{ methodLabel(p.method) }} · {{ p.last4 }}</span></td>
-              <td class="px-4 py-3"><span class="chip" :class="statusColor(p.status)">{{ p.status }}</span></td>
-              <td class="px-4 py-3 text-right font-bold text-teal-700">{{ fmt(p.amountUSD) }}</td>
+              <td class="px-4 py-3"><span class="chip" :class="methodColor(p.method)">{{ methodLabel(p.method) }}</span></td>
+              <td class="px-4 py-3"><span class="chip" :class="statusColor(p.status)">{{ statusLabel(p.status) }}</span></td>
+              <td class="px-4 py-3 text-left font-bold text-teal-700">{{ toman(p.amountUSD) }}</td>
             </tr>
           </tbody>
         </table>
@@ -121,11 +107,11 @@ function totalPages() { return Math.max(1, Math.ceil(total.value / limit)); }
             <div class="min-w-0">
               <div class="font-semibold truncate">{{ p.customerId?.fullName }}</div>
               <div class="text-xs text-ink-500 truncate">{{ p.context?.label }}</div>
-              <div class="text-[10px] text-ink-300 mt-0.5">{{ fmtDate(p.createdAt) }}</div>
+              <div class="text-[10px] text-ink-300 mt-0.5">{{ persianDateTime(p.createdAt) }}</div>
             </div>
-            <div class="text-right">
-              <div class="font-bold text-teal-700">{{ fmt(p.amountUSD) }}</div>
-              <span class="chip text-[10px]" :class="statusColor(p.status)">{{ p.status }}</span>
+            <div class="text-left">
+              <div class="font-bold text-teal-700">{{ toman(p.amountUSD) }}</div>
+              <span class="chip text-[10px]" :class="statusColor(p.status)">{{ statusLabel(p.status) }}</span>
             </div>
           </div>
           <div class="flex gap-1.5 mt-2 flex-wrap">
@@ -136,13 +122,9 @@ function totalPages() { return Math.max(1, Math.ceil(total.value / limit)); }
       </div>
 
       <div class="mt-6 flex items-center justify-between">
-        <button @click="page > 1 && (page--)" :disabled="page <= 1" class="ios-card px-4 py-2 text-sm font-semibold disabled:opacity-40 active:scale-95">
-          ← Previous
-        </button>
-        <div class="text-sm text-ink-500">Page {{ page }} of {{ totalPages() }}</div>
-        <button @click="page < totalPages() && (page++)" :disabled="page >= totalPages()" class="ios-card px-4 py-2 text-sm font-semibold disabled:opacity-40 active:scale-95">
-          Next →
-        </button>
+        <button @click="page > 1 && (page--)" :disabled="page <= 1" class="ios-card px-4 py-2 text-sm font-semibold disabled:opacity-40 active:scale-95">→ قبلی</button>
+        <div class="text-sm text-ink-500">صفحه {{ persianNumber(page) }} از {{ persianNumber(totalPages()) }}</div>
+        <button @click="page < totalPages() && (page++)" :disabled="page >= totalPages()" class="ios-card px-4 py-2 text-sm font-semibold disabled:opacity-40 active:scale-95">بعدی ←</button>
       </div>
     </div>
   </div>

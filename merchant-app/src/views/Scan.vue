@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import CameraScanner from '../components/CameraScanner.vue';
+import { toman } from '../composables/useFormat';
 
 const auth = useAuthStore();
 const stage = ref('idle');
@@ -22,23 +23,13 @@ async function onDetected(text) {
     result.value = data;
     stage.value = 'success';
   } catch (e) {
-    errorText.value = e.response?.data?.error?.message || 'Scan failed';
+    errorText.value = e.response?.data?.error?.message || 'اسکن ناموفق بود';
     stage.value = 'error';
   }
 }
 
-function onError(msg) {
-  errorText.value = msg;
-  stage.value = 'error';
-  scannerOpen.value = false;
-}
-
-function reset() {
-  stage.value = 'idle';
-  result.value = null;
-  errorText.value = '';
-  lastScanned.value = '';
-}
+function onError(msg) { errorText.value = msg; stage.value = 'error'; scannerOpen.value = false; }
+function reset() { stage.value = 'idle'; result.value = null; errorText.value = ''; lastScanned.value = ''; }
 </script>
 
 <template>
@@ -46,48 +37,43 @@ function reset() {
     <header class="bg-gradient-to-br from-teal-700 to-teal-800 text-white safe-top px-5 pb-8 rounded-b-3xl shadow-lift">
       <div class="pt-2 flex items-center justify-between">
         <div>
-          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">Merchant console</div>
+          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">پنل پرسنل</div>
           <div class="text-2xl font-bold mt-0.5">{{ auth.user?.fullName }}</div>
         </div>
-        <button @click="auth.logout()" class="text-xs opacity-80 active:opacity-50">Sign out</button>
+        <button @click="auth.logout()" class="text-xs opacity-80 active:opacity-50">خروج</button>
       </div>
     </header>
 
     <div v-if="stage === 'idle'" class="px-5 -mt-6 space-y-4">
-      <button
-        @click="scannerOpen = true"
-        class="w-full bg-coral-500 text-white rounded-3xl py-8 flex flex-col items-center gap-3 shadow-lift active:scale-[.98] transition"
-      >
+      <button @click="scannerOpen = true" class="w-full bg-coral-500 text-white rounded-3xl py-8 flex flex-col items-center gap-3 shadow-lift active:scale-[.98] transition">
         <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
           <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M21 7V5a2 2 0 0 0-2-2h-2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 12h18"/></svg>
         </div>
-        <div class="text-xl font-bold">Scan a customer QR</div>
-        <div class="text-sm opacity-80">Tap to open camera</div>
+        <div class="text-xl font-bold">اسکن کد QR مشتری</div>
+        <div class="text-sm opacity-80">برای باز کردن دوربین لمس کنید</div>
       </button>
 
       <div class="ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">How it works</div>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">نحوه کار</div>
         <ol class="mt-3 space-y-2.5 text-sm text-ink-700">
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">1</span>Customer shows their QR from the Happy Hour app.</li>
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">2</span>You scan it with this app.</li>
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">3</span>Coupon redeems, customer details saved.</li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">۱</span>مشتری کد QR را از اپلیکیشن نشان می‌دهد.</li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">۲</span>شما با این اپلیکیشن آن را اسکن می‌کنید.</li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">۳</span>کوپن استفاده می‌شود، مشخصات مشتری ذخیره می‌شود.</li>
         </ol>
       </div>
     </div>
 
     <div v-if="scannerOpen" class="fixed inset-0 z-50 bg-black animate-fade-in">
       <CameraScanner @detected="onDetected" @error="onError" />
-      <button @click="scannerOpen = false" class="absolute top-[max(env(safe-area-inset-top),16px)] right-5 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      <button @click="scannerOpen = false" class="absolute top-[max(env(safe-area-inset-top),16px)] left-5 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12"/></svg>
       </button>
-      <div class="absolute bottom-[max(env(safe-area-inset-bottom),24px)] inset-x-0 text-center text-white text-sm font-semibold">
-        Point the camera at the customer's QR
-      </div>
+      <div class="absolute bottom-[max(env(safe-area-inset-bottom),24px)] inset-x-0 text-center text-white text-sm font-semibold">دوربین را روی کد QR مشتری بگیرید</div>
     </div>
 
     <div v-if="stage==='processing'" class="px-5 mt-10 text-center">
       <div class="mx-auto w-16 h-16 rounded-full border-4 border-teal-600/20 border-t-teal-600 animate-spin"></div>
-      <div class="mt-4 font-semibold">Verifying…</div>
+      <div class="mt-4 font-semibold">در حال بررسی...</div>
     </div>
 
     <div v-if="stage==='success' && result" class="px-5 mt-6 space-y-4 animate-fade-in">
@@ -95,34 +81,34 @@ function reset() {
         <div class="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-pop-in">
           <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4 10-10"/></svg>
         </div>
-        <div class="mt-4 text-xl font-bold">Redemption complete</div>
-        <div class="text-ink-500 text-sm mt-1">Coupon successfully applied.</div>
+        <div class="mt-4 text-xl font-bold">کوپن با موفقیت استفاده شد</div>
+        <div class="text-ink-500 text-sm mt-1">تخفیف اعمال شد.</div>
       </div>
 
       <div class="ios-card p-5 space-y-4">
         <div>
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Customer</div>
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">مشتری</div>
           <div class="font-bold mt-0.5">{{ result.customer?.fullName }}</div>
-          <div class="text-sm text-ink-500">{{ result.customer?.email }}</div>
+          <div class="text-sm text-ink-500" dir="ltr">{{ result.customer?.phone || result.customer?.email }}</div>
         </div>
         <div class="border-t border-cream-200 pt-4">
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Offer</div>
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">پیشنهاد</div>
           <div class="font-bold mt-0.5">{{ result.coupon?.title }}</div>
           <div class="text-sm text-ink-500">{{ result.coupon?.subtitle }}</div>
         </div>
         <div class="border-t border-cream-200 pt-4 flex items-center justify-between">
           <div>
-            <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Uses remaining</div>
-            <div class="font-bold mt-0.5">{{ result.usesRemaining }} of {{ result.maxUses }}</div>
+            <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">باقی‌مانده</div>
+            <div class="font-bold mt-0.5">{{ result.usesRemaining }} از {{ result.maxUses }}</div>
           </div>
-          <div class="text-right">
-            <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Saved</div>
-            <div class="font-bold text-teal-700 mt-0.5">${{ (result.coupon?.priceUSD || 0).toFixed(2) }}</div>
+          <div class="text-left">
+            <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">صرفه‌جویی</div>
+            <div class="font-bold text-teal-700 mt-0.5">{{ toman(result.coupon?.priceUSD || 0) }}</div>
           </div>
         </div>
       </div>
 
-      <button @click="reset" class="ios-button-primary w-full">Scan next customer</button>
+      <button @click="reset" class="ios-button-primary w-full">اسکن مشتری بعدی</button>
     </div>
 
     <div v-if="stage==='error'" class="px-5 mt-6 animate-fade-in">
@@ -130,9 +116,9 @@ function reset() {
         <div class="mx-auto w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center animate-pop-in">
           <svg class="w-12 h-12 text-coral-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </div>
-        <div class="mt-4 text-xl font-bold">Couldn't redeem</div>
+        <div class="mt-4 text-xl font-bold">اسکن ناموفق</div>
         <div class="text-ink-500 text-sm mt-1">{{ errorText }}</div>
-        <button @click="reset" class="ios-button-primary mt-5">Try again</button>
+        <button @click="reset" class="ios-button-primary mt-5">تلاش مجدد</button>
       </div>
     </div>
   </div>
