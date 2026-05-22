@@ -13,7 +13,11 @@ async function loginWithOtp({ phone, code, fullName, userAgent }) {
   const verified = await otpService.verifyOtp({ phone, code });
   let user = await User.findOne({ phone: verified.phone });
   if (!user) {
-    if (!fullName) throw new BadRequestError('برای ثبت‌نام، نام کامل خود را وارد کنید');
+    if (!fullName) {
+      const err = new BadRequestError('برای ثبت‌نام، نام کامل خود را وارد کنید');
+      err.code = 'FULL_NAME_REQUIRED';
+      throw err;
+    }
     user = await User.create({
       phone: verified.phone,
       fullName,
@@ -27,6 +31,7 @@ async function loginWithOtp({ phone, code, fullName, userAgent }) {
     user.lastLoginAt = new Date();
     await user.save();
   }
+  await otpService.consumeOtp(verified.otp);
   return issueTokens(user, userAgent || 'unknown');
 }
 

@@ -7,13 +7,24 @@ const MAX_ATTEMPTS = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX = 3;
 
+function toEnglishDigits(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06F0))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+}
+
 function normalizePhone(phone) {
   if (!phone) return '';
-  let p = String(phone).trim().replace(/[\s-()]/g, '');
+  let p = toEnglishDigits(phone).trim().replace(/[\s-()]/g, '');
   if (p.startsWith('+98')) p = '0' + p.slice(3);
   if (p.startsWith('98') && p.length === 12) p = '0' + p.slice(2);
   if (p.startsWith('9') && p.length === 10) p = '0' + p;
   return p;
+}
+
+function normalizeCode(code) {
+  return toEnglishDigits(code).replace(/[^0-9]/g, '');
 }
 
 function isValidIranianMobile(phone) {
@@ -60,14 +71,19 @@ async function verifyOtp({ phone, code }) {
     await otp.save();
     throw new UnauthorizedError('تعداد تلاش‌ها بیش از حد است');
   }
-  if (otp.code !== String(code)) {
+  const submittedCode = normalizeCode(code);
+  if (otp.code !== submittedCode) {
     otp.attempts += 1;
     await otp.save();
     throw new UnauthorizedError('کد وارد شده اشتباه است');
   }
-  otp.consumed = true;
-  await otp.save();
-  return { phone: normalized };
+  return { phone: normalized, otp };
 }
 
-module.exports = { requestOtp, verifyOtp, normalizePhone, isValidIranianMobile };
+async function consumeOtp(otp) {
+  if (!otp) return;
+  otp.consumed = true;
+  await otp.save();
+}
+
+module.exports = { requestOtp, verifyOtp, consumeOtp, normalizePhone, normalizeCode, toEnglishDigits, isValidIranianMobile };
