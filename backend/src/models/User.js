@@ -24,6 +24,9 @@ const userSchema = new mongoose.Schema({
   failedLoginAttempts: { type: Number, default: 0 },
   lockedUntil: Date,
   refreshTokens: [refreshTokenSchema],
+  dailyClaimsCount: { type: Number, default: 0 },
+  dailyClaimsResetAt: Date,
+  favoriteMerchantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' }],
 }, { timestamps: true });
 
 userSchema.methods.toJSON = function () {

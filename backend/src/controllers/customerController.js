@@ -1,14 +1,60 @@
 const asyncHandler = require('../utils/asyncHandler');
 const QRCode = require('qrcode');
 const couponService = require('../services/couponService');
+const merchantService = require('../services/merchantService');
 const redemptionService = require('../services/redemptionService');
 const purchasedRepo = require('../repositories/purchasedCouponRepository');
 
+function parseFloatOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
 exports.browse = asyncHandler(async (req, res) => {
-  const query = { ...req.query };
-  if (!query.kind) query.kind = 'member_perk';
+  const query = {
+    ...req.query,
+    kind: req.query.kind || 'member_perk',
+    lat: parseFloatOrNull(req.query.lat),
+    lng: parseFloatOrNull(req.query.lng),
+    priceMin: parseFloatOrNull(req.query.priceMin),
+    priceMax: parseFloatOrNull(req.query.priceMax),
+    ratingMin: parseFloatOrNull(req.query.ratingMin),
+  };
   const result = await couponService.browse(query);
   res.json(result);
+});
+
+exports.discoverMerchants = asyncHandler(async (req, res) => {
+  const result = await merchantService.discover({
+    category: req.query.category,
+    search: req.query.search,
+    lat: parseFloatOrNull(req.query.lat),
+    lng: parseFloatOrNull(req.query.lng),
+    sort: req.query.sort || 'distance',
+    order: req.query.order || 'asc',
+    priceMin: parseFloatOrNull(req.query.priceMin),
+    priceMax: parseFloatOrNull(req.query.priceMax),
+    ratingMin: parseFloatOrNull(req.query.ratingMin),
+    page: parseInt(req.query.page || '1', 10),
+    limit: parseInt(req.query.limit || '30', 10),
+  });
+  res.json(result);
+});
+
+exports.merchantDetail = asyncHandler(async (req, res) => {
+  const merchant = await merchantService.getById(req.params.id);
+  const coupons = await couponService.couponsByMerchant({
+    merchantId: req.params.id,
+    customerLat: parseFloatOrNull(req.query.lat),
+    customerLng: parseFloatOrNull(req.query.lng),
+  });
+  res.json({ merchant, coupons });
+});
+
+exports.dailyStatus = asyncHandler(async (req, res) => {
+  const status = await couponService.getDailyStatus(req.user._id);
+  res.json(status);
 });
 
 exports.surpriseBags = asyncHandler(async (req, res) => {

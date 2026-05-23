@@ -10,6 +10,13 @@ const browseQuerySchema = z.object({
   city: z.string().optional(),
   search: z.string().optional(),
   kind: z.enum(['member_perk', 'surprise_bag']).optional(),
+  lat: z.coerce.number().optional(),
+  lng: z.coerce.number().optional(),
+  sort: z.enum(['distance', 'rating', 'price']).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
+  priceMin: z.coerce.number().optional(),
+  priceMax: z.coerce.number().optional(),
+  ratingMin: z.coerce.number().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

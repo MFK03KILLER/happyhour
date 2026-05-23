@@ -10,6 +10,7 @@ const subscriptionSchema = new mongoose.Schema({
   cancelAtPeriodEnd: { type: Boolean, default: false },
   paymentMethod: { type: String, enum: ['apple_pay', 'google_pay', 'card', 'paypal'] },
   amountUSD: { type: Number, required: true },
+  dailyClaimLimit: { type: Number, default: 3 },
   payments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }],
 }, { timestamps: true });
 
