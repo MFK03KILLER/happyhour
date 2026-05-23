@@ -11,6 +11,7 @@ const result = ref(null);
 const errorText = ref('');
 const lastScanned = ref('');
 
+const errorCode = ref('');
 async function onDetected(text) {
   if (text === lastScanned.value) return;
   lastScanned.value = text;
@@ -23,6 +24,7 @@ async function onDetected(text) {
     stage.value = 'success';
   } catch (e) {
     errorText.value = e.response?.data?.error?.message || 'Scan failed';
+    errorCode.value = e.response?.data?.error?.code || '';
     stage.value = 'error';
   }
 }
@@ -126,9 +128,23 @@ function reset() {
     </div>
 
     <div v-if="stage==='error'" class="px-5 mt-6 animate-fade-in">
-      <div class="ios-card p-6 text-center">
+      <div v-if="errorCode === 'OUTSIDE_ACTIVE_HOURS'" class="ios-card p-6 text-center border-2 border-amber-300 bg-amber-50">
+        <div class="mx-auto w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center animate-pop-in">
+          <i class="fa-solid fa-hourglass-half text-3xl text-amber-600"></i>
+        </div>
+        <div class="mt-4 text-xl font-bold">Outside Happy Hour</div>
+        <p class="text-ink-700 text-sm mt-2 leading-relaxed">{{ errorText }}</p>
+        <div class="mt-4 ios-card p-3 bg-white text-left">
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">What to tell the customer</div>
+          <p class="text-sm text-ink-700 mt-1">
+            This coupon is only valid during the merchant's happy hour window. Ask them to come back during the times shown on their coupon, and you'll be able to scan it then.
+          </p>
+        </div>
+        <button @click="reset" class="ios-button-primary mt-5">OK, got it</button>
+      </div>
+      <div v-else class="ios-card p-6 text-center">
         <div class="mx-auto w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center animate-pop-in">
-          <svg class="w-12 h-12 text-coral-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+          <i class="fa-solid fa-circle-xmark text-3xl text-coral-600"></i>
         </div>
         <div class="mt-4 text-xl font-bold">Couldn't redeem</div>
         <div class="text-ink-500 text-sm mt-1">{{ errorText }}</div>

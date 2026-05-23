@@ -5,18 +5,25 @@ import BottomTabBar from './components/BottomTabBar.vue';
 import DesktopFrame from './components/DesktopFrame.vue';
 import SplashScreen from './components/SplashScreen.vue';
 import ToastContainer from './components/ToastContainer.vue';
+import OnboardingModal from './components/OnboardingModal.vue';
 import { useFlagsStore } from './stores/flags';
 import { useGeolocation } from './composables/useGeolocation';
+import { useAuthStore } from './stores/auth';
 
 const route = useRoute();
 const flagsStore = useFlagsStore();
+const auth = useAuthStore();
 const showSplash = ref(sessionStorage.getItem('hh_splash_shown') !== '1');
+const showOnboarding = ref(false);
 const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
 
 onMounted(() => {
   flagsStore.load();
   if (!coords.value && geoStatus.value !== 'denied') {
     setTimeout(() => requestGeo(), showSplash.value ? 1300 : 200);
+  }
+  if (auth.isAuthenticated && localStorage.getItem('hh_onboarded') !== '1') {
+    setTimeout(() => { showOnboarding.value = true; }, showSplash.value ? 1500 : 400);
   }
 });
 
@@ -40,6 +47,7 @@ const isLanding = computed(() => route.path === '/welcome');
 
 <template>
   <SplashScreen v-if="showSplash" @done="onSplashDone" />
+  <OnboardingModal v-if="showOnboarding" @done="showOnboarding = false" />
   <ToastContainer />
   <DesktopFrame :landing="isLanding">
     <div class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
