@@ -4,8 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import { useFlagsStore } from '../stores/flags';
 import { directionsUrl } from '../composables/useMapLink';
+import { useToastStore } from '../stores/toast';
 
 const flags = useFlagsStore();
+const toast = useToastStore();
 function openDirections(m) {
   if (!m?.address) return;
   const url = directionsUrl({ lat: m.address.lat, lng: m.address.lng, label: m.name });
@@ -44,10 +46,15 @@ async function claim() {
   }
   claiming.value = true;
   try {
-    await client.post(`/customer/coupons/${coupon.value._id}/claim`);
+    const { data } = await client.post(`/customer/coupons/${coupon.value._id}/claim`);
+    if (data.activeNow !== false) {
+      toast.success('Saved to your wallet — show it at the counter to redeem.', { title: 'Coupon claimed! 🎉' });
+    } else {
+      toast.warning('Claimed, but only redeemable during happy hour.', { title: 'Outside active hours', ttl: 7000 });
+    }
     router.push('/wallet');
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Could not claim');
+    toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
   } finally {
     claiming.value = false;
   }

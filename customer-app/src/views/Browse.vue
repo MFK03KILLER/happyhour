@@ -97,7 +97,7 @@ function sortLabel(s) {
     <div class="mt-4 flex gap-2 px-5 overflow-x-auto scroll-no-bar">
       <button @click="setCat('')" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition" :class="!category ? 'bg-ink-900 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">All</button>
       <button v-for="c in categories" :key="c._id" @click="setCat(c.slug)" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition flex items-center gap-1.5" :class="category===c.slug ? 'bg-ink-900 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">
-        <i :class="c.iconUrl"></i>
+        <i class="fa-solid" :class="c.iconUrl"></i>
         {{ c.name }}
       </button>
     </div>

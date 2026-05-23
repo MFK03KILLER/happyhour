@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue';
 import BottomTabBar from './components/BottomTabBar.vue';
 import DesktopFrame from './components/DesktopFrame.vue';
 import SplashScreen from './components/SplashScreen.vue';
+import ToastContainer from './components/ToastContainer.vue';
 import { useFlagsStore } from './stores/flags';
 
 const route = useRoute();
@@ -34,6 +35,7 @@ const isLanding = computed(() => route.path === '/welcome');
 
 <template>
   <SplashScreen v-if="showSplash" @done="onSplashDone" />
+  <ToastContainer />
   <DesktopFrame :landing="isLanding">
     <div class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
       <router-view v-slot="{ Component }">

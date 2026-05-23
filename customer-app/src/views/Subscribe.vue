@@ -3,8 +3,10 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import ApplePaySheet from '../components/ApplePaySheet.vue';
+import { useToastStore } from '../stores/toast';
 
 const router = useRouter();
+const toast = useToastStore();
 const plan = ref('monthly');
 const sub = ref(null);
 const showPay = ref(false);
@@ -22,9 +24,10 @@ async function onConfirm(paymentMethod) {
     const { data } = await client.post('/customer/subscription/subscribe', { plan: plan.value, paymentMethod });
     sub.value = data.subscription;
     showPay.value = false;
+    toast.success('Welcome to Happy Hour! You can now claim 3 coupons per day.', { title: 'Membership active 🎉' });
     router.push('/');
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Subscription failed');
+    toast.error(e.response?.data?.error?.message || 'Subscription failed', { title: 'Payment failed' });
   }
 }
 

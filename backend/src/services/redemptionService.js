@@ -83,6 +83,25 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
     const allowed = coupon.merchantIds.some((m) => m._id.toString() === merchantId.toString());
     if (!allowed) throw new ForbiddenError('Coupon not valid at this merchant');
   }
+  const couponService = require('./couponService');
+  if (!couponService.couponIsActiveNow(coupon)) {
+    const w = coupon.activeWindow;
+    const fmtT = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`;
+    };
+    let windowStr = '';
+    if (w && w.start && w.end) {
+      const days = (w.days || ['daily']).includes('daily') ? 'daily' : (w.days || []).join(', ');
+      windowStr = ` (active ${days} ${fmtT(w.start)}–${fmtT(w.end)})`;
+    }
+    const err = new BadRequestError(`This coupon is outside its active hours${windowStr}. Ask the customer to come back during happy hour.`);
+    err.code = 'OUTSIDE_ACTIVE_HOURS';
+    err.activeWindow = w || null;
+    throw err;
+  }
   const customer = await userRepo.findById(redemption.customerId._id);
   const merchant = await merchantRepo.findById(merchantId);
   redemption.status = 'completed';

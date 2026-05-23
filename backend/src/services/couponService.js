@@ -120,7 +120,6 @@ async function claim({ customerId, couponId }) {
   if (coupon.offerKind === 'surprise_bag') throw new BadRequestError('Surprise bags must be purchased, not claimed');
   if (coupon.status !== 'active') throw new BadRequestError('Coupon not available');
   if (coupon.validUntil < new Date()) throw new BadRequestError('Coupon expired');
-  if (!couponIsActiveNow(coupon)) throw new BadRequestError('This coupon is outside its active hours');
   await subscriptionService.ensureActive(customerId);
   const { user } = await ensureDailyLimit(customerId);
   const purchased = await purchasedRepo.create({
@@ -131,7 +130,8 @@ async function claim({ customerId, couponId }) {
   });
   user.dailyClaimsCount += 1;
   await user.save();
-  return { purchased, coupon };
+  const activeNow = couponIsActiveNow(coupon);
+  return { purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null };
 }
 
 async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfillment = 'pickup' }) {

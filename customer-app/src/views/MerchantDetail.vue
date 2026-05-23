@@ -5,19 +5,47 @@ import client from '../api/client';
 import TicketCoupon from '../components/TicketCoupon.vue';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 import { useDailyStore } from '../stores/daily';
+import { useToastStore } from '../stores/toast';
 import { directionsUrl } from '../composables/useMapLink';
 
 const route = useRoute();
 const router = useRouter();
 const { coords } = useGeolocation();
 const daily = useDailyStore();
+const toast = useToastStore();
 
 const merchant = ref(null);
 const coupons = ref([]);
 const loading = ref(true);
 const subscription = ref(null);
 const claiming = ref(null);
-const showSuccess = ref(false);
+
+function isActiveNow(coupon) {
+  const w = coupon.activeWindow;
+  if (!w || !w.start || !w.end) return true;
+  const days = w.days || ['daily'];
+  const now = new Date();
+  const dayName = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()];
+  if (!days.includes('daily') && !days.includes(dayName)) return false;
+  const [sh, sm] = w.start.split(':').map(Number);
+  const [eh, em] = w.end.split(':').map(Number);
+  const minNow = now.getHours() * 60 + now.getMinutes();
+  return minNow >= sh * 60 + sm && minNow <= eh * 60 + em;
+}
+
+function windowLabel(coupon) {
+  const w = coupon.activeWindow;
+  if (!w || !w.start || !w.end) return '';
+  const fmt = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2,'0')}${ampm}`;
+  };
+  const days = w.days || ['daily'];
+  const dayText = days.includes('daily') ? 'daily' : days.map((d) => d[0].toUpperCase() + d.slice(1)).join('/');
+  return `${dayText} ${fmt(w.start)}–${fmt(w.end)}`;
+}
 
 onMounted(async () => {
   daily.refresh();
@@ -50,19 +78,34 @@ function variantFor(c) {
 }
 
 async function onClaim(coupon) {
-  if (!isSubscribed.value) { router.push('/subscribe'); return; }
+  if (!isSubscribed.value) {
+    toast.info('Become a member to claim coupons', { title: 'Membership required', action: { label: 'Subscribe →', handler: () => router.push('/subscribe') } });
+    return;
+  }
   if (daily.isExhausted) {
-    alert(`You've reached your daily limit of ${daily.limit} coupons. Come back tomorrow!`);
+    toast.warning(`You've used all ${daily.limit} of today's coupons. Reset at midnight.`, { title: 'Daily limit reached' });
     return;
   }
   claiming.value = coupon._id;
   try {
-    await client.post(`/customer/coupons/${coupon._id}/claim`);
+    const { data } = await client.post(`/customer/coupons/${coupon._id}/claim`);
     daily.optimisticIncrement();
-    showSuccess.value = true;
-    setTimeout(() => { showSuccess.value = false; router.push('/wallet'); }, 1400);
+    const activeNow = data.activeNow !== false;
+    if (activeNow) {
+      toast.success('Saved to your wallet. Show it at the counter to redeem.', {
+        title: 'Coupon claimed! 🎉',
+        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
+      });
+    } else {
+      const w = windowLabel(coupon);
+      toast.warning(`Claimed, but you can only redeem during happy hour${w ? ` (${w})` : ''}. Come back during these hours.`, {
+        title: 'Outside happy hour',
+        ttl: 9000,
+        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
+      });
+    }
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Could not claim');
+    toast.error(e.response?.data?.error?.message || 'Could not claim coupon', { title: 'Claim failed' });
   } finally { claiming.value = null; }
 }
 
@@ -177,6 +220,7 @@ function offPeakLabel() {
         <TicketCoupon
           v-for="c in todaysOffers" :key="c._id"
           :coupon="c" :locked="!isSubscribed" variant="today"
+          :outside-hours="isSubscribed && !isActiveNow(c)"
           @claim="onClaim"
         />
       </div>
@@ -191,6 +235,7 @@ function offPeakLabel() {
         <TicketCoupon
           v-for="c in popupOffers" :key="c._id"
           :coupon="c" :locked="!isSubscribed" variant="popup"
+          :outside-hours="isSubscribed && !isActiveNow(c)"
           @claim="onClaim"
         />
       </div>
@@ -202,6 +247,7 @@ function offPeakLabel() {
         <TicketCoupon
           v-for="c in otherOffers" :key="c._id"
           :coupon="c" :locked="!isSubscribed" variant="always"
+          :outside-hours="isSubscribed && !isActiveNow(c)"
           @claim="onClaim"
         />
       </div>
@@ -229,14 +275,5 @@ function offPeakLabel() {
       </div>
     </div>
 
-    <div v-if="showSuccess" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 animate-fade-in">
-      <div class="bg-white rounded-3xl p-8 shadow-lift text-center animate-pop-in">
-        <div class="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-          <i class="fa-solid fa-check text-3xl text-green-600"></i>
-        </div>
-        <div class="mt-4 font-bold text-xl">Coupon Claimed!</div>
-        <div class="text-sm text-ink-500 mt-1">Check your wallet to redeem.</div>
-      </div>
-    </div>
   </div>
 </template>

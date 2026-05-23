@@ -131,7 +131,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
       <div class="grid grid-cols-4 gap-3 px-5">
         <button v-for="c in categories" :key="c._id" @click="goCategory(c.slug)" class="flex flex-col items-center gap-2 active:scale-95 transition">
           <div class="w-16 h-16 rounded-2xl bg-white shadow-soft flex items-center justify-center">
-            <i class="text-2xl text-teal-600" :class="c.iconUrl || 'fa-solid fa-location-dot'"></i>
+            <i class="text-2xl text-teal-600 fa-solid" :class="c.iconUrl || 'fa-location-dot'"></i>
           </div>
           <div class="text-xs font-semibold text-ink-700 text-center leading-tight">{{ c.name }}</div>
         </button>
