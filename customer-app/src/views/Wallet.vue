@@ -1,17 +1,18 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import client from '../api/client';
+import { useDailyStore } from '../stores/daily';
 
 const items = ref([]);
 const loading = ref(true);
+const daily = useDailyStore();
 
 onMounted(async () => {
+  daily.refresh();
   try {
     const { data } = await client.get('/customer/wallet');
     items.value = data.items;
-  } finally {
-    loading.value = false;
-  }
+  } finally { loading.value = false; }
 });
 
 function statusLabel(s) {
@@ -21,9 +22,15 @@ function statusLabel(s) {
 
 <template>
   <div class="pb-28 safe-top">
-    <header class="px-5 pt-6">
-      <h1 class="text-3xl font-bold tracking-tight">Wallet</h1>
-      <p class="text-ink-500 mt-1">Your purchased coupons.</p>
+    <header class="px-5 pt-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Wallet</h1>
+        <p class="text-ink-500 mt-1">Your claimed coupons.</p>
+      </div>
+      <div class="ios-card p-3 text-center">
+        <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">Today</div>
+        <div class="text-xl font-bold text-teal-700">{{ daily.remaining }}<span class="text-sm text-ink-500">/{{ daily.limit }}</span></div>
+      </div>
     </header>
 
     <div v-if="loading" class="px-5 mt-6 space-y-4">
@@ -31,10 +38,10 @@ function statusLabel(s) {
     </div>
     <div v-else-if="items.length === 0" class="px-5 mt-16 text-center">
       <div class="mx-auto w-20 h-20 rounded-3xl bg-cream-200 flex items-center justify-center">
-        <svg class="w-10 h-10 text-ink-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/></svg>
+        <i class="fa-solid fa-wallet text-3xl text-ink-300"></i>
       </div>
       <div class="mt-4 font-semibold">No coupons yet</div>
-      <p class="text-ink-500 text-sm mt-1">Browse offers and save your favorites.</p>
+      <p class="text-ink-500 text-sm mt-1">Browse offers and claim your favorites.</p>
       <router-link to="/browse" class="ios-button-primary inline-block mt-5">Browse offers</router-link>
     </div>
     <div v-else class="px-5 mt-6 space-y-4">

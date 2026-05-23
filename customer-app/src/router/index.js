@@ -19,6 +19,7 @@ import HelpView from '../views/Help.vue';
 import TonightsDealsView from '../views/TonightsDeals.vue';
 import SurpriseBagDetailView from '../views/SurpriseBagDetail.vue';
 import MapView from '../views/MapView.vue';
+import MerchantDetailView from '../views/MerchantDetail.vue';
 
 const routes = [
   { path: '/welcome', component: LandingView, meta: { public: true } },
@@ -30,6 +31,7 @@ const routes = [
   { path: '/tonight', component: TonightsDealsView },
   { path: '/surprise-bag/:id', component: SurpriseBagDetailView },
   { path: '/map', component: MapView },
+  { path: '/merchant-detail/:id', component: MerchantDetailView },
   { path: '/coupons/:id', component: CouponDetailView },
   { path: '/wallet', component: WalletView },
   { path: '/wallet/:purchasedId/redeem', component: RedeemView },

@@ -1,16 +1,28 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import BottomTabBar from './components/BottomTabBar.vue';
 import DesktopFrame from './components/DesktopFrame.vue';
+import SplashScreen from './components/SplashScreen.vue';
 import { useFlagsStore } from './stores/flags';
 
 const route = useRoute();
 const flagsStore = useFlagsStore();
-onMounted(() => flagsStore.load());
+const showSplash = ref(sessionStorage.getItem('hh_splash_shown') !== '1');
+
+onMounted(() => {
+  flagsStore.load();
+});
+
+function onSplashDone() {
+  showSplash.value = false;
+  sessionStorage.setItem('hh_splash_shown', '1');
+}
+
 const hideTabs = computed(() => {
   if (['/login', '/register', '/welcome', '/subscribe'].includes(route.path)) return true;
   if (route.path.startsWith('/coupons/')) return true;
+  if (route.path.startsWith('/merchant-detail/')) return true;
   if (route.path.startsWith('/surprise-bag/')) return true;
   if (route.path === '/map') return true;
   if (route.path.includes('/redeem')) return true;
@@ -21,6 +33,7 @@ const isLanding = computed(() => route.path === '/welcome');
 </script>
 
 <template>
+  <SplashScreen v-if="showSplash" @done="onSplashDone" />
   <DesktopFrame :landing="isLanding">
     <div class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
       <router-view v-slot="{ Component }">
