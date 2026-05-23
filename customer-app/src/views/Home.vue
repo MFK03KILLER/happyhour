@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
@@ -9,33 +9,19 @@ import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 const router = useRouter();
 const auth = useAuthStore();
 const daily = useDailyStore();
-const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
+const { coords } = useGeolocation();
 
 const categories = ref([]);
 const nearbyMerchants = ref([]);
 const trendingOffers = ref([]);
 const loading = ref(true);
-const showGeoPrompt = ref(false);
 
 onMounted(async () => {
   daily.refresh();
-  const stored = localStorage.getItem('hh_geo_dismissed');
-  if (!coords.value && geoStatus.value !== 'denied' && stored !== '1') {
-    showGeoPrompt.value = true;
-  }
   await loadData();
 });
 
-async function enableLocation() {
-  showGeoPrompt.value = false;
-  await requestGeo();
-  await loadData();
-}
-
-function dismissGeo() {
-  showGeoPrompt.value = false;
-  localStorage.setItem('hh_geo_dismissed', '1');
-}
+watch(coords, (v) => { if (v) loadData(); });
 
 async function loadData() {
   loading.value = true;
@@ -88,24 +74,6 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
       <div class="flex-1">
         <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">Today's quota</div>
         <div class="font-bold">{{ daily.remaining }} of {{ daily.limit }} coupons remaining</div>
-      </div>
-    </div>
-
-    <div v-if="showGeoPrompt" class="mx-5 mt-4 rounded-3xl bg-gradient-to-br from-teal-600 to-teal-800 text-white p-5 shadow-lift">
-      <div class="flex items-start gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
-          <i class="fa-solid fa-location-crosshairs text-xl"></i>
-        </div>
-        <div class="flex-1">
-          <div class="font-bold">Enable location</div>
-          <div class="text-sm opacity-90 mt-0.5">See the best deals near you, sorted by distance.</div>
-          <div class="flex gap-2 mt-3">
-            <button @click="enableLocation" class="bg-white text-teal-700 font-bold rounded-full px-4 py-2 text-sm active:scale-95">
-              Allow location
-            </button>
-            <button @click="dismissGeo" class="text-white/80 font-semibold text-sm px-3">Not now</button>
-          </div>
-        </div>
       </div>
     </div>
 

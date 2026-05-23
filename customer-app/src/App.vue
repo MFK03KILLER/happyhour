@@ -6,13 +6,18 @@ import DesktopFrame from './components/DesktopFrame.vue';
 import SplashScreen from './components/SplashScreen.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import { useFlagsStore } from './stores/flags';
+import { useGeolocation } from './composables/useGeolocation';
 
 const route = useRoute();
 const flagsStore = useFlagsStore();
 const showSplash = ref(sessionStorage.getItem('hh_splash_shown') !== '1');
+const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
 
 onMounted(() => {
   flagsStore.load();
+  if (!coords.value && geoStatus.value !== 'denied') {
+    setTimeout(() => requestGeo(), showSplash.value ? 1300 : 200);
+  }
 });
 
 function onSplashDone() {

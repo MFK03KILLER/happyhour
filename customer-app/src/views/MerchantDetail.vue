@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import TicketCoupon from '../components/TicketCoupon.vue';
+import MapPreview from '../components/MapPreview.vue';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 import { useDailyStore } from '../stores/daily';
 import { useToastStore } from '../stores/toast';
@@ -187,7 +188,11 @@ function offPeakLabel() {
         </button>
       </div>
 
-      <div class="mt-4 ios-card p-4 flex items-start gap-3">
+      <div v-if="merchant.address?.lat" class="mt-4">
+        <MapPreview :lat="merchant.address.lat" :lng="merchant.address.lng" :name="merchant.name" height="160px" />
+      </div>
+
+      <div class="mt-3 ios-card p-4 flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-location-dot"></i>
         </div>
