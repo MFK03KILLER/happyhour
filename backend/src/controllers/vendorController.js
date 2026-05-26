@@ -141,6 +141,41 @@ exports.suggestions = asyncHandler(async (req, res) => {
   res.json({ items: data });
 });
 
+exports.couponPerformance = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.couponPerformanceByLocation(vendorId, req.params.id);
+  if (!data) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Coupon not found' } });
+  res.json(data);
+});
+
+exports.bestCouponNow = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.bestCouponNow(vendorId);
+  res.json(data);
+});
+
+exports.activityFeed = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const items = await analyticsService.vendorActivityFeed(vendorId, { limit: parseInt(req.query.limit || '50', 10) });
+  res.json({ items });
+});
+
+exports.exportRedemptionsCsv = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const csv = await analyticsService.redemptionsExportCsv(vendorId, { from: req.query.from, to: req.query.to });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="redemptions-${new Date().toISOString().slice(0,10)}.csv"`);
+  res.send(csv);
+});
+
+exports.bulkCouponAction = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { ids, action } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'ids required' } });
+  const result = await couponService.bulkUpdate({ vendorId, ids, action });
+  res.json({ modifiedCount: result.modifiedCount || result.deletedCount, action });
+});
+
 exports.removeTeamMember = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
   const user = await userRepo.findById(req.params.id);

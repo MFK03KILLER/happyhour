@@ -13,6 +13,7 @@ import VendorMerchants from '../views/vendor/VendorMerchants.vue';
 import VendorCoupons from '../views/vendor/VendorCoupons.vue';
 import VendorTeam from '../views/vendor/VendorTeam.vue';
 import VendorAnalytics from '../views/vendor/VendorAnalytics.vue';
+import VendorActivity from '../views/vendor/VendorActivity.vue';
 
 import AdminLayout from '../views/admin/AdminLayout.vue';
 import AdminDashboard from '../views/admin/AdminDashboard.vue';
@@ -41,6 +42,7 @@ const routes = [
       { path: 'merchants', component: VendorMerchants },
       { path: 'coupons', component: VendorCoupons },
       { path: 'team', component: VendorTeam },
+      { path: 'activity', component: VendorActivity },
     ],
   },
   {

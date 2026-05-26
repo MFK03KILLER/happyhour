@@ -8,6 +8,11 @@ router.use(authenticate(), authorize('vendor'));
 router.get('/stats', requirePermission('view_stats'), ctrl.stats);
 router.get('/analytics', requirePermission('view_stats'), ctrl.analytics);
 router.get('/suggestions', requirePermission('view_stats'), ctrl.suggestions);
+router.get('/best-now', requirePermission('view_stats'), ctrl.bestCouponNow);
+router.get('/activity', requirePermission('view_stats'), ctrl.activityFeed);
+router.get('/export/redemptions.csv', requirePermission('view_payments'), ctrl.exportRedemptionsCsv);
+router.get('/coupons/:id/performance', requirePermission('view_stats'), ctrl.couponPerformance);
+router.post('/coupons/bulk', requirePermission('manage_coupons'), writeLimiter, ctrl.bulkCouponAction);
 
 router.get('/merchants', ctrl.listMyMerchants);
 router.post('/merchants', requirePermission('manage_merchants'), writeLimiter, ctrl.createMyMerchant);

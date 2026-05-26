@@ -216,8 +216,30 @@ async function getDailyStatus(customerId) {
   return { limit, used, remaining: Math.max(0, limit - used) };
 }
 
+async function bulkUpdate({ vendorId, ids, action }) {
+  const Coupon = require('../models/Coupon');
+  const filter = { vendorId, _id: { $in: ids } };
+  if (action === 'pause') {
+    return Coupon.updateMany(filter, { status: 'paused' });
+  }
+  if (action === 'activate') {
+    return Coupon.updateMany(filter, { status: 'active' });
+  }
+  if (action === 'delete') {
+    return Coupon.deleteMany(filter);
+  }
+  if (action === 'feature_on') {
+    return Coupon.updateMany(filter, { featured: true });
+  }
+  if (action === 'feature_off') {
+    return Coupon.updateMany(filter, { featured: false });
+  }
+  throw new BadRequestError('Unknown bulk action');
+}
+
 module.exports = {
   browse, getById, claim, purchase, purchaseSurpriseBag,
   createCoupon, updateCoupon, deleteCoupon, listCoupons,
   couponsByMerchant, getDailyStatus, haversineKm, couponIsActiveNow,
+  bulkUpdate,
 };

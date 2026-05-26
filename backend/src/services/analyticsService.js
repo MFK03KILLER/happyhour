@@ -182,4 +182,111 @@ async function vendorSuggestions(vendorId) {
   return suggestions;
 }
 
-module.exports = { vendorAnalytics, vendorSuggestions };
+async function couponPerformanceByLocation(vendorId, couponId) {
+  const Redemption = require('../models/Redemption');
+  const Coupon = require('../models/Coupon');
+  const coupon = await Coupon.findOne({ _id: couponId, vendorId });
+  if (!coupon) return null;
+  const merchantIds = coupon.merchantIds;
+  const stats = await Redemption.aggregate([
+    { $match: { couponId: coupon._id, status: 'completed' } },
+    { $group: { _id: '$merchantId', count: { $sum: 1 }, savings: { $sum: '$amountSavedUSD' }, last: { $max: '$scannedAt' } } },
+    { $lookup: { from: 'merchants', localField: '_id', foreignField: '_id', as: 'merchant' } },
+    { $unwind: '$merchant' },
+    { $sort: { count: -1 } },
+  ]);
+  const nonZero = stats.map((s) => ({ merchantId: s._id, merchant: s.merchant, count: s.count, savings: s.savings, lastScan: s.last }));
+  const seenIds = new Set(nonZero.map((s) => String(s.merchantId)));
+  const Merchant = require('../models/Merchant');
+  const zeroMerchants = await Merchant.find({ _id: { $in: merchantIds.filter((id) => !seenIds.has(String(id))) } });
+  const zeros = zeroMerchants.map((m) => ({ merchantId: m._id, merchant: m, count: 0, savings: 0, lastScan: null }));
+  return { coupon, breakdown: [...nonZero, ...zeros] };
+}
+
+async function bestCouponNow(vendorId) {
+  const Coupon = require('../models/Coupon');
+  const Merchant = require('../models/Merchant');
+  const now = new Date();
+  const DAY_NAMES = ['sun','mon','tue','wed','thu','fri','sat'];
+  const today = DAY_NAMES[now.getDay()];
+  const curMin = now.getHours() * 60 + now.getMinutes();
+
+  const merchants = await Merchant.find({ vendorId, status: 'active' });
+  const slowMerchants = merchants.filter((m) => {
+    const slots = m.offPeakHours || [];
+    return slots.some((s) => {
+      if (s.day !== 'daily' && s.day !== today) return false;
+      const [sh, sm] = s.start.split(':').map(Number);
+      const [eh, em] = s.end.split(':').map(Number);
+      return curMin >= sh * 60 + sm && curMin <= eh * 60 + em;
+    });
+  });
+
+  const activeCoupons = await Coupon.find({ vendorId, status: 'active', validUntil: { $gte: now } });
+  const liveNow = activeCoupons.filter((c) => {
+    if (!c.activeWindow || !c.activeWindow.start) return true;
+    const days = c.activeWindow.days || ['daily'];
+    if (!days.includes('daily') && !days.includes(today)) return false;
+    const [sh, sm] = c.activeWindow.start.split(':').map(Number);
+    const [eh, em] = c.activeWindow.end.split(':').map(Number);
+    return curMin >= sh * 60 + sm && curMin <= eh * 60 + em;
+  });
+
+  const Redemption = require('../models/Redemption');
+  const ranked = await Promise.all(liveNow.map(async (c) => {
+    const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentScans = await Redemption.countDocuments({ couponId: c._id, status: 'completed', scannedAt: { $gte: fromDate } });
+    return { coupon: c, recentScans, isToday: !!c.todaysOffer, isFeatured: !!c.featured, isPopup: !!c.popupOffer };
+  }));
+  ranked.sort((a, b) => {
+    const aScore = a.recentScans * 10 + (a.isPopup ? 25 : 0) + (a.isToday ? 15 : 0) + (a.isFeatured ? 5 : 0);
+    const bScore = b.recentScans * 10 + (b.isPopup ? 25 : 0) + (b.isToday ? 15 : 0) + (b.isFeatured ? 5 : 0);
+    return bScore - aScore;
+  });
+
+  return {
+    now,
+    slowMerchantCount: slowMerchants.length,
+    slowMerchants: slowMerchants.slice(0, 5),
+    activeNow: ranked.length,
+    top: ranked.slice(0, 3),
+  };
+}
+
+async function vendorActivityFeed(vendorId, { limit = 50 } = {}) {
+  const AuditLog = require('../models/AuditLog');
+  const User = require('../models/User');
+  const teamUserIds = await User.find({ vendorId }).distinct('_id');
+  const items = await AuditLog.find({ actorUserId: { $in: teamUserIds } }).sort({ createdAt: -1 }).limit(limit).populate('actorUserId', 'fullName email roleSlug');
+  return items;
+}
+
+async function redemptionsExportCsv(vendorId, { from, to } = {}) {
+  const Redemption = require('../models/Redemption');
+  const Merchant = require('../models/Merchant');
+  const merchants = await Merchant.find({ vendorId }).distinct('_id');
+  const filter = { merchantId: { $in: merchants }, status: 'completed' };
+  if (from) filter.scannedAt = { ...(filter.scannedAt || {}), $gte: new Date(from) };
+  if (to) filter.scannedAt = { ...(filter.scannedAt || {}), $lte: new Date(to) };
+  const rows = await Redemption.find(filter).sort({ scannedAt: -1 }).limit(5000).populate('couponId merchantId customerId');
+  const header = 'Date,Time,Merchant,Coupon,Customer,Email,Discount USD,Redemption ID';
+  const csv = [header];
+  for (const r of rows) {
+    const dt = new Date(r.scannedAt);
+    const date = dt.toISOString().slice(0, 10);
+    const time = dt.toISOString().slice(11, 19);
+    const merchantName = (r.merchantId?.name || '').replace(/,/g, ' ');
+    const couponTitle = (r.couponId?.title || '').replace(/,/g, ' ');
+    const custName = (r.customerId?.fullName || r.customerSnapshot?.name || '').replace(/,/g, ' ');
+    const custEmail = r.customerId?.email || r.customerSnapshot?.email || '';
+    const savings = (r.amountSavedUSD || 0).toFixed(2);
+    csv.push(`${date},${time},${merchantName},${couponTitle},${custName},${custEmail},${savings},${r._id}`);
+  }
+  return csv.join('\n');
+}
+
+module.exports = {
+  vendorAnalytics, vendorSuggestions,
+  couponPerformanceByLocation, bestCouponNow,
+  vendorActivityFeed, redemptionsExportCsv,
+};
