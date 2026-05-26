@@ -21,4 +21,20 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 
-module.exports = { registerSchema, loginSchema, refreshSchema, changePasswordSchema };
+const googleSignInSchema = z.object({
+  idToken: z.string().min(20),
+});
+
+const appleSignInSchema = z.object({
+  idToken: z.string().min(20),
+  fullName: z.string().max(100).optional(),
+});
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+  changePasswordSchema,
+  googleSignInSchema,
+  appleSignInSchema,
+};

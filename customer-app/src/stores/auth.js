@@ -22,6 +22,16 @@ export const useAuthStore = defineStore('auth', {
       this.setSession(data);
       return data.user;
     },
+    async loginWithGoogle(idToken) {
+      const { data } = await client.post('/auth/google', { idToken });
+      this.setSession(data);
+      return data.user;
+    },
+    async loginWithApple({ idToken, fullName }) {
+      const { data } = await client.post('/auth/apple', { idToken, fullName });
+      this.setSession(data);
+      return data.user;
+    },
     async fetchMe() {
       if (!this.accessToken) return null;
       const { data } = await client.get('/auth/me');

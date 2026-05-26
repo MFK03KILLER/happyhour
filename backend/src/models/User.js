@@ -8,9 +8,14 @@ const refreshTokenSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: String,
   phone: String,
   fullName: { type: String, required: true },
+  avatarUrl: String,
+  authProvider: { type: String, enum: ['password', 'google', 'apple'], default: 'password' },
+  googleId: { type: String, index: true, sparse: true },
+  appleId: { type: String, index: true, sparse: true },
+  emailVerified: { type: Boolean, default: false },
   role: { type: String, enum: ['admin', 'vendor', 'merchant_staff', 'customer'], required: true, index: true },
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   merchantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' },
