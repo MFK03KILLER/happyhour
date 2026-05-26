@@ -1,8 +1,12 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import CameraScanner from '../components/CameraScanner.vue';
+
+const router = useRouter();
+async function signOut() { await auth.logout(); router.push('/login'); }
 
 const auth = useAuthStore();
 const stage = ref('idle');
@@ -51,7 +55,7 @@ function reset() {
           <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">Merchant console</div>
           <div class="text-2xl font-bold mt-0.5">{{ auth.user?.fullName }}</div>
         </div>
-        <button @click="auth.logout()" class="text-xs opacity-80 active:opacity-50">Sign out</button>
+        <button @click="signOut" class="text-xs opacity-80 active:opacity-50">Sign out</button>
       </div>
     </header>
 

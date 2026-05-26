@@ -90,16 +90,69 @@ exports.deleteCoupon = asyncHandler(async (req, res) => {
 });
 
 exports.createUser = asyncHandler(async (req, res) => {
+  const roleService = require('../services/roleService');
   const exists = await userRepo.findByEmail(req.body.email);
   if (exists) throw new ConflictError('Email already in use');
   const passwordHash = await bcrypt.hash(req.body.password, 12);
-  const user = await userRepo.create({ ...req.body, passwordHash });
+  const data = { ...req.body, passwordHash };
+  delete data.password;
+  if (data.roleSlug) {
+    const perms = await roleService.permissionsForRole(data.roleSlug);
+    if (perms.length) data.permissions = perms;
+  }
+  const user = await userRepo.create(data);
   await auditService.log({ actorUserId: req.user._id, action: 'user.create', targetType: 'User', targetId: user._id.toString(), after: user, req });
   res.status(201).json(user);
 });
+
 exports.listUsers = asyncHandler(async (req, res) => {
-  const items = await userRepo.list({}, { skip: 0, limit: 200 });
+  const filter = {};
+  if (req.query.role) filter.role = req.query.role;
+  if (req.query.vendorId) filter.vendorId = req.query.vendorId;
+  if (req.query.q) filter.$or = [
+    { fullName: { $regex: req.query.q, $options: 'i' } },
+    { email: { $regex: req.query.q, $options: 'i' } },
+  ];
+  const items = await userRepo.list(filter, { skip: 0, limit: 500 });
   res.json({ items, total: items.length });
+});
+
+exports.listRoles = asyncHandler(async (req, res) => {
+  const Role = require('../models/Role');
+  const items = await Role.find().sort({ scope: 1, name: 1 });
+  res.json({ items });
+});
+
+exports.updateUser = asyncHandler(async (req, res) => {
+  const roleService = require('../services/roleService');
+  const { NotFoundError } = require('../utils/errors');
+  const before = await userRepo.findById(req.params.id);
+  if (!before) throw new NotFoundError('User not found');
+  const data = { ...req.body };
+  delete data.email;
+  if (data.password) {
+    data.passwordHash = await bcrypt.hash(data.password, 12);
+    delete data.password;
+  }
+  if (data.roleSlug && data.roleSlug !== before.roleSlug) {
+    const perms = await roleService.permissionsForRole(data.roleSlug);
+    if (perms.length) data.permissions = perms;
+  }
+  if (!data.vendorId) delete data.vendorId;
+  if (!data.merchantId) delete data.merchantId;
+  const updated = await userRepo.update(req.params.id, data);
+  await auditService.log({ actorUserId: req.user._id, action: 'user.update', targetType: 'User', targetId: updated._id.toString(), before, after: updated, req });
+  res.json(updated);
+});
+
+exports.deleteUser = asyncHandler(async (req, res) => {
+  const { NotFoundError, BadRequestError } = require('../utils/errors');
+  const target = await userRepo.findById(req.params.id);
+  if (!target) throw new NotFoundError('User not found');
+  if (target._id.toString() === req.user._id.toString()) throw new BadRequestError('Cannot delete your own account');
+  await userRepo.delete(req.params.id);
+  await auditService.log({ actorUserId: req.user._id, action: 'user.delete', targetType: 'User', targetId: req.params.id, before: target, req });
+  res.status(204).end();
 });
 
 exports.overview = asyncHandler(async (req, res) => {

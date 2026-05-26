@@ -94,7 +94,9 @@ const createUserSchema = z.object({
   role: z.enum(['admin', 'vendor', 'merchant_staff', 'customer']),
   vendorId: z.string().optional(),
   merchantId: z.string().optional(),
-  permissions: z.array(z.enum(['manage_coupons', 'view_stats', 'manage_team', 'scan_only', 'manage_merchants'])).optional(),
+  roleSlug: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+  status: z.enum(['active', 'suspended', 'pending']).optional(),
   phone: z.string().optional(),
 });
 

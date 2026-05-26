@@ -45,6 +45,8 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = null;
       localStorage.removeItem('hh_access_token');
       localStorage.removeItem('hh_refresh_token');
+      localStorage.removeItem('hh_onboarded');
+      sessionStorage.removeItem('hh_splash_shown');
     },
   },
 });
