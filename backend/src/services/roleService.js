@@ -35,6 +35,14 @@ const SYSTEM_ROLES = [
     isSystem: true,
   },
   {
+    slug: 'vendor_location_manager',
+    name: 'Location Manager',
+    description: 'Runs a single location: scans QR, creates coupons valid here, edits this location\'s hours, sees this location\'s stats.',
+    scope: 'vendor',
+    permissions: ['scan_coupons','manage_coupons','view_coupons','manage_hours','view_merchants','view_stats','view_team'],
+    isSystem: true,
+  },
+  {
     slug: 'vendor_cashier',
     name: 'Cashier / Staff',
     description: 'Front-of-house staff. Can only scan customer QR codes to redeem coupons.',
