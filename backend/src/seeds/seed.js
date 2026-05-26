@@ -199,6 +199,8 @@ async function upsertCustomers() {
 }
 
 async function upsertVendorOwners(vendorsBySlug) {
+  const roleService = require('../services/roleService');
+  const ownerPerms = await roleService.permissionsForRole('vendor_owner');
   const passwordHash = await bcrypt.hash('Vendor@123', 12);
   const vendor = vendorsBySlug['pizza-my-heart'];
   if (!vendor) return;
@@ -207,17 +209,21 @@ async function upsertVendorOwners(vendorsBySlug) {
     {
       email: 'pizza.owner@happyhour.demo', passwordHash, fullName: 'Pizza My Heart Owner',
       role: 'vendor', vendorId: vendor._id, status: 'active',
-      permissions: ['manage_coupons', 'view_stats', 'manage_team', 'manage_merchants'],
+      roleSlug: 'vendor_owner', permissions: ownerPerms,
     },
     { upsert: true, new: true }
   );
 }
 
 async function upsertMerchantStaff(merchantsBySlug) {
+  const roleService = require('../services/roleService');
+  const cashierPerms = await roleService.permissionsForRole('vendor_cashier');
+  const managerPerms = await roleService.permissionsForRole('vendor_manager');
   const passwordHash = await bcrypt.hash('Merchant@123', 12);
   const staff = [
-    { email: 'pizza.staff@happyhour.demo', fullName: 'Diego Ramirez', merchantSlug: 'pmh-redwood-city' },
-    { email: 'cafe.staff@happyhour.demo', fullName: 'Emma Wilson', merchantSlug: 'bay-brew-mission' },
+    { email: 'pizza.staff@happyhour.demo', fullName: 'Diego Ramirez', merchantSlug: 'pmh-redwood-city', roleSlug: 'vendor_cashier', perms: cashierPerms },
+    { email: 'cafe.staff@happyhour.demo', fullName: 'Emma Wilson', merchantSlug: 'bay-brew-mission', roleSlug: 'vendor_cashier', perms: cashierPerms },
+    { email: 'pizza.manager@happyhour.demo', fullName: 'Jordan Lee', merchantSlug: 'pmh-redwood-city', roleSlug: 'vendor_manager', perms: managerPerms },
   ];
   for (const s of staff) {
     const merchant = merchantsBySlug[s.merchantSlug];
@@ -226,16 +232,22 @@ async function upsertMerchantStaff(merchantsBySlug) {
       { email: s.email },
       { email: s.email, fullName: s.fullName, passwordHash, role: 'merchant_staff',
         merchantId: merchant._id, vendorId: merchant.vendorId, status: 'active',
-        permissions: ['scan_only'] },
+        roleSlug: s.roleSlug, permissions: s.perms },
       { upsert: true, new: true }
     );
   }
+}
+
+async function upsertRolesSync() {
+  const roleService = require('../services/roleService');
+  await roleService.syncSystemRoles();
 }
 
 async function run() {
   await connectDB();
   logger.info('Seeding database...');
   if (RESET) await wipeData();
+  await upsertRolesSync();
   await upsertAdmin();
   await upsertCategories();
   const vendorsBySlug = await upsertVendors();

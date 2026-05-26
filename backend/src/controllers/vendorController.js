@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const merchantService = require('../services/merchantService');
 const couponService = require('../services/couponService');
 const statsService = require('../services/statsService');
+const roleService = require('../services/roleService');
+const analyticsService = require('../services/analyticsService');
 const userRepo = require('../repositories/userRepository');
 const { ForbiddenError, ConflictError, NotFoundError } = require('../utils/errors');
 
@@ -75,21 +77,68 @@ exports.listTeam = asyncHandler(async (req, res) => {
 
 exports.createTeamMember = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
-  const { email, password, fullName, merchantId, permissions } = req.body;
+  const { email, password, fullName, merchantId, roleSlug, permissions } = req.body;
   const existing = await userRepo.findByEmail(email);
   if (existing) throw new ConflictError('Email already in use');
   const passwordHash = await bcrypt.hash(password, 12);
+  let perms = permissions;
+  let chosenRole = roleSlug;
+  if (roleSlug) {
+    perms = await roleService.permissionsForRole(roleSlug);
+    if (!perms.length) throw new NotFoundError('Role not found');
+  }
+  if (!perms || !perms.length) {
+    chosenRole = 'vendor_cashier';
+    perms = await roleService.permissionsForRole('vendor_cashier');
+  }
   const user = await userRepo.create({
-    email,
-    passwordHash,
-    fullName,
+    email, passwordHash, fullName,
     role: 'merchant_staff',
     vendorId,
     merchantId: merchantId || undefined,
-    permissions: permissions && permissions.length ? permissions : ['scan_only'],
+    roleSlug: chosenRole,
+    permissions: perms,
     status: 'active',
   });
   res.status(201).json(user);
+});
+
+exports.updateTeamMember = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const user = await userRepo.findById(req.params.id);
+  if (!user) throw new NotFoundError('User not found');
+  if (user.vendorId?.toString() !== vendorId.toString()) throw new ForbiddenError('Not in your team');
+  const update = {};
+  if (req.body.fullName) update.fullName = req.body.fullName;
+  if (req.body.merchantId !== undefined) update.merchantId = req.body.merchantId || undefined;
+  if (req.body.status) update.status = req.body.status;
+  if (req.body.roleSlug) {
+    const perms = await roleService.permissionsForRole(req.body.roleSlug);
+    if (!perms.length) throw new NotFoundError('Role not found');
+    update.roleSlug = req.body.roleSlug;
+    update.permissions = perms;
+  }
+  if (req.body.password) update.passwordHash = await bcrypt.hash(req.body.password, 12);
+  const updated = await userRepo.update(req.params.id, update);
+  res.json(updated);
+});
+
+exports.listRoles = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const items = await roleService.listAvailable(vendorId);
+  res.json({ items });
+});
+
+exports.analytics = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.vendorAnalytics(vendorId, req.query);
+  res.json(data);
+});
+
+exports.suggestions = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.vendorSuggestions(vendorId);
+  res.json({ items: data });
 });
 
 exports.removeTeamMember = asyncHandler(async (req, res) => {

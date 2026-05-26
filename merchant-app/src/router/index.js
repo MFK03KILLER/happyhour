@@ -12,6 +12,7 @@ import VendorDashboard from '../views/vendor/VendorDashboard.vue';
 import VendorMerchants from '../views/vendor/VendorMerchants.vue';
 import VendorCoupons from '../views/vendor/VendorCoupons.vue';
 import VendorTeam from '../views/vendor/VendorTeam.vue';
+import VendorAnalytics from '../views/vendor/VendorAnalytics.vue';
 
 import AdminLayout from '../views/admin/AdminLayout.vue';
 import AdminDashboard from '../views/admin/AdminDashboard.vue';
@@ -36,6 +37,7 @@ const routes = [
     meta: { roles: ['vendor'] },
     children: [
       { path: '', component: VendorDashboard },
+      { path: 'analytics', component: VendorAnalytics },
       { path: 'merchants', component: VendorMerchants },
       { path: 'coupons', component: VendorCoupons },
       { path: 'team', component: VendorTeam },
