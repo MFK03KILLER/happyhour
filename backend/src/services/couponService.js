@@ -2,6 +2,7 @@ const couponRepo = require('../repositories/couponRepository');
 const purchasedRepo = require('../repositories/purchasedCouponRepository');
 const paymentService = require('./paymentService');
 const subscriptionService = require('./subscriptionService');
+const holidayService = require('./holidayService');
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const Merchant = require('../models/Merchant');
@@ -81,7 +82,14 @@ async function getById(id) {
   return coupon;
 }
 
-function couponIsActiveNow(coupon) {
+// `holidayMap` (optional): Map<YYYY-MM-DD, name> already loaded for the merchant —
+// pass it when checking many coupons in a list to avoid N+1 queries.
+function couponIsActiveNow(coupon, opts = {}) {
+  // Holiday gate
+  if (coupon.disabledOnHolidays !== false && opts.holidayMap) {
+    const today = holidayService.todayYmd();
+    if (opts.holidayMap.has(today)) return false;
+  }
   if (!coupon.activeWindow || !coupon.activeWindow.start || !coupon.activeWindow.end) return true;
   const days = coupon.activeWindow.days || ['daily'];
   const now = new Date();
@@ -93,6 +101,18 @@ function couponIsActiveNow(coupon) {
   const minStart = sh * 60 + sm;
   const minEnd = eh * 60 + em;
   return minNow >= minStart && minNow <= minEnd;
+}
+
+// Returns { isHoliday, name } if today is a holiday for ANY merchant the coupon belongs to.
+// Used during claim to block claim-attempts on holidays for holiday-disabled coupons.
+async function holidayInfoForCoupon(coupon) {
+  if (coupon.disabledOnHolidays === false) return { isHoliday: false };
+  const merchantIds = (coupon.merchantIds || []).map((m) => (m && m._id) ? m._id : m);
+  for (const mid of merchantIds) {
+    const info = await holidayService.isHolidayTodayFor(mid);
+    if (info.isHoliday) return info;
+  }
+  return { isHoliday: false };
 }
 
 async function ensureDailyLimit(customerId) {
@@ -120,6 +140,10 @@ async function claim({ customerId, couponId }) {
   if (coupon.offerKind === 'surprise_bag') throw new BadRequestError('Surprise bags must be purchased, not claimed');
   if (coupon.status !== 'active') throw new BadRequestError('Coupon not available');
   if (coupon.validUntil < new Date()) throw new BadRequestError('Coupon expired');
+  const holidayInfo = await holidayInfoForCoupon(coupon);
+  if (holidayInfo.isHoliday) {
+    throw new BadRequestError(`This coupon is unavailable today (${holidayInfo.name}). Try again tomorrow.`);
+  }
   await subscriptionService.ensureActive(customerId);
   const { user } = await ensureDailyLimit(customerId);
   const purchased = await purchasedRepo.create({
@@ -182,6 +206,25 @@ async function createCoupon(data) {
   if (data.offerKind === 'surprise_bag' && data.inventoryCount != null) {
     data.inventoryRemaining = data.inventoryCount;
   }
+  // Enforce the vendor's per-plan active-coupon limit
+  if (data.vendorId) {
+    const planService = require('./planService');
+    const Coupon = require('../models/Coupon');
+    const Vendor = require('../models/Vendor');
+    const vendor = await Vendor.findById(data.vendorId);
+    if (vendor && vendor.ownerUserId) {
+      const User = require('../models/User');
+      const owner = await User.findById(vendor.ownerUserId);
+      if (owner) {
+        const { plan } = await planService.getUserPlan(owner, 'merchant');
+        const limit = plan?.limits?.activeCoupons || 1;
+        const currentActive = await Coupon.countDocuments({ vendorId: data.vendorId, status: 'active' });
+        if (currentActive >= limit && (data.status || 'active') === 'active') {
+          throw new BadRequestError(`Your ${plan.label} plan allows ${limit} active coupon${limit === 1 ? '' : 's'}. Upgrade to add more, or pause an existing coupon.`);
+        }
+      }
+    }
+  }
   return couponRepo.create(data);
 }
 async function updateCoupon(id, data) {
@@ -241,5 +284,5 @@ module.exports = {
   browse, getById, claim, purchase, purchaseSurpriseBag,
   createCoupon, updateCoupon, deleteCoupon, listCoupons,
   couponsByMerchant, getDailyStatus, haversineKm, couponIsActiveNow,
-  bulkUpdate,
+  holidayInfoForCoupon, bulkUpdate,
 };

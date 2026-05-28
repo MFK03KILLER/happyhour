@@ -25,4 +25,26 @@ router.get('/categories', ctrl.categories);
  */
 router.get('/merchants/:slug', ctrl.merchantBySlug);
 
+/**
+ * @openapi
+ * /public/terms:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get current terms of service (version + markdown content)
+ */
+router.get('/terms', ctrl.terms);
+
+/**
+ * @openapi
+ * /public/plans:
+ *   get:
+ *     tags: [Public]
+ *     summary: List subscription plans (customer or merchant audience)
+ *     parameters:
+ *       - in: query
+ *         name: audience
+ *         schema: { type: string, enum: [customer, merchant] }
+ */
+router.get('/plans', ctrl.plans);
+
 module.exports = router;

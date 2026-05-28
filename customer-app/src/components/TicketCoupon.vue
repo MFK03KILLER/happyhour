@@ -74,7 +74,7 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
             </div>
           </div>
 
-          <div v-if="windowText || outsideHours" class="mt-2 flex items-center gap-1.5 flex-wrap">
+          <div v-if="windowText || outsideHours || coupon.unavailableToday" class="mt-2 flex items-center gap-1.5 flex-wrap">
             <div v-if="windowText" class="text-[10px] font-semibold opacity-85 inline-flex items-center gap-1">
               <i class="fa-regular fa-clock text-[10px]"></i>
               <span>{{ windowText }}</span>
@@ -83,14 +83,21 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
               <i class="fa-solid fa-hourglass-half text-[8px]"></i>
               Outside hours
             </span>
+            <span v-if="coupon.unavailableToday" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/30 text-[9px] font-bold uppercase">
+              <i class="fa-solid fa-calendar-xmark text-[8px]"></i>
+              Closed today · {{ coupon.unavailableToday.name }}
+            </span>
           </div>
 
           <div class="mt-2.5 flex justify-end">
             <button
-              v-if="!locked"
+              v-if="!locked && !coupon.unavailableToday"
               @click="onClaim"
               class="bg-white rounded-full px-4 py-1.5 text-xs font-bold whitespace-nowrap text-ink-900 active:scale-95 transition shadow-soft inline-flex items-center gap-1"
             >Claim <i class="fa-solid fa-arrow-right text-[10px]"></i></button>
+            <button v-else-if="coupon.unavailableToday" disabled class="bg-white/15 backdrop-blur rounded-full px-3 py-1.5 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 opacity-80">
+              <i class="fa-solid fa-calendar-xmark text-[9px]"></i> Try again tomorrow
+            </button>
             <button v-else class="bg-white/25 backdrop-blur rounded-full px-3 py-1.5 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1">
               <i class="fa-solid fa-lock text-[9px]"></i> Subscribe to unlock
             </button>

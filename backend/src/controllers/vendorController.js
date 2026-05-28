@@ -5,6 +5,7 @@ const couponService = require('../services/couponService');
 const statsService = require('../services/statsService');
 const roleService = require('../services/roleService');
 const analyticsService = require('../services/analyticsService');
+const holidayService = require('../services/holidayService');
 const userRepo = require('../repositories/userRepository');
 const { ForbiddenError, ConflictError, NotFoundError } = require('../utils/errors');
 
@@ -189,4 +190,41 @@ exports.stats = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
   const data = await statsService.vendorStats(vendorId);
   res.json(data);
+});
+
+// Holidays — vendor can manage holidays for any of their merchants
+async function assertOwnsMerchant(vendorId, merchantId) {
+  const m = await merchantService.getById(merchantId);
+  if (!m) throw new NotFoundError('Merchant not found');
+  const mvid = m.vendorId?._id || m.vendorId;
+  if (String(mvid) !== String(vendorId)) throw new ForbiddenError('Not your merchant');
+  return m;
+}
+
+exports.listHolidays = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId } = req.query;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const year = req.query.year ? parseInt(req.query.year, 10) : undefined;
+  const data = await holidayService.listForMerchant(merchantId, { year });
+  res.json(data);
+});
+
+exports.addHoliday = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId, date, name } = req.body;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const h = await holidayService.addCustom({ merchantId, date, name, userId: req.user._id });
+  res.status(201).json(h);
+});
+
+exports.deleteHoliday = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId } = req.query;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const h = await holidayService.removeCustom({ holidayId: req.params.id, merchantId });
+  res.json(h);
 });

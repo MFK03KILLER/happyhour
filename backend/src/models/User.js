@@ -29,6 +29,16 @@ const userSchema = new mongoose.Schema({
   dailyClaimsCount: { type: Number, default: 0 },
   dailyClaimsResetAt: Date,
   favoriteMerchantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' }],
+  acceptedTerms: {
+    version: { type: Number, default: null },
+    acceptedAt: { type: Date, default: null },
+  },
+  planTier: {
+    type: String,
+    enum: ['basic', 'gold', 'premium'],
+    default: 'basic',
+    index: true,
+  },
 }, { timestamps: true });
 
 userSchema.methods.toJSON = function () {

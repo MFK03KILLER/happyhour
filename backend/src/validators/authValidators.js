@@ -5,6 +5,7 @@ const registerSchema = z.object({
   password: z.string().min(8).max(128),
   fullName: z.string().min(2).max(100),
   phone: z.string().optional(),
+  acceptedTermsVersion: z.number().int().positive(),
 });
 
 const loginSchema = z.object({
@@ -23,11 +24,13 @@ const changePasswordSchema = z.object({
 
 const googleSignInSchema = z.object({
   idToken: z.string().min(20),
+  acceptedTermsVersion: z.number().int().positive().optional(),
 });
 
 const appleSignInSchema = z.object({
   idToken: z.string().min(20),
   fullName: z.string().max(100).optional(),
+  acceptedTermsVersion: z.number().int().positive().optional(),
 });
 
 module.exports = {

@@ -18,6 +18,9 @@ const tabs = computed(() => {
   if (can('manage_coupons') || can('view_coupons')) {
     t.push({ to: '/my-coupons', label: 'Coupons', icon: 'fa-ticket' });
   }
+  if (can('manage_hours')) {
+    t.push({ to: '/holidays', label: 'Holidays', icon: 'fa-calendar-xmark' });
+  }
   t.push({ to: '/settings', label: 'Store', icon: 'fa-store' });
   return t;
 });

@@ -22,13 +22,13 @@ export const useAuthStore = defineStore('auth', {
       this.setSession(data);
       return data.user;
     },
-    async loginWithGoogle(idToken) {
-      const { data } = await client.post('/auth/google', { idToken });
+    async loginWithGoogle(idToken, acceptedTermsVersion) {
+      const { data } = await client.post('/auth/google', { idToken, acceptedTermsVersion });
       this.setSession(data);
       return data.user;
     },
-    async loginWithApple({ idToken, fullName }) {
-      const { data } = await client.post('/auth/apple', { idToken, fullName });
+    async loginWithApple({ idToken, fullName, acceptedTermsVersion }) {
+      const { data } = await client.post('/auth/apple', { idToken, fullName, acceptedTermsVersion });
       this.setSession(data);
       return data.user;
     },

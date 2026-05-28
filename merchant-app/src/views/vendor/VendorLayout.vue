@@ -14,6 +14,7 @@ const items = [
   { to: '/vendor/coupons', label: 'Coupons', icon: 'tag', perm: null },
   { to: '/vendor/team', label: 'Team', icon: 'users', perm: 'view_team' },
   { to: '/vendor/activity', label: 'Activity', icon: 'log', perm: 'view_stats' },
+  { to: '/vendor/pricing', label: 'Pricing', icon: 'dollar', perm: null },
 ];
 
 function can(perm) {
@@ -52,6 +53,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           <svg v-if="i.icon==='users'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M22 20a5 5 0 0 0-6-5"/></svg>
           <svg v-if="i.icon==='chart'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 19V5M4 19h16M8 16V11M12 16V8M16 16v-3"/></svg>
           <svg v-if="i.icon==='log'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+          <svg v-if="i.icon==='dollar'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           {{ i.label }}
         </router-link>
       </nav>

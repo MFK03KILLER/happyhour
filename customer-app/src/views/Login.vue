@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import client from '../api/client';
+import TermsModal from '../components/TermsModal.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -10,14 +12,20 @@ const email = ref('customer1@happyhour.demo');
 const password = ref('Customer@123');
 const loading = ref(false);
 const error = ref('');
+const showTerms = ref(false);
+const termsVersion = ref(null);
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const APPLE_SERVICE_ID = import.meta.env.VITE_APPLE_SERVICE_ID || '';
 const APPLE_REDIRECT_URI = import.meta.env.VITE_APPLE_REDIRECT_URI || (typeof window !== 'undefined' ? window.location.origin + '/login' : '');
 
-onMounted(() => {
+onMounted(async () => {
   initGoogle();
   initApple();
+  try {
+    const { data } = await client.get('/public/terms');
+    termsVersion.value = data.version;
+  } catch {}
 });
 
 function initGoogle() {
@@ -64,7 +72,7 @@ async function handleGoogleCredential(response) {
   loading.value = true;
   error.value = '';
   try {
-    const user = await auth.loginWithGoogle(response.credential);
+    const user = await auth.loginWithGoogle(response.credential, termsVersion.value);
     if (user.role !== 'customer') {
       error.value = 'This app is for customers.';
       await auth.logout();
@@ -90,7 +98,7 @@ async function signInWithApple() {
     const idToken = data?.authorization?.id_token;
     const fullName = data?.user?.name ? `${data.user.name.firstName || ''} ${data.user.name.lastName || ''}`.trim() : undefined;
     if (!idToken) throw new Error('Apple did not return an ID token');
-    const user = await auth.loginWithApple({ idToken, fullName });
+    const user = await auth.loginWithApple({ idToken, fullName, acceptedTermsVersion: termsVersion.value });
     if (user.role !== 'customer') {
       error.value = 'This app is for customers.';
       await auth.logout();
@@ -172,8 +180,15 @@ async function submit() {
       </router-link>
     </form>
 
+    <div class="mt-6 max-w-sm mx-auto w-full text-center text-[11px] text-ink-500">
+      By continuing you accept our
+      <button type="button" @click="showTerms = true" class="text-teal-700 font-semibold underline">Terms of Service</button>.
+    </div>
+
     <div class="mt-auto text-center text-[11px] text-ink-300">
       Demo creds prefilled · admin@happyhour.demo · pizza.staff@happyhour.demo
     </div>
+
+    <TermsModal :show="showTerms" @close="showTerms = false" />
   </div>
 </template>

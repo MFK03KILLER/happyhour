@@ -3,6 +3,7 @@ const redemptionService = require('../services/redemptionService');
 const statsService = require('../services/statsService');
 const merchantService = require('../services/merchantService');
 const couponService = require('../services/couponService');
+const holidayService = require('../services/holidayService');
 const Coupon = require('../models/Coupon');
 const { ForbiddenError, NotFoundError } = require('../utils/errors');
 
@@ -80,4 +81,30 @@ exports.deleteMyCoupon = asyncHandler(async (req, res) => {
   if (!ownsCoupon) throw new ForbiddenError('Not your coupon');
   await couponService.deleteCoupon(req.params.id);
   res.status(204).end();
+});
+
+// Holidays — merchant_staff with manage_hours permission
+exports.listHolidays = asyncHandler(async (req, res) => {
+  const merchantId = ensureMerchant(req);
+  const year = req.query.year ? parseInt(req.query.year, 10) : undefined;
+  const data = await holidayService.listForMerchant(merchantId, { year });
+  const today = await holidayService.isHolidayTodayFor(merchantId);
+  res.json({ ...data, todayIsHoliday: today.isHoliday ? today : null });
+});
+
+exports.addHoliday = asyncHandler(async (req, res) => {
+  const merchantId = ensureMerchant(req);
+  const h = await holidayService.addCustom({
+    merchantId,
+    date: req.body.date,
+    name: req.body.name,
+    userId: req.user._id,
+  });
+  res.status(201).json(h);
+});
+
+exports.deleteHoliday = asyncHandler(async (req, res) => {
+  const merchantId = ensureMerchant(req);
+  const h = await holidayService.removeCustom({ holidayId: req.params.id, merchantId });
+  res.json(h);
 });

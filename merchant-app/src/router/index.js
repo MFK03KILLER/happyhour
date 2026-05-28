@@ -7,6 +7,7 @@ import HistoryView from '../views/History.vue';
 import StatsView from '../views/Stats.vue';
 import MerchantSettings from '../views/MerchantSettings.vue';
 import MyCoupons from '../views/MyCoupons.vue';
+import MerchantHolidays from '../views/MerchantHolidays.vue';
 
 import VendorLayout from '../views/vendor/VendorLayout.vue';
 import VendorDashboard from '../views/vendor/VendorDashboard.vue';
@@ -15,6 +16,7 @@ import VendorCoupons from '../views/vendor/VendorCoupons.vue';
 import VendorTeam from '../views/vendor/VendorTeam.vue';
 import VendorAnalytics from '../views/vendor/VendorAnalytics.vue';
 import VendorActivity from '../views/vendor/VendorActivity.vue';
+import VendorPricing from '../views/vendor/VendorPricing.vue';
 
 import AdminLayout from '../views/admin/AdminLayout.vue';
 import AdminDashboard from '../views/admin/AdminDashboard.vue';
@@ -26,6 +28,7 @@ import AdminAudit from '../views/admin/AdminAudit.vue';
 import AdminPayments from '../views/admin/AdminPayments.vue';
 import AdminRevenue from '../views/admin/AdminRevenue.vue';
 import AdminFeatures from '../views/admin/AdminFeatures.vue';
+import AdminTerms from '../views/admin/AdminTerms.vue';
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
@@ -34,6 +37,7 @@ const routes = [
   { path: '/stats', component: StatsView, meta: { roles: ['merchant_staff'] } },
   { path: '/settings', component: MerchantSettings, meta: { roles: ['merchant_staff'] } },
   { path: '/my-coupons', component: MyCoupons, meta: { roles: ['merchant_staff'] } },
+  { path: '/holidays', component: MerchantHolidays, meta: { roles: ['merchant_staff'] } },
   {
     path: '/vendor',
     component: VendorLayout,
@@ -45,6 +49,7 @@ const routes = [
       { path: 'coupons', component: VendorCoupons },
       { path: 'team', component: VendorTeam },
       { path: 'activity', component: VendorActivity },
+      { path: 'pricing', component: VendorPricing },
     ],
   },
   {
@@ -60,6 +65,7 @@ const routes = [
       { path: 'coupons', component: AdminCoupons },
       { path: 'users', component: AdminUsers },
       { path: 'features', component: AdminFeatures },
+      { path: 'terms', component: AdminTerms },
       { path: 'audit', component: AdminAudit },
     ],
   },

@@ -1,9 +1,23 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/vendorController');
+const subCtrl = require('../controllers/subscriptionController');
 const { authenticate, authorize, requirePermission } = require('../middlewares/auth');
 const { writeLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate(), authorize('vendor'));
+
+/**
+ * @openapi
+ * /vendor/subscription:
+ *   get:
+ *     tags: [Vendor]
+ *     summary: Get this vendor's merchant subscription
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/subscription', (req, res, next) => { req.query.audience = 'merchant'; next(); }, subCtrl.me);
+router.post('/subscription/subscribe', writeLimiter, (req, res, next) => { req.body.audience = 'merchant'; next(); }, subCtrl.subscribe);
+router.post('/subscription/cancel', writeLimiter, (req, res, next) => { req.query.audience = 'merchant'; next(); }, subCtrl.cancel);
+router.post('/subscription/resume', writeLimiter, (req, res, next) => { req.query.audience = 'merchant'; next(); }, subCtrl.resume);
 
 router.get('/stats', requirePermission('view_stats'), ctrl.stats);
 router.get('/analytics', requirePermission('view_stats'), ctrl.analytics);
@@ -29,5 +43,9 @@ router.get('/team', requirePermission('view_team'), ctrl.listTeam);
 router.post('/team', requirePermission('manage_team'), writeLimiter, ctrl.createTeamMember);
 router.put('/team/:id', requirePermission('manage_team'), writeLimiter, ctrl.updateTeamMember);
 router.delete('/team/:id', requirePermission('manage_team'), writeLimiter, ctrl.removeTeamMember);
+
+router.get('/holidays', ctrl.listHolidays);
+router.post('/holidays', requirePermission('manage_hours'), writeLimiter, ctrl.addHoliday);
+router.delete('/holidays/:id', requirePermission('manage_hours'), writeLimiter, ctrl.deleteHoliday);
 
 module.exports = router;

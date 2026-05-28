@@ -3,7 +3,35 @@ const QRCode = require('qrcode');
 const couponService = require('../services/couponService');
 const merchantService = require('../services/merchantService');
 const redemptionService = require('../services/redemptionService');
+const holidayService = require('../services/holidayService');
 const purchasedRepo = require('../repositories/purchasedCouponRepository');
+
+// Stamp each coupon with `unavailableToday` (or null) so the UI can show a "closed today" badge.
+// Loads each merchant's holiday set once and reuses it.
+async function annotateHolidays(coupons) {
+  const today = holidayService.todayYmd();
+  const cache = new Map(); // merchantId -> Set<dateStr>
+  async function setFor(mid) {
+    if (!mid) return null;
+    const key = String(mid);
+    if (!cache.has(key)) cache.set(key, await holidayService.holidaySetForMerchant(mid));
+    return cache.get(key);
+  }
+  return Promise.all(coupons.map(async (raw) => {
+    const c = raw.toObject ? raw.toObject() : raw;
+    c.unavailableToday = null;
+    if (c.disabledOnHolidays === false) return c;
+    for (const m of (c.merchantIds || [])) {
+      const mid = (m && m._id) ? m._id : m;
+      const set = await setFor(mid);
+      if (set && set.has(today)) {
+        c.unavailableToday = { reason: 'holiday', name: set.get(today), date: today };
+        break;
+      }
+    }
+    return c;
+  }));
+}
 
 function parseFloatOrNull(v) {
   if (v == null || v === '') return null;
@@ -22,6 +50,7 @@ exports.browse = asyncHandler(async (req, res) => {
     ratingMin: parseFloatOrNull(req.query.ratingMin),
   };
   const result = await couponService.browse(query);
+  result.items = await annotateHolidays(result.items);
   res.json(result);
 });
 
@@ -49,7 +78,9 @@ exports.merchantDetail = asyncHandler(async (req, res) => {
     customerLat: parseFloatOrNull(req.query.lat),
     customerLng: parseFloatOrNull(req.query.lng),
   });
-  res.json({ merchant, coupons });
+  const annotated = await annotateHolidays(coupons);
+  const todayInfo = await holidayService.isHolidayTodayFor(req.params.id);
+  res.json({ merchant, coupons: annotated, holidayToday: todayInfo.isHoliday ? todayInfo : null });
 });
 
 exports.dailyStatus = asyncHandler(async (req, res) => {
@@ -74,7 +105,8 @@ exports.purchaseSurpriseBag = asyncHandler(async (req, res) => {
 
 exports.detail = asyncHandler(async (req, res) => {
   const c = await couponService.getById(req.params.id);
-  res.json(c);
+  const [annotated] = await annotateHolidays([c]);
+  res.json(annotated);
 });
 
 exports.purchase = asyncHandler(async (req, res) => {

@@ -40,6 +40,9 @@ const couponSchema = new mongoose.Schema({
     start: String,
     end: String,
   },
+  // When true (default), this coupon is unavailable on US federal holidays + the merchant's custom holidays.
+  // Set to false if the merchant WANTS the coupon to keep running through holidays.
+  disabledOnHolidays: { type: Boolean, default: true },
 }, { timestamps: true });
 
 couponSchema.index({ offerKind: 1, status: 1, validUntil: 1 });

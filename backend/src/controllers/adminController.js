@@ -6,6 +6,7 @@ const couponService = require('../services/couponService');
 const statsService = require('../services/statsService');
 const auditService = require('../services/auditService');
 const revenueService = require('../services/revenueService');
+const siteSettingService = require('../services/siteSettingService');
 const userRepo = require('../repositories/userRepository');
 const { ConflictError } = require('../utils/errors');
 
@@ -184,4 +185,27 @@ exports.payments = asyncHandler(async (req, res) => {
 exports.revenue = asyncHandler(async (req, res) => {
   const data = await revenueService.overview(req.query.range || 'month');
   res.json(data);
+});
+
+exports.getTerms = asyncHandler(async (req, res) => {
+  const terms = await siteSettingService.getTerms();
+  res.json(terms);
+});
+
+exports.updateTerms = asyncHandler(async (req, res) => {
+  const before = await siteSettingService.getTerms();
+  const updated = await siteSettingService.updateTerms({
+    content: req.body.content,
+    userId: req.user._id,
+  });
+  await auditService.log({
+    actorUserId: req.user._id,
+    action: 'terms.update',
+    targetType: 'SiteSetting',
+    targetId: 'terms',
+    before,
+    after: updated.value,
+    req,
+  });
+  res.json(updated.value);
 });

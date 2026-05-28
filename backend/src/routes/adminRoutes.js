@@ -145,4 +145,19 @@ router.put('/users/:id', writeLimiter, ctrl.updateUser);
 router.delete('/users/:id', writeLimiter, ctrl.deleteUser);
 router.get('/roles', ctrl.listRoles);
 
+/**
+ * @openapi
+ * /admin/site-settings/terms:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get the current Terms of Service (markdown + version)
+ *     security: [{ bearerAuth: [] }]
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update Terms of Service. Auto-increments the version, forcing all users to re-accept on next signup.
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/site-settings/terms', ctrl.getTerms);
+router.put('/site-settings/terms', writeLimiter, ctrl.updateTerms);
+
 module.exports = router;

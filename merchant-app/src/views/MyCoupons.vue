@@ -19,6 +19,7 @@ function blankForm() {
     validFrom: new Date().toISOString().slice(0, 10),
     validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     featured: false, todaysOffer: false, popupOffer: false,
+    disabledOnHolidays: true,
     activeWindow: { days: ['daily'], start: '14:00', end: '17:00' },
   };
 }
@@ -49,6 +50,7 @@ function openEdit(c) {
     validFrom: c.validFrom ? new Date(c.validFrom).toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
     validUntil: c.validUntil ? new Date(c.validUntil).toISOString().slice(0,10) : new Date(Date.now()+90*24*60*60*1000).toISOString().slice(0,10),
     featured: !!c.featured, todaysOffer: !!c.todaysOffer, popupOffer: !!c.popupOffer,
+    disabledOnHolidays: c.disabledOnHolidays !== false,
     activeWindow: c.activeWindow || { days: ['daily'], start: '14:00', end: '17:00' },
   };
   showForm.value = true;
@@ -165,6 +167,17 @@ onMounted(load);
             <div>
               <div class="font-semibold"><i class="fa-solid fa-fire text-coral-500 mr-1"></i>Today's Offer</div>
               <div class="text-xs text-ink-500">Highlight at top of merchant page</div>
+            </div>
+          </label>
+
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">
+            <i class="fa-solid fa-calendar-xmark"></i> Holidays
+          </div>
+          <label class="flex items-center gap-3 p-3 rounded-2xl bg-cream-100 cursor-pointer">
+            <input type="checkbox" v-model="form.disabledOnHolidays" class="w-5 h-5" />
+            <div>
+              <div class="font-semibold">Disable on holidays</div>
+              <div class="text-xs text-ink-500">Coupon pauses on US federal holidays + your custom holidays. Uncheck to keep it active during holidays.</div>
             </div>
           </label>
 

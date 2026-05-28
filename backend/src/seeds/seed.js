@@ -256,6 +256,8 @@ async function run() {
   await upsertCustomers();
   await upsertVendorOwners(vendorsBySlug);
   await upsertMerchantStaff(merchantsBySlug);
+  await require('../services/siteSettingService').ensureSeed();
+  await require('../services/holidayService').seedUSFederalHolidays();
   logger.info('===== SEED COMPLETE =====');
   logger.info(`Admin:         ${env.ADMIN_EMAIL} / ${env.ADMIN_PASSWORD}`);
   logger.info('Vendor owner:  pizza.owner@happyhour.demo / Vendor@123');

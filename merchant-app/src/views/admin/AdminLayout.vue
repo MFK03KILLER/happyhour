@@ -16,6 +16,7 @@ const items = [
   { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
   { to: '/admin/users', label: 'Users', icon: 'users' },
   { to: '/admin/features', label: 'Features', icon: 'flag' },
+  { to: '/admin/terms', label: 'Terms', icon: 'doc' },
   { to: '/admin/audit', label: 'Audit log', icon: 'log' },
 ];
 
@@ -53,6 +54,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           <svg v-if="i.icon==='dollar'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <svg v-if="i.icon==='card'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
           <svg v-if="i.icon==='flag'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 22V4M5 4h13l-2 5 2 5H5"/></svg>
+          <svg v-if="i.icon==='doc'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></svg>
           {{ i.label }}
         </router-link>
       </nav>

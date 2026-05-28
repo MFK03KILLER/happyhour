@@ -1,16 +1,28 @@
 const bcrypt = require('bcryptjs');
 const userRepo = require('../repositories/userRepository');
+const siteSettingService = require('./siteSettingService');
 const { signAccessToken, signRefreshToken, verifyRefreshToken, hashToken } = require('../utils/crypto');
 const { UnauthorizedError, ConflictError, BadRequestError } = require('../utils/errors');
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
 
-async function register({ email, password, fullName, phone }) {
+async function register({ email, password, fullName, phone, acceptedTermsVersion }) {
   const existing = await userRepo.findByEmail(email);
   if (existing) throw new ConflictError('Email already in use');
+  const terms = await siteSettingService.getTerms();
+  if (!acceptedTermsVersion || acceptedTermsVersion !== terms.version) {
+    throw new BadRequestError('You must accept the current terms to register');
+  }
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await userRepo.create({ email, passwordHash, fullName, phone, role: 'customer' });
+  const user = await userRepo.create({
+    email,
+    passwordHash,
+    fullName,
+    phone,
+    role: 'customer',
+    acceptedTerms: { version: terms.version, acceptedAt: new Date() },
+  });
   return issueTokens(user, 'unknown');
 }
 

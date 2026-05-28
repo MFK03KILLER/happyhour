@@ -20,4 +20,20 @@ router.post('/coupons', requirePermission('manage_coupons'), writeLimiter, ctrl.
 router.put('/coupons/:id', requirePermission('manage_coupons'), writeLimiter, ctrl.updateMyCoupon);
 router.delete('/coupons/:id', requirePermission('manage_coupons'), writeLimiter, ctrl.deleteMyCoupon);
 
+/**
+ * @openapi
+ * /merchant/holidays:
+ *   get:
+ *     tags: [Merchant]
+ *     summary: List effective holidays for this merchant (global + custom)
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Merchant]
+ *     summary: Add a custom holiday for this merchant
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/holidays', ctrl.listHolidays);
+router.post('/holidays', requirePermission('manage_hours'), writeLimiter, ctrl.addHoliday);
+router.delete('/holidays/:id', requirePermission('manage_hours'), writeLimiter, ctrl.deleteHoliday);
+
 module.exports = router;

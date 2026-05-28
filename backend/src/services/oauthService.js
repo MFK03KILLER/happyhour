@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 const env = require('../config/env');
 const userRepo = require('../repositories/userRepository');
+const siteSettingService = require('./siteSettingService');
 const { issueTokens } = require('./authService');
 const { UnauthorizedError, BadRequestError } = require('../utils/errors');
 
@@ -65,27 +66,36 @@ async function verifyAppleToken(idToken, fullName) {
   };
 }
 
-async function signInWithGoogle({ idToken, userAgent }) {
+async function signInWithGoogle({ idToken, acceptedTermsVersion, userAgent }) {
   const info = await verifyGoogleToken(idToken);
-  const user = await findOrCreateOauthUser('google', info);
+  const user = await findOrCreateOauthUser('google', info, acceptedTermsVersion);
   return issueTokens(user, userAgent || 'google-oauth');
 }
 
-async function signInWithApple({ idToken, fullName, userAgent }) {
+async function signInWithApple({ idToken, fullName, acceptedTermsVersion, userAgent }) {
   const info = await verifyAppleToken(idToken, fullName);
-  const user = await findOrCreateOauthUser('apple', info);
+  const user = await findOrCreateOauthUser('apple', info, acceptedTermsVersion);
   return issueTokens(user, userAgent || 'apple-oauth');
 }
 
-async function findOrCreateOauthUser(provider, info) {
+async function findOrCreateOauthUser(provider, info, acceptedTermsVersion) {
   const idField = provider === 'google' ? 'googleId' : 'appleId';
 
   let user = await require('../models/User').findOne({ [idField]: info.providerId });
   if (user) {
     user.lastLoginAt = new Date();
     if (info.avatarUrl && !user.avatarUrl) user.avatarUrl = info.avatarUrl;
+    // If they hadn't accepted current terms yet and client provided one, store it.
+    if (acceptedTermsVersion && (!user.acceptedTerms || user.acceptedTerms.version !== acceptedTermsVersion)) {
+      user.acceptedTerms = { version: acceptedTermsVersion, acceptedAt: new Date() };
+    }
     await user.save();
     return user;
+  }
+
+  const terms = await siteSettingService.getTerms();
+  if (!acceptedTermsVersion || acceptedTermsVersion !== terms.version) {
+    throw new BadRequestError('You must accept the current terms to sign up');
   }
 
   if (info.email) {
@@ -95,6 +105,7 @@ async function findOrCreateOauthUser(provider, info) {
       user.authProvider = provider;
       user.emailVerified = user.emailVerified || info.emailVerified;
       if (info.avatarUrl && !user.avatarUrl) user.avatarUrl = info.avatarUrl;
+      user.acceptedTerms = { version: terms.version, acceptedAt: new Date() };
       user.lastLoginAt = new Date();
       await user.save();
       return user;
@@ -112,6 +123,7 @@ async function findOrCreateOauthUser(provider, info) {
     avatarUrl: info.avatarUrl,
     role: 'customer',
     lastLoginAt: new Date(),
+    acceptedTerms: { version: terms.version, acceptedAt: new Date() },
   });
   return user;
 }

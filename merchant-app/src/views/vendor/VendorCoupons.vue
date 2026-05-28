@@ -21,6 +21,7 @@ function blankForm() {
     featured: false,
     todaysOffer: false,
     popupOffer: false,
+    disabledOnHolidays: true,
     activeWindow: { days: ['daily'], start: '14:00', end: '17:00' },
   };
 }
@@ -61,6 +62,7 @@ function openEdit(c) {
     featured: !!c.featured,
     todaysOffer: !!c.todaysOffer,
     popupOffer: !!c.popupOffer,
+    disabledOnHolidays: c.disabledOnHolidays !== false,
     activeWindow: c.activeWindow || { days: ['daily'], start: '14:00', end: '17:00' },
   };
   showForm.value = true;
@@ -285,6 +287,17 @@ onMounted(load);
               </div>
             </label>
           </div>
+
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">
+            <i class="fa-solid fa-calendar-xmark"></i> Holidays
+          </div>
+          <label class="flex items-center gap-3 p-3 rounded-2xl bg-cream-100 cursor-pointer">
+            <input type="checkbox" v-model="form.disabledOnHolidays" class="w-5 h-5" />
+            <div>
+              <div class="font-semibold">Disable on holidays</div>
+              <div class="text-xs text-ink-500">Pause this coupon on US federal holidays + each location's custom holidays. Uncheck to keep it active during holidays (e.g. when you WANT a holiday promo).</div>
+            </div>
+          </label>
 
           <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">
             <i class="fa-regular fa-clock"></i> Active window

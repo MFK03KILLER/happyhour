@@ -1,6 +1,6 @@
 const merchantRepo = require('../repositories/merchantRepository');
 const Merchant = require('../models/Merchant');
-const { NotFoundError } = require('../utils/errors');
+const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 function slugify(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -18,6 +18,24 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 async function create(data) {
   if (!data.slug) data.slug = slugify(data.name);
+  // Enforce locations limit per vendor plan
+  if (data.vendorId) {
+    const planService = require('./planService');
+    const Vendor = require('../models/Vendor');
+    const vendor = await Vendor.findById(data.vendorId);
+    if (vendor && vendor.ownerUserId) {
+      const User = require('../models/User');
+      const owner = await User.findById(vendor.ownerUserId);
+      if (owner) {
+        const { plan } = await planService.getUserPlan(owner, 'merchant');
+        const limit = plan?.limits?.locations || 1;
+        const currentCount = await Merchant.countDocuments({ vendorId: data.vendorId });
+        if (currentCount >= limit) {
+          throw new BadRequestError(`Your ${plan.label} plan allows ${limit} location${limit === 1 ? '' : 's'}. Upgrade to add more.`);
+        }
+      }
+    }
+  }
   return merchantRepo.create(data);
 }
 async function update(id, data) {
