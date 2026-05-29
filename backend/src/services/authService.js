@@ -60,13 +60,20 @@ async function issueTokens(user, userAgent) {
   return {
     accessToken,
     refreshToken,
+    // Include fields the UI immediately needs (permissions especially) so we
+    // don't have to do a second /auth/me roundtrip just to render the menu.
     user: {
       id: user._id,
       email: user.email,
       fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
       role: user.role,
       vendorId: user.vendorId,
       merchantId: user.merchantId,
+      permissions: user.permissions || [],
+      roleSlug: user.roleSlug || null,
+      planTier: user.planTier || 'basic',
+      status: user.status,
     },
   };
 }

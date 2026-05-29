@@ -10,6 +10,8 @@ async function start() {
     await flagService.syncRegistry();
     const roleService = require('./services/roleService');
     await roleService.syncSystemRoles();
+    const refreshed = await roleService.syncUserPermissionsFromRoles();
+    if (refreshed > 0) logger.info(`Refreshed permissions on ${refreshed} user(s) from current role definitions`);
     const siteSettingService = require('./services/siteSettingService');
     await siteSettingService.ensureSeed();
     const holidayService = require('./services/holidayService');

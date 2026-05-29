@@ -58,6 +58,24 @@ async function syncSystemRoles() {
   }
 }
 
+// Re-sync every user's `permissions` array to match the live permissions
+// of whatever role they're tagged with. Idempotent + cheap to run on boot.
+// Without this, adding a new permission to a role only affects NEW users —
+// existing ones keep whatever they were seeded with, which silently rots.
+async function syncUserPermissionsFromRoles() {
+  const User = require('../models/User');
+  const roles = await Role.find();
+  let updated = 0;
+  for (const r of roles) {
+    const result = await User.updateMany(
+      { roleSlug: r.slug },
+      { $set: { permissions: r.permissions } },
+    );
+    updated += result.modifiedCount || 0;
+  }
+  return updated;
+}
+
 async function listAvailable(vendorId) {
   return Role.find({ $or: [{ scope: 'vendor', vendorId: null }, { vendorId }] }).sort({ name: 1 });
 }
@@ -88,4 +106,4 @@ async function deleteRole(slug, vendorId) {
   return r;
 }
 
-module.exports = { syncSystemRoles, listAvailable, getBySlug, permissionsForRole, createCustomRole, deleteRole, SYSTEM_ROLES };
+module.exports = { syncSystemRoles, syncUserPermissionsFromRoles, listAvailable, getBySlug, permissionsForRole, createCustomRole, deleteRole, SYSTEM_ROLES };

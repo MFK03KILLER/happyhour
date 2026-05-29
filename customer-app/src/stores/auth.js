@@ -15,11 +15,13 @@ export const useAuthStore = defineStore('auth', {
     async login(email, password) {
       const { data } = await client.post('/auth/login', { email, password });
       this.setSession(data);
+      try { await this.fetchMe(); } catch {}
       return data.user;
     },
     async register(payload) {
       const { data } = await client.post('/auth/register', payload);
       this.setSession(data);
+      try { await this.fetchMe(); } catch {}
       return data.user;
     },
     async loginWithGoogle(idToken, acceptedTermsVersion) {
