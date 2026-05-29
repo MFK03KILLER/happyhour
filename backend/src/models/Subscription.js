@@ -5,9 +5,10 @@ const subscriptionSchema = new mongoose.Schema({
   audience: { type: String, enum: ['customer', 'merchant'], default: 'customer', index: true },
 
   // For audience='customer': the user this sub belongs to
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, sparse: true },
+  // (no `index: true` here — covered by the partial unique index below)
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', sparse: true },
   // For audience='merchant': the vendor org this sub belongs to (shared by all the vendor's merchants)
-  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', index: true, sparse: true },
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', sparse: true },
 
   // Plan tier (basic = free, no subscription needed but stored for analytics)
   tier: { type: String, enum: ['basic', 'gold', 'premium'], default: 'gold', index: true },
