@@ -9,6 +9,7 @@ const merchants = ref([]);
 const loading = ref(true);
 const showForm = ref(false);
 const editing = ref(null);
+const planInfo = ref(null); // { tier, plan: { label, limits: { activeCoupons } } }
 
 function blankForm() {
   return {
@@ -37,14 +38,21 @@ function can(p) { return (auth.user?.permissions || []).includes(p); }
 async function load() {
   loading.value = true;
   try {
-    const [c, m] = await Promise.all([
+    const [c, m, s] = await Promise.all([
       client.get('/vendor/coupons'),
       client.get('/vendor/merchants'),
+      client.get('/vendor/subscription').catch(() => ({ data: null })),
     ]);
     items.value = c.data.items;
     merchants.value = m.data.items;
+    planInfo.value = s.data;
   } finally { loading.value = false; }
 }
+
+const activeCount = computed(() => items.value.filter((c) => c.status === 'active').length);
+const couponLimit = computed(() => planInfo.value?.plan?.limits?.activeCoupons || 1);
+const planLabel = computed(() => planInfo.value?.plan?.label || 'Basic');
+const overLimit = computed(() => activeCount.value >= couponLimit.value);
 
 function openNew() { editing.value = null; form.value = blankForm(); showForm.value = true; }
 
@@ -68,18 +76,33 @@ function openEdit(c) {
   showForm.value = true;
 }
 
+const saveError = ref('');
+const saving = ref(false);
+
 async function save() {
-  const payload = { ...form.value, offerKind: 'member_perk', priceUSD: 0 };
-  if (editing.value) await client.put(`/vendor/coupons/${editing.value._id}`, payload);
-  else await client.post('/vendor/coupons', payload);
-  showForm.value = false;
-  await load();
+  saveError.value = '';
+  saving.value = true;
+  try {
+    const payload = { ...form.value, offerKind: 'member_perk', priceUSD: 0 };
+    if (editing.value) await client.put(`/vendor/coupons/${editing.value._id}`, payload);
+    else await client.post('/vendor/coupons', payload);
+    showForm.value = false;
+    await load();
+  } catch (e) {
+    saveError.value = e.response?.data?.error?.message || e.message || 'Save failed';
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function del(id) {
   if (!confirm('Delete this coupon?')) return;
-  await client.delete(`/vendor/coupons/${id}`);
-  await load();
+  try {
+    await client.delete(`/vendor/coupons/${id}`);
+    await load();
+  } catch (e) {
+    alert(e.response?.data?.error?.message || 'Delete failed');
+  }
 }
 
 function toggleDay(d) {
@@ -155,6 +178,20 @@ onMounted(load);
         </button>
         <button v-if="can('manage_coupons')" @click="openNew" class="ios-button-primary"><i class="fa-solid fa-plus mr-2"></i>New coupon</button>
       </div>
+    </div>
+
+    <div v-if="planInfo" class="mt-4 ios-card p-4 flex items-center justify-between gap-3 flex-wrap" :class="overLimit ? 'border-2 border-coral-500/40 bg-coral-500/5' : 'bg-teal-50/40'">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl flex items-center justify-center" :class="overLimit ? 'bg-coral-500/15 text-coral-600' : 'bg-teal-50 text-teal-700'">
+          <i class="fa-solid" :class="overLimit ? 'fa-triangle-exclamation' : 'fa-ticket'"></i>
+        </div>
+        <div>
+          <div class="font-bold text-sm">{{ activeCount }} of {{ couponLimit >= 9999 ? '∞' : couponLimit }} active coupons used</div>
+          <div class="text-xs text-ink-500">Plan: <span class="font-semibold">{{ planLabel }}</span><span v-if="overLimit && couponLimit < 9999"> · Limit reached — pause one or upgrade</span></div>
+        </div>
+      </div>
+      <router-link v-if="overLimit && couponLimit < 9999" to="/vendor/pricing" class="bg-teal-600 text-white px-3 py-1.5 rounded-full text-xs font-bold active:scale-95"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Upgrade</router-link>
+      <router-link v-else to="/vendor/pricing" class="text-xs font-semibold text-teal-700">View plans →</router-link>
     </div>
 
     <div v-if="selectMode && selected.length" class="mt-4 ios-card p-3 flex items-center gap-2 flex-wrap bg-teal-50">
@@ -331,7 +368,11 @@ onMounted(load);
             </label>
           </div>
 
-          <button type="submit" class="ios-button-primary w-full mt-2">{{ editing ? 'Save changes' : 'Create coupon' }}</button>
+          <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
+            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
+          </div>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create coupon') }}</button>
         </form>
       </div>
     </div>

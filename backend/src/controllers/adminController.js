@@ -54,7 +54,7 @@ exports.listMerchants = asyncHandler(async (req, res) => {
   res.json(result);
 });
 exports.createMerchant = asyncHandler(async (req, res) => {
-  const m = await merchantService.create(req.body);
+  const m = await merchantService.create(req.body, { bypassPlanLimits: true });
   await auditService.log({ actorUserId: req.user._id, action: 'merchant.create', targetType: 'Merchant', targetId: m._id.toString(), after: m, req });
   res.status(201).json(m);
 });
@@ -75,7 +75,7 @@ exports.listCoupons = asyncHandler(async (req, res) => {
   res.json(result);
 });
 exports.createCoupon = asyncHandler(async (req, res) => {
-  const c = await couponService.createCoupon(req.body);
+  const c = await couponService.createCoupon(req.body, { bypassPlanLimits: true });
   await auditService.log({ actorUserId: req.user._id, action: 'coupon.create', targetType: 'Coupon', targetId: c._id.toString(), after: c, req });
   res.status(201).json(c);
 });

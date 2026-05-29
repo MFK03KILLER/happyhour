@@ -16,10 +16,11 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-async function create(data) {
+async function create(data, opts = {}) {
   if (!data.slug) data.slug = slugify(data.name);
   // Enforce locations limit per vendor plan
-  if (data.vendorId) {
+  // opts.bypassPlanLimits: pass `true` from admin endpoints.
+  if (data.vendorId && !opts.bypassPlanLimits) {
     const planService = require('./planService');
     const Vendor = require('../models/Vendor');
     const vendor = await Vendor.findById(data.vendorId);
@@ -31,7 +32,12 @@ async function create(data) {
         const limit = plan?.limits?.locations || 1;
         const currentCount = await Merchant.countDocuments({ vendorId: data.vendorId });
         if (currentCount >= limit) {
-          throw new BadRequestError(`Your ${plan.label} plan allows ${limit} location${limit === 1 ? '' : 's'}. Upgrade to add more.`);
+          const err = new BadRequestError(
+            `You have ${currentCount} location${currentCount === 1 ? '' : 's'} but your ${plan.label} plan allows ${limit}. Upgrade to add more.`,
+          );
+          err.code = 'PLAN_LIMIT_EXCEEDED';
+          err.details = { currentCount, limit, tier: plan.tier, planLabel: plan.label, kind: 'locations' };
+          throw err;
         }
       }
     }

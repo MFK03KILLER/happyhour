@@ -78,20 +78,35 @@ function removeOffPeakSlot(i) {
   form.value.offPeakHours.splice(i, 1);
 }
 
+const saveError = ref('');
+const saving = ref(false);
+
 async function save() {
-  if (editing.value) {
-    await client.put(`/vendor/merchants/${editing.value._id}`, form.value);
-  } else {
-    await client.post('/vendor/merchants', form.value);
+  saveError.value = '';
+  saving.value = true;
+  try {
+    if (editing.value) {
+      await client.put(`/vendor/merchants/${editing.value._id}`, form.value);
+    } else {
+      await client.post('/vendor/merchants', form.value);
+    }
+    showForm.value = false;
+    await load();
+  } catch (e) {
+    saveError.value = e.response?.data?.error?.message || e.message || 'Save failed';
+  } finally {
+    saving.value = false;
   }
-  showForm.value = false;
-  await load();
 }
 
 async function del(id) {
   if (!confirm('Delete this location?')) return;
-  await client.delete(`/vendor/merchants/${id}`);
-  await load();
+  try {
+    await client.delete(`/vendor/merchants/${id}`);
+    await load();
+  } catch (e) {
+    alert(e.response?.data?.error?.message || 'Delete failed');
+  }
 }
 
 onMounted(load);
@@ -222,7 +237,11 @@ onMounted(load);
             <i class="fa-solid fa-plus mr-1"></i> Add happy hour slot
           </button>
 
-          <button type="submit" class="ios-button-primary w-full mt-3">{{ editing ? 'Save changes' : 'Create location' }}</button>
+          <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
+            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
+          </div>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-3">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create location') }}</button>
         </form>
       </div>
     </div>

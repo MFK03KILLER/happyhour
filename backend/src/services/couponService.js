@@ -202,12 +202,13 @@ async function purchase({ customerId, couponId, paymentMethod }) {
   throw new BadRequestError('This coupon is claim-only — use /claim instead');
 }
 
-async function createCoupon(data) {
+async function createCoupon(data, opts = {}) {
   if (data.offerKind === 'surprise_bag' && data.inventoryCount != null) {
     data.inventoryRemaining = data.inventoryCount;
   }
-  // Enforce the vendor's per-plan active-coupon limit
-  if (data.vendorId) {
+  // Enforce the vendor's per-plan active-coupon limit.
+  // opts.bypassPlanLimits: pass `true` from admin endpoints (admin overrides quotas).
+  if (data.vendorId && !opts.bypassPlanLimits) {
     const planService = require('./planService');
     const Coupon = require('../models/Coupon');
     const Vendor = require('../models/Vendor');
@@ -219,8 +220,16 @@ async function createCoupon(data) {
         const { plan } = await planService.getUserPlan(owner, 'merchant');
         const limit = plan?.limits?.activeCoupons || 1;
         const currentActive = await Coupon.countDocuments({ vendorId: data.vendorId, status: 'active' });
-        if (currentActive >= limit && (data.status || 'active') === 'active') {
-          throw new BadRequestError(`Your ${plan.label} plan allows ${limit} active coupon${limit === 1 ? '' : 's'}. Upgrade to add more, or pause an existing coupon.`);
+        // Only block if creating an ACTIVE coupon AT or ABOVE the limit.
+        // Drafts/paused coupons are unlimited (status: 'paused' or 'draft').
+        const isActive = (data.status || 'active') === 'active';
+        if (isActive && currentActive >= limit) {
+          const err = new BadRequestError(
+            `You have ${currentActive} active coupon${currentActive === 1 ? '' : 's'} but your ${plan.label} plan allows ${limit}. Upgrade your plan, or pause an existing coupon to free up a slot.`,
+          );
+          err.code = 'PLAN_LIMIT_EXCEEDED';
+          err.details = { currentActive, limit, tier: plan.tier, planLabel: plan.label, kind: 'activeCoupons' };
+          throw err;
         }
       }
     }

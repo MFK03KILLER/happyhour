@@ -56,18 +56,33 @@ function openEdit(c) {
   showForm.value = true;
 }
 
+const saveError = ref('');
+const saving = ref(false);
+
 async function save() {
-  const payload = { ...form.value, offerKind: 'member_perk', priceUSD: 0 };
-  if (editing.value) await client.put(`/merchant/coupons/${editing.value._id}`, payload);
-  else await client.post('/merchant/coupons', payload);
-  showForm.value = false;
-  await load();
+  saveError.value = '';
+  saving.value = true;
+  try {
+    const payload = { ...form.value, offerKind: 'member_perk', priceUSD: 0 };
+    if (editing.value) await client.put(`/merchant/coupons/${editing.value._id}`, payload);
+    else await client.post('/merchant/coupons', payload);
+    showForm.value = false;
+    await load();
+  } catch (e) {
+    saveError.value = e.response?.data?.error?.message || e.message || 'Save failed';
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function del(id) {
   if (!confirm('Delete this coupon?')) return;
-  await client.delete(`/merchant/coupons/${id}`);
-  await load();
+  try {
+    await client.delete(`/merchant/coupons/${id}`);
+    await load();
+  } catch (e) {
+    alert(e.response?.data?.error?.message || 'Delete failed');
+  }
 }
 
 function toggleDay(d) {
@@ -195,7 +210,10 @@ onMounted(load);
             <input v-model="form.activeWindow.end" type="time" class="input" />
           </div>
 
-          <button type="submit" class="ios-button-primary w-full mt-2">{{ editing ? 'Save changes' : 'Create coupon' }}</button>
+          <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
+          </div>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create coupon') }}</button>
         </form>
       </div>
     </div>
