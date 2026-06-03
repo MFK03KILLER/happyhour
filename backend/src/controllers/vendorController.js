@@ -192,6 +192,22 @@ exports.stats = asyncHandler(async (req, res) => {
   res.json(data);
 });
 
+// Record this vendor user's acceptance of the current Merchant TOS version.
+exports.acceptTerms = asyncHandler(async (req, res) => {
+  const siteSettingService = require('../services/siteSettingService');
+  const User = require('../models/User');
+  const current = await siteSettingService.getTerms('merchant');
+  const submittedVersion = Number(req.body.version);
+  if (!submittedVersion || submittedVersion !== current.version) {
+    const { BadRequestError } = require('../utils/errors');
+    throw new BadRequestError(`You must accept the current Merchant Terms (v${current.version}).`);
+  }
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } },
+  });
+  res.json({ acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } });
+});
+
 // Holidays — vendor can manage holidays for any of their merchants
 async function assertOwnsMerchant(vendorId, merchantId) {
   const m = await merchantService.getById(merchantId);

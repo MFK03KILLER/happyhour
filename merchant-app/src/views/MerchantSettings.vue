@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
+import TermsModal from '../components/TermsModal.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -11,6 +12,7 @@ const loading = ref(true);
 const editing = ref(false);
 const saving = ref(false);
 const form = ref(null);
+const showTerms = ref(false);
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
 
@@ -192,6 +194,12 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
       <button @click="doLogout" class="ios-card w-full p-4 text-coral-600 font-semibold active:bg-cream-100 text-center">
         Sign out
       </button>
+
+      <button @click="showTerms = true" class="block mx-auto text-xs text-ink-500 underline pt-2">
+        <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
+      </button>
     </div>
+
+    <TermsModal :show="showTerms" audience="merchant" @close="showTerms = false" />
   </div>
 </template>

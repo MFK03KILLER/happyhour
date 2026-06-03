@@ -83,6 +83,22 @@ exports.deleteMyCoupon = asyncHandler(async (req, res) => {
   res.status(204).end();
 });
 
+// Record this merchant_staff user's acceptance of the current Merchant TOS version.
+exports.acceptTerms = asyncHandler(async (req, res) => {
+  const siteSettingService = require('../services/siteSettingService');
+  const User = require('../models/User');
+  const current = await siteSettingService.getTerms('merchant');
+  const submittedVersion = Number(req.body.version);
+  if (!submittedVersion || submittedVersion !== current.version) {
+    const { BadRequestError } = require('../utils/errors');
+    throw new BadRequestError(`You must accept the current Merchant Terms (v${current.version}).`);
+  }
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } },
+  });
+  res.json({ acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } });
+});
+
 // Holidays — merchant_staff with manage_hours permission
 exports.listHolidays = asyncHandler(async (req, res) => {
   const merchantId = ensureMerchant(req);

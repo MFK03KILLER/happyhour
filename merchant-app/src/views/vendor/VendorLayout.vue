@@ -1,11 +1,13 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '../../stores/auth';
+import TermsModal from '../../components/TermsModal.vue';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const showTerms = ref(false);
 
 const items = [
   { to: '/vendor', label: 'Dashboard', icon: 'home', perm: null },
@@ -57,7 +59,10 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           {{ i.label }}
         </router-link>
       </nav>
-      <div class="p-3 border-t border-cream-200">
+      <div class="p-3 border-t border-cream-200 space-y-1">
+        <button @click="showTerms = true" class="w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold text-ink-500 hover:bg-cream-100">
+          <i class="fa-regular fa-file-lines mr-1.5"></i>Merchant Terms of Service
+        </button>
         <button @click="doLogout" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">Sign out</button>
       </div>
     </aside>
@@ -75,6 +80,13 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </div>
       <router-view />
+      <!-- Footer for mobile -->
+      <footer class="md:hidden border-t border-cream-200 mt-4 px-5 py-3 bg-white">
+        <button @click="showTerms = true" class="text-xs text-ink-500 underline">
+          <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
+        </button>
+      </footer>
     </main>
+    <TermsModal :show="showTerms" audience="merchant" @close="showTerms = false" />
   </div>
 </template>

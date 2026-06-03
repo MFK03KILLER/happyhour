@@ -74,6 +74,8 @@ async function issueTokens(user, userAgent) {
       roleSlug: user.roleSlug || null,
       planTier: user.planTier || 'basic',
       status: user.status,
+      acceptedTerms: user.acceptedTerms || null,
+      acceptedMerchantTerms: user.acceptedMerchantTerms || null,
     },
   };
 }

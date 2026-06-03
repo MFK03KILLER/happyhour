@@ -29,7 +29,14 @@ const userSchema = new mongoose.Schema({
   dailyClaimsCount: { type: Number, default: 0 },
   dailyClaimsResetAt: Date,
   favoriteMerchantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' }],
+  // Consumer terms acceptance (customer signup)
   acceptedTerms: {
+    version: { type: Number, default: null },
+    acceptedAt: { type: Date, default: null },
+  },
+  // Merchant terms acceptance (vendor/merchant_staff users — recorded on first
+  // login or on each new version bump via /merchant/accept-terms etc.)
+  acceptedMerchantTerms: {
     version: { type: Number, default: null },
     acceptedAt: { type: Date, default: null },
   },

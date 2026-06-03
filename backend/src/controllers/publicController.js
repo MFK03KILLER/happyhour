@@ -15,7 +15,8 @@ exports.merchantBySlug = asyncHandler(async (req, res) => {
 });
 
 exports.terms = asyncHandler(async (req, res) => {
-  const terms = await siteSettingService.getTerms();
+  const audience = req.query.audience === 'merchant' ? 'merchant' : 'consumer';
+  const terms = await siteSettingService.getTerms(audience);
   res.json(terms);
 });
 

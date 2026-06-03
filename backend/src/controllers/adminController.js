@@ -188,21 +188,24 @@ exports.revenue = asyncHandler(async (req, res) => {
 });
 
 exports.getTerms = asyncHandler(async (req, res) => {
-  const terms = await siteSettingService.getTerms();
+  const audience = req.query.audience === 'merchant' ? 'merchant' : 'consumer';
+  const terms = await siteSettingService.getTerms(audience);
   res.json(terms);
 });
 
 exports.updateTerms = asyncHandler(async (req, res) => {
-  const before = await siteSettingService.getTerms();
+  const audience = (req.body.audience === 'merchant' || req.query.audience === 'merchant') ? 'merchant' : 'consumer';
+  const before = await siteSettingService.getTerms(audience);
   const updated = await siteSettingService.updateTerms({
+    audience,
     content: req.body.content,
     userId: req.user._id,
   });
   await auditService.log({
     actorUserId: req.user._id,
-    action: 'terms.update',
+    action: `terms.update.${audience}`,
     targetType: 'SiteSetting',
-    targetId: 'terms',
+    targetId: `terms_${audience}`,
     before,
     after: updated.value,
     req,

@@ -2,7 +2,10 @@
 import { onMounted, ref } from 'vue';
 import client from '../api/client';
 
-defineProps({ show: Boolean });
+const props = defineProps({
+  show: Boolean,
+  audience: { type: String, default: 'consumer' }, // 'consumer' | 'merchant'
+});
 const emit = defineEmits(['close']);
 
 const terms = ref(null);
@@ -10,7 +13,7 @@ const loading = ref(true);
 
 onMounted(async () => {
   try {
-    const { data } = await client.get('/public/terms');
+    const { data } = await client.get('/public/terms', { params: { audience: props.audience } });
     terms.value = data;
   } finally { loading.value = false; }
 });

@@ -36,4 +36,14 @@ router.get('/holidays', ctrl.listHolidays);
 router.post('/holidays', requirePermission('manage_hours'), writeLimiter, ctrl.addHoliday);
 router.delete('/holidays/:id', requirePermission('manage_hours'), writeLimiter, ctrl.deleteHoliday);
 
+/**
+ * @openapi
+ * /merchant/accept-terms:
+ *   post:
+ *     tags: [Merchant]
+ *     summary: Record acceptance of the current Merchant Terms version
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/accept-terms', writeLimiter, ctrl.acceptTerms);
+
 module.exports = router;
