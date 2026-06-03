@@ -284,6 +284,45 @@ const KEY_MERCHANT = 'terms_merchant';
 // Legacy key kept readable for back-compat with very early seeds.
 const KEY_LEGACY = 'terms';
 
+// ------------- Footer / About-section content blocks -------------
+// 12 small markdown documents the customer-app footer links to.
+// Editable from the admin panel; each block has an independent version.
+// Keys are prefixed with `content_` to keep them out of the terms namespace.
+const SITE_CONTENT_BLOCKS = [
+  // Section: Membership
+  { key: 'content_membership_2026', section: 'membership', title: '2026 Membership' },
+  { key: 'content_membership_vip',  section: 'membership', title: 'VIP Key' },
+  // Section: Company
+  { key: 'content_company_partner', section: 'company', title: 'Become a Partner' },
+  { key: 'content_company_corporate', section: 'company', title: 'Corporate' },
+  { key: 'content_company_careers', section: 'company', title: 'Careers' },
+  { key: 'content_company_about', section: 'company', title: 'About' },
+  // Section: Help & Support
+  { key: 'content_help_faqs', section: 'help', title: 'FAQs' },
+  { key: 'content_help_rules', section: 'help', title: 'Rules of Use' },
+  { key: 'content_help_contact', section: 'help', title: 'Contact Us' },
+  // Section: Legal (Terms of Use here is intentionally NOT included —
+  // the footer link for "Terms of Use" opens the existing consumer
+  // TOS, so it stays in one place.)
+  { key: 'content_legal_eula', section: 'legal', title: 'End User License' },
+  { key: 'content_legal_privacy', section: 'legal', title: 'Privacy Policy' },
+];
+
+const PLACEHOLDER_CONTENT = (title) => `# ${title}
+
+> ⚠️ **PLACEHOLDER** — replace this from the admin panel (Admin → Site Content → ${title}).
+
+This section is currently using placeholder text. The administrator will populate the real content shortly.
+
+## What goes here
+
+This page is reserved for the **${title}** content. Once the team provides the final copy, an admin can paste it in via the admin panel and it will show up here instantly for every visitor.
+
+## Contact
+
+If you need this content sooner, please reach out to our team.
+`;
+
 const DEFAULTS = {
   [KEY_CONSUMER]: {
     audience: 'consumer',
@@ -297,6 +336,17 @@ const DEFAULTS = {
     content: DEFAULT_MERCHANT_TERMS_CONTENT,
     updatedAt: new Date(),
   },
+  ...Object.fromEntries(SITE_CONTENT_BLOCKS.map((b) => [
+    b.key,
+    {
+      key: b.key,
+      section: b.section,
+      title: b.title,
+      version: 1,
+      content: PLACEHOLDER_CONTENT(b.title),
+      updatedAt: new Date(),
+    },
+  ])),
 };
 
 function keyFor(audience) {
@@ -356,9 +406,44 @@ async function updateTerms({ audience = 'consumer', content, userId }) {
   return set(keyFor(audience), { audience, content }, userId);
 }
 
+// ------------- Site content blocks -------------
+function isContentKey(key) {
+  return SITE_CONTENT_BLOCKS.some((b) => b.key === key);
+}
+
+async function getContent(key) {
+  if (!isContentKey(key)) return null;
+  const v = await get(key);
+  return v || DEFAULTS[key];
+}
+
+async function listContent() {
+  // Returns every block in stable order; uses live DB value if present, otherwise default.
+  const out = [];
+  for (const b of SITE_CONTENT_BLOCKS) {
+    const v = await get(b.key);
+    out.push(v || DEFAULTS[b.key]);
+  }
+  return out;
+}
+
+async function setContent({ key, title, content, userId }) {
+  if (!isContentKey(key)) throw new Error('Unknown content key: ' + key);
+  const block = SITE_CONTENT_BLOCKS.find((b) => b.key === key);
+  // Title is editable too (in case the client renames "VIP Key" → "Black Card" later, etc.)
+  return set(key, {
+    key,
+    section: block.section,
+    title: title || block.title,
+    content,
+  }, userId);
+}
+
 module.exports = {
   get, set, ensureSeed,
   getTerms, updateTerms,
+  getContent, listContent, setContent, isContentKey,
   KEY_CONSUMER, KEY_MERCHANT, KEY_LEGACY,
+  SITE_CONTENT_BLOCKS,
   DEFAULTS,
 };

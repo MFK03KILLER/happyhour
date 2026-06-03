@@ -47,4 +47,18 @@ router.get('/terms', ctrl.terms);
  */
 router.get('/plans', ctrl.plans);
 
+/**
+ * @openapi
+ * /public/site-content:
+ *   get:
+ *     tags: [Public]
+ *     summary: List all editable footer content blocks (titles + sections + versions only)
+ * /public/site-content/{key}:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get full markdown content of one block (Membership, Careers, About, etc.)
+ */
+router.get('/site-content', ctrl.contentList);
+router.get('/site-content/:key', ctrl.contentOne);
+
 module.exports = router;

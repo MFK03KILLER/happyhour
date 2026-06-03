@@ -212,3 +212,33 @@ exports.updateTerms = asyncHandler(async (req, res) => {
   });
   res.json(updated.value);
 });
+
+// ---------- Site content (footer blocks) ----------
+exports.listSiteContent = asyncHandler(async (req, res) => {
+  const items = await siteSettingService.listContent();
+  res.json({ items });
+});
+
+exports.updateSiteContent = asyncHandler(async (req, res) => {
+  const key = req.params.key;
+  const before = await siteSettingService.getContent(key);
+  if (!before) {
+    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Unknown content key' } });
+  }
+  const updated = await siteSettingService.setContent({
+    key,
+    title: req.body.title,
+    content: req.body.content,
+    userId: req.user._id,
+  });
+  await auditService.log({
+    actorUserId: req.user._id,
+    action: `site_content.update.${key}`,
+    targetType: 'SiteSetting',
+    targetId: key,
+    before,
+    after: updated.value,
+    req,
+  });
+  res.json(updated.value);
+});

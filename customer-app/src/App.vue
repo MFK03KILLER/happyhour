@@ -6,6 +6,7 @@ import DesktopFrame from './components/DesktopFrame.vue';
 import SplashScreen from './components/SplashScreen.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
+import Footer from './components/Footer.vue';
 import { useFlagsStore } from './stores/flags';
 import { useGeolocation } from './composables/useGeolocation';
 import { useAuthStore } from './stores/auth';
@@ -42,6 +43,15 @@ const hideTabs = computed(() => {
   if (route.path.includes('/orders/')) return true;
   return false;
 });
+// Footer visible on the public landing + the main browse/discovery pages.
+// Hidden on transactional flows (Redeem, Subscribe, Login) so it doesn't
+// distract from a single-step action.
+const showFooter = computed(() => {
+  if (['/login', '/register', '/subscribe'].includes(route.path)) return false;
+  if (route.path.includes('/redeem')) return false;
+  if (route.path === '/map') return false;
+  return true;
+});
 const isLanding = computed(() => route.path === '/welcome');
 </script>
 
@@ -56,6 +66,7 @@ const isLanding = computed(() => route.path === '/welcome');
           <component :is="Component" />
         </transition>
       </router-view>
+      <Footer v-if="showFooter" :class="{ 'pb-24': !hideTabs }" />
       <BottomTabBar v-if="!hideTabs" />
     </div>
   </DesktopFrame>

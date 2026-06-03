@@ -29,6 +29,7 @@ import AdminPayments from '../views/admin/AdminPayments.vue';
 import AdminRevenue from '../views/admin/AdminRevenue.vue';
 import AdminFeatures from '../views/admin/AdminFeatures.vue';
 import AdminTerms from '../views/admin/AdminTerms.vue';
+import AdminSiteContent from '../views/admin/AdminSiteContent.vue';
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
@@ -66,6 +67,7 @@ const routes = [
       { path: 'users', component: AdminUsers },
       { path: 'features', component: AdminFeatures },
       { path: 'terms', component: AdminTerms },
+      { path: 'site-content', component: AdminSiteContent },
       { path: 'audit', component: AdminAudit },
     ],
   },

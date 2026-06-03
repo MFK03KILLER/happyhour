@@ -160,4 +160,20 @@ router.get('/roles', ctrl.listRoles);
 router.get('/site-settings/terms', ctrl.getTerms);
 router.put('/site-settings/terms', writeLimiter, ctrl.updateTerms);
 
+/**
+ * @openapi
+ * /admin/site-content:
+ *   get:
+ *     tags: [Admin]
+ *     summary: List all footer content blocks (Membership, Careers, About, etc.)
+ *     security: [{ bearerAuth: [] }]
+ * /admin/site-content/{key}:
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update one content block. Auto-bumps its version.
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/site-content', ctrl.listSiteContent);
+router.put('/site-content/:key', writeLimiter, ctrl.updateSiteContent);
+
 module.exports = router;

@@ -17,6 +17,7 @@ const items = [
   { to: '/admin/users', label: 'Users', icon: 'users' },
   { to: '/admin/features', label: 'Features', icon: 'flag' },
   { to: '/admin/terms', label: 'Terms', icon: 'doc' },
+  { to: '/admin/site-content', label: 'Site Content', icon: 'doc' },
   { to: '/admin/audit', label: 'Audit log', icon: 'log' },
 ];
 
