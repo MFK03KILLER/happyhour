@@ -51,7 +51,7 @@ function goCoupon(c) {
   else router.push(`/coupons/${c._id}`);
 }
 
-const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+const today = new Date().toLocaleDateString('fa-IR-u-ca-persian', { weekday: 'long', month: 'long', day: 'numeric' });
 const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0]);
 </script>
 
@@ -60,7 +60,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
         <div class="text-xs text-ink-500 font-medium">{{ today }}</div>
-        <div class="text-2xl font-bold mt-0.5">Hi {{ firstName }} 👋</div>
+        <div class="text-2xl font-bold mt-0.5">سلام {{ firstName }} 👋</div>
       </div>
       <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
@@ -72,8 +72,8 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
         <i class="fa-solid fa-ticket"></i>
       </div>
       <div class="flex-1">
-        <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">Today's quota</div>
-        <div class="font-bold">{{ daily.remaining }} of {{ daily.limit }} coupons remaining</div>
+        <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">سهمیه امروز</div>
+        <div class="font-bold">{{ daily.remaining }} از {{ daily.limit }} کوپن باقی مانده</div>
       </div>
     </div>
 
@@ -82,11 +82,11 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
         <div class="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-white/10"></div>
         <div class="absolute right-12 bottom-2 w-32 h-32 rounded-full bg-white/10"></div>
         <div class="relative p-6">
-          <div class="text-xs uppercase tracking-wider opacity-80 font-semibold">Happy Hour Members</div>
-          <div class="text-3xl font-bold mt-1">3 deals every day</div>
-          <div class="mt-1 text-white/90 text-sm">Eat, drink, play for less at 100+ Bay Area spots.</div>
+          <div class="text-xs uppercase tracking-wider opacity-80 font-semibold">اعضای هپی اَور</div>
+          <div class="text-3xl font-bold mt-1">۳ آفر هر روز</div>
+          <div class="mt-1 text-white/90 text-sm">با تخفیف ویژه در بیش از ۱۰۰ مکان منتخب تهران غذا بخور، نوشیدنی بخر و تفریح کن.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            $4.99/mo · Get started →
+            عضویت ماهانه · ۴۹۹٬۰۰۰ تومان ←
           </button>
         </div>
       </div>
@@ -109,10 +109,10 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
     <section class="mt-7">
       <div class="flex items-center justify-between px-5 mb-3">
         <div>
-          <h2 class="text-lg font-bold">Nearby</h2>
-          <div v-if="!coords" class="text-xs text-ink-500">Enable location for accurate results</div>
+          <h2 class="text-lg font-bold">نزدیک شما</h2>
+          <div v-if="!coords" class="text-xs text-ink-500">برای نمایش دقیق‌تر، موقعیت مکانی را فعال کنید</div>
         </div>
-        <button @click="router.push('/browse')" class="text-sm font-semibold text-teal-700">See all</button>
+        <button @click="router.push('/browse')" class="text-sm font-semibold text-teal-700">مشاهده همه</button>
       </div>
       <div v-if="loading" class="flex gap-3 px-5 overflow-x-auto scroll-no-bar">
         <div v-for="i in 3" :key="i" class="flex-shrink-0 w-56 h-48 bg-cream-200 animate-pulse rounded-2xl"></div>
@@ -143,7 +143,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
 
     <section class="mt-7 px-5">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold">Trending offers</h2>
+        <h2 class="text-lg font-bold">آفرهای داغ</h2>
       </div>
       <div v-if="loading" class="space-y-3">
         <div v-for="i in 3" :key="i" class="ios-card h-32 animate-pulse"></div>
@@ -157,7 +157,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
               <div class="font-bold mt-0.5 truncate">{{ c.title }}</div>
               <div class="text-xs text-ink-500 truncate mt-0.5">{{ c.subtitle }}</div>
               <div class="mt-2 flex items-center gap-1.5">
-                <span class="chip bg-coral-500/10 text-coral-600 text-[10px]"><i class="fa-solid fa-fire text-[9px]"></i> {{ c.todaysOffer ? "Today" : "Featured" }}</span>
+                <span class="chip bg-coral-500/10 text-coral-600 text-[10px]"><i class="fa-solid fa-fire text-[9px]"></i> {{ c.todaysOffer ? "آفر امروز" : "ویژه" }}</span>
                 <span v-if="c.distanceKm != null" class="chip bg-cream-200 text-ink-700 text-[10px]">{{ distanceLabel(c.distanceKm) }}</span>
               </div>
             </div>

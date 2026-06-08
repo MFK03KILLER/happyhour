@@ -1,51 +1,52 @@
-// Subscription plans — pricing chart source of truth.
-// Edit feature flags & limits here; do NOT scatter "is gold?" checks across services.
+// پلن‌های اشتراک — منبع حقیقت قیمت‌گذاری.
+// قیمت‌ها به تومان (IRT) برای بازار ایران. لیبل‌ها و bulletها فارسی.
+// فیچرها و محدودیت‌ها را اینجا ویرایش کن، نه در سرویس‌ها.
 
-// ------------- Customer plans -------------
+// ------------- پلن‌های مشتری (Consumer) -------------
 const CUSTOMER_PLANS = {
   basic: {
     tier: 'basic',
     audience: 'customer',
-    label: 'Basic',
+    label: 'پایه',
     price: { monthly: 0, yearly: 0 },
-    description: 'Free plan with limited access.',
+    description: 'پلن رایگان با دسترسی محدود.',
     badge: null,
     features: {
-      access: 'basic',                       // basic | full | vip
-      browseEntertainers: 'limited',         // limited | unlimited
-      referrals: false,                      // false | 'limited' | 'unlimited'
-      couponRedemptions: 'none',             // 'none' | 'limited' | 'unlimited'
-      dailyOffers: 'limited',                // limited | priority | vip_exclusive
+      access: 'basic',
+      browseEntertainers: 'limited',
+      referrals: false,
+      couponRedemptions: 'none',
+      dailyOffers: 'limited',
       featuredListings: false,
-      hotels: false,                         // false | 'partner' | 'luxury'
-      support: 'basic_email',                // basic_email | priority | 24_7_vip
+      hotels: false,
+      support: 'basic_email',
       exclusiveEventsContent: false,
-      weekendRedemptions: false,             // false | 'limited' | 'unlimited'
-      verificationBadge: false,              // false | true | 'premium'
+      weekendRedemptions: false,
+      verificationBadge: false,
     },
     limits: {
-      dailyClaims: 0,                        // basic = no claims, must upgrade
+      dailyClaims: 0,
       monthlyClaims: 0,
       weekendClaims: 0,
     },
     bullets: [
-      'Browse entertainers (limited)',
-      'Limited access to daily offers',
-      'Basic email support',
+      'جست‌وجوی کسب‌وکارها (محدود)',
+      'دسترسی محدود به آفرهای روزانه',
+      'پشتیبانی ایمیلی پایه',
     ],
     crossedOut: [
-      'No coupon redemptions',
-      'No featured listings',
-      'No hotels access',
+      'بدون استفاده از کوپن',
+      'بدون نمایش ویژه',
+      'بدون دسترسی به هتل‌ها',
     ],
   },
   gold: {
     tier: 'gold',
     audience: 'customer',
-    label: 'Gold',
-    price: { monthly: 4.99, yearly: 49.99 },
-    description: 'Most popular — daily savings.',
-    badge: 'Most Popular',
+    label: 'طلایی',
+    price: { monthly: 499000, yearly: 4990000 },
+    description: 'محبوب‌ترین — صرفه‌جویی روزانه.',
+    badge: 'محبوب‌ترین',
     features: {
       access: 'full',
       browseEntertainers: 'unlimited',
@@ -65,25 +66,25 @@ const CUSTOMER_PLANS = {
       weekendClaims: 5,
     },
     bullets: [
-      'Unlimited browsing',
-      'Up to 3 coupon claims per day',
-      'Limited referrals',
-      'Priority daily offers',
-      'Partner hotel access',
-      'Limited weekend deals',
-      'Priority support',
-      'Verification badge',
+      'جست‌وجوی نامحدود کسب‌وکارها',
+      'تا ۳ کوپن در روز',
+      'دعوت محدود دوستان',
+      'دسترسی ویژه به آفرهای روزانه',
+      'دسترسی به هتل‌های شریک',
+      'آفرهای آخر هفته (محدود)',
+      'پشتیبانی اولویت‌دار',
+      'نشان تأیید کاربر',
     ],
     crossedOut: [
-      'No exclusive VIP events',
+      'بدون رویدادهای انحصاری VIP',
     ],
   },
   premium: {
     tier: 'premium',
     audience: 'customer',
-    label: 'Premium',
-    price: { monthly: 29.99, yearly: 299.99 },
-    description: 'VIP-only access to everything.',
+    label: 'پریمیوم',
+    price: { monthly: 2990000, yearly: 29900000 },
+    description: 'دسترسی VIP به همه چیز.',
     badge: 'VIP',
     features: {
       access: 'vip',
@@ -104,75 +105,75 @@ const CUSTOMER_PLANS = {
       weekendClaims: 999,
     },
     bullets: [
-      'VIP access to the platform',
-      'Unlimited coupon redemptions',
-      'Unlimited referrals',
-      'VIP-exclusive daily offers',
-      'Premium placement & visibility',
-      'Luxury hotel access',
-      'Unlimited weekend deals',
-      '24/7 VIP support',
-      'Exclusive events & content',
-      'Premium verification badge',
+      'دسترسی VIP به پلتفرم',
+      'استفاده نامحدود از کوپن‌ها',
+      'دعوت نامحدود دوستان',
+      'آفرهای انحصاری VIP',
+      'نمایش ویژه و اولویت‌دار',
+      'دسترسی به هتل‌های لوکس',
+      'آفرهای نامحدود آخر هفته',
+      'پشتیبانی ۲۴/۷ ویژه VIP',
+      'رویدادها و محتوای انحصاری',
+      'نشان تأیید پریمیوم',
     ],
     crossedOut: [],
   },
 };
 
-// ------------- Merchant plans -------------
+// ------------- پلن‌های مرچنت (Merchant) -------------
 const MERCHANT_PLANS = {
   basic: {
     tier: 'basic',
     audience: 'merchant',
-    label: 'Basic',
+    label: 'پایه',
     price: { monthly: 0, yearly: 0 },
-    description: 'Small / new businesses.',
+    description: 'کسب‌وکارهای کوچک یا تازه‌کار.',
     badge: null,
     features: {
       profileListing: 'basic',
       platformVisibility: 'limited',
-      couponCampaigns: 1,                    // max active coupon count
+      couponCampaigns: 1,
       referralBonusUSD: 0,
-      dailyOfferPromotions: false,           // can use todaysOffer flag
+      dailyOfferPromotions: false,
       weekendPromotions: false,
-      analytics: 'basic_traffic',            // basic_traffic | engagement | revenue
+      analytics: 'basic_traffic',
       verificationBadge: false,
       support: 'standard_email',
-      adPlacement: false,                    // false | 'local' | 'premium_sponsored'
-      multiLocation: 1,                      // max locations (merchants under this vendor)
+      adPlacement: false,
+      multiLocation: 1,
     },
     limits: {
       activeCoupons: 1,
       locations: 1,
     },
     bullets: [
-      'Basic business profile listing',
-      'Limited platform exposure',
-      '1 active coupon',
-      'Basic traffic stats',
-      'Standard email support',
+      'پروفایل پایه کسب‌وکار',
+      'نمایش محدود در پلتفرم',
+      '۱ کوپن فعال',
+      'آمار ترافیک پایه',
+      'پشتیبانی ایمیلی استاندارد',
     ],
     crossedOut: [
-      'No referral bonus',
-      'No daily offer promotions',
-      'No weekend promotions',
-      'No verification badge',
-      'No ad placement',
-      'No multi-location management',
+      'بدون پاداش معرفی',
+      'بدون آفر روزانه',
+      'بدون آفر آخر هفته',
+      'بدون نشان تأیید',
+      'بدون تبلیغات',
+      'بدون مدیریت چند شعبه',
     ],
   },
   gold: {
     tier: 'gold',
     audience: 'merchant',
-    label: 'Gold',
-    price: { monthly: 99.99, yearly: 999.99 },
-    description: 'Growing restaurants & venues.',
-    badge: 'Most Popular',
+    label: 'طلایی',
+    price: { monthly: 9990000, yearly: 99900000 },
+    description: 'رستوران‌ها و مکان‌های در حال رشد.',
+    badge: 'محبوب‌ترین',
     features: {
       profileListing: 'enhanced',
       platformVisibility: 'higher_search',
       couponCampaigns: 5,
-      referralBonusUSD: 50,
+      referralBonusUSD: 5000000,
       dailyOfferPromotions: 'limited',
       weekendPromotions: 'weekend_access',
       analytics: 'engagement',
@@ -186,33 +187,32 @@ const MERCHANT_PLANS = {
       locations: 3,
     },
     bullets: [
-      'Enhanced business listing',
-      'Higher search placement',
-      'Up to 5 active coupons',
-      '$50 referral bonus rewards',
-      'Limited daily-offer promotions',
-      'Weekend promotion access',
-      'Customer engagement insights',
-      'Verified merchant badge',
-      'Local ad placements',
-      'Up to 3 locations',
-      'Priority support',
+      'پروفایل ارتقا یافته',
+      'رتبه‌بندی بالاتر در جست‌وجو',
+      'تا ۵ کوپن فعال',
+      'پاداش معرفی ۵٬۰۰۰٬۰۰۰ تومان',
+      'آفر روزانه (محدود)',
+      'دسترسی به آفرهای آخر هفته',
+      'تحلیل تعامل مشتریان',
+      'نشان مرچنت تأیید شده',
+      'تبلیغات محلی',
+      'تا ۳ شعبه',
+      'پشتیبانی اولویت‌دار',
     ],
     crossedOut: [],
   },
   premium: {
     tier: 'premium',
     audience: 'merchant',
-    label: 'Premium',
-    // Note: merchant Premium is priced yearly per the chart ($3,500/year)
-    price: { monthly: 350, yearly: 3500 },
-    description: 'Large brands & chains.',
-    badge: 'Enterprise',
+    label: 'پریمیوم',
+    price: { monthly: 35000000, yearly: 350000000 },
+    description: 'برندهای بزرگ و زنجیره‌ها.',
+    badge: 'سازمانی',
     features: {
       profileListing: 'featured_vip',
       platformVisibility: 'top_priority',
       couponCampaigns: 9999,
-      referralBonusUSD: 100,
+      referralBonusUSD: 10000000,
       dailyOfferPromotions: 'unlimited',
       weekendPromotions: 'premium_weekend',
       analytics: 'revenue',
@@ -226,17 +226,17 @@ const MERCHANT_PLANS = {
       locations: 9999,
     },
     bullets: [
-      'Featured VIP listing',
-      'Top priority placement',
-      'Unlimited coupons',
-      '$100 referral bonus rewards',
-      'Unlimited daily-offer promotions',
-      'Premium weekend placement',
-      'Advanced revenue analytics',
-      'Premium verified badge',
-      'Premium sponsored ad placement',
-      'Unlimited locations',
-      'Dedicated account manager',
+      'نمایش VIP در صفحه اصلی',
+      'بالاترین اولویت در جست‌وجو',
+      'کوپن نامحدود',
+      'پاداش معرفی ۱۰٬۰۰۰٬۰۰۰ تومان',
+      'آفر روزانه نامحدود',
+      'نمایش ویژه آخر هفته',
+      'تحلیل کامل درآمد',
+      'نشان تأیید پریمیوم',
+      'تبلیغات اسپانسری ویژه',
+      'شعبه نامحدود',
+      'مدیر حساب اختصاصی',
     ],
     crossedOut: [],
   },
@@ -252,7 +252,7 @@ function listPlans(audience = 'customer') {
   return Object.values(set);
 }
 
-// Returns trimmed, no-private-fields version suitable for /public/plans
+// خروجی public بدون فیلدهای خصوصی، مناسب /public/plans
 function publicSummary(audience = 'customer') {
   return listPlans(audience).map((p) => ({
     tier: p.tier,
@@ -265,6 +265,7 @@ function publicSummary(audience = 'customer') {
     limits: p.limits,
     bullets: p.bullets,
     crossedOut: p.crossedOut,
+    currency: 'IRT',
   }));
 }
 

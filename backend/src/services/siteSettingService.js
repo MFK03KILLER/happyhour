@@ -289,38 +289,37 @@ const KEY_LEGACY = 'terms';
 // Editable from the admin panel; each block has an independent version.
 // Keys are prefixed with `content_` to keep them out of the terms namespace.
 const SITE_CONTENT_BLOCKS = [
-  // Section: Membership
-  { key: 'content_membership_2026', section: 'membership', title: '2026 Membership' },
-  { key: 'content_membership_vip',  section: 'membership', title: 'VIP Key' },
-  // Section: Company
-  { key: 'content_company_partner', section: 'company', title: 'Become a Partner' },
-  { key: 'content_company_corporate', section: 'company', title: 'Corporate' },
-  { key: 'content_company_careers', section: 'company', title: 'Careers' },
-  { key: 'content_company_about', section: 'company', title: 'About' },
-  // Section: Help & Support
-  { key: 'content_help_faqs', section: 'help', title: 'FAQs' },
-  { key: 'content_help_rules', section: 'help', title: 'Rules of Use' },
-  { key: 'content_help_contact', section: 'help', title: 'Contact Us' },
-  // Section: Legal (Terms of Use here is intentionally NOT included —
-  // the footer link for "Terms of Use" opens the existing consumer
-  // TOS, so it stays in one place.)
-  { key: 'content_legal_eula', section: 'legal', title: 'End User License' },
-  { key: 'content_legal_privacy', section: 'legal', title: 'Privacy Policy' },
+  // عضویت
+  { key: 'content_membership_2026', section: 'membership', title: 'عضویت ۲۰۲۶' },
+  { key: 'content_membership_vip',  section: 'membership', title: 'کلید VIP' },
+  // شرکت
+  { key: 'content_company_partner', section: 'company', title: 'همکاری با ما' },
+  { key: 'content_company_corporate', section: 'company', title: 'مشتریان سازمانی' },
+  { key: 'content_company_careers', section: 'company', title: 'فرصت‌های شغلی' },
+  { key: 'content_company_about', section: 'company', title: 'درباره ما' },
+  // راهنما و پشتیبانی
+  { key: 'content_help_faqs', section: 'help', title: 'سوالات متداول' },
+  { key: 'content_help_rules', section: 'help', title: 'قوانین استفاده' },
+  { key: 'content_help_contact', section: 'help', title: 'تماس با ما' },
+  // قوانین (شرایط استفاده اینجا نیست چون از TermsModal Consumer
+  // قبلی استفاده می‌شود تا متن واحد در یک جا نگه داشته شود.)
+  { key: 'content_legal_eula', section: 'legal', title: 'قرارداد کاربری' },
+  { key: 'content_legal_privacy', section: 'legal', title: 'حریم خصوصی' },
 ];
 
 const PLACEHOLDER_CONTENT = (title) => `# ${title}
 
-> ⚠️ **PLACEHOLDER** — replace this from the admin panel (Admin → Site Content → ${title}).
+> ⚠️ **متن نمونه** — این بخش را از پنل ادمین ویرایش کنید (پنل ادمین → محتوای سایت → ${title}).
 
-This section is currently using placeholder text. The administrator will populate the real content shortly.
+این بخش هم‌اکنون از یک متن نمونه استفاده می‌کند. مدیر سایت در زمان مقتضی متن واقعی را جایگزین خواهد کرد.
 
-## What goes here
+## محتوای این صفحه
 
-This page is reserved for the **${title}** content. Once the team provides the final copy, an admin can paste it in via the admin panel and it will show up here instantly for every visitor.
+این صفحه برای محتوای **${title}** رزرو شده است. به محض آماده شدن متن نهایی، ادمین می‌تواند آن را از پنل وارد کند و بلافاصله برای تمام بازدیدکنندگان نمایش داده می‌شود.
 
-## Contact
+## تماس با ما
 
-If you need this content sooner, please reach out to our team.
+برای دسترسی سریع‌تر به این محتوا، با تیم پشتیبانی هپی اَور تماس بگیرید.
 `;
 
 const DEFAULTS = {

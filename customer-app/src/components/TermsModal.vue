@@ -50,8 +50,8 @@ function renderMd(md) {
     <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[85vh] overflow-y-auto shadow-lift">
       <div class="sticky top-0 bg-white border-b border-cream-200 px-5 py-3 flex items-center justify-between rounded-t-3xl">
         <div>
-          <div class="font-bold">Terms of Service</div>
-          <div v-if="terms" class="text-xs text-ink-500">Version {{ terms.version }} · Updated {{ new Date(terms.updatedAt).toLocaleDateString() }}</div>
+          <div class="font-bold">شرایط استفاده</div>
+          <div v-if="terms" class="text-xs text-ink-500">نسخه {{ terms.version }} · به‌روز شده در {{ new Date(terms.updatedAt).toLocaleDateString('fa-IR-u-ca-persian') }}</div>
         </div>
         <button @click="emit('close')" class="w-8 h-8 -mr-2 rounded-full active:bg-cream-200 flex items-center justify-center">
           <i class="fa-solid fa-xmark"></i>
@@ -62,7 +62,7 @@ function renderMd(md) {
         <div v-else v-html="renderMd(terms?.content)"></div>
       </div>
       <div class="sticky bottom-0 bg-white border-t border-cream-200 p-4">
-        <button @click="emit('close')" class="ios-button-primary w-full">Got it</button>
+        <button @click="emit('close')" class="ios-button-primary w-full">متوجه شدم</button>
       </div>
     </div>
   </div>

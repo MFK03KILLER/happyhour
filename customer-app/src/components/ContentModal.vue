@@ -80,8 +80,8 @@ function renderMd(md) {
     <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[88vh] flex flex-col shadow-lift">
       <div class="sticky top-0 bg-white border-b border-cream-200 px-5 py-3 flex items-center justify-between rounded-t-3xl">
         <div class="min-w-0">
-          <div class="font-bold truncate">{{ content?.title || 'Loading…' }}</div>
-          <div v-if="content" class="text-xs text-ink-500">Updated {{ new Date(content.updatedAt).toLocaleDateString() }}</div>
+          <div class="font-bold truncate">{{ content?.title || 'در حال بارگذاری…' }}</div>
+          <div v-if="content" class="text-xs text-ink-500">به‌روز شده در {{ new Date(content.updatedAt).toLocaleDateString('fa-IR-u-ca-persian') }}</div>
         </div>
         <button @click="emit('close')" class="w-8 h-8 -mr-2 rounded-full active:bg-cream-200 flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-xmark"></i>
@@ -96,7 +96,7 @@ function renderMd(md) {
         <div v-else-if="content" v-html="renderMd(content.content)"></div>
       </div>
       <div class="sticky bottom-0 bg-white border-t border-cream-200 p-4">
-        <button @click="emit('close')" class="ios-button-primary w-full">Close</button>
+        <button @click="emit('close')" class="ios-button-primary w-full">بستن</button>
       </div>
     </div>
   </div>

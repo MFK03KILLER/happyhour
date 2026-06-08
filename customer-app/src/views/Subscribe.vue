@@ -2,9 +2,10 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
+import IranPaySheet from '../components/IranPaySheet.vue';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
+import { toman, persianNumber, persianDate } from '../composables/useFormat';
 
 const router = useRouter();
 const toast = useToastStore();
@@ -17,11 +18,6 @@ const selectedTier = ref('gold');
 const billing = ref('monthly');
 const loading = ref(true);
 
-const plans = {
-  monthly: { label: 'ماهانه', amount: 299000, perMonth: 299000, period: 'ماه' },
-  yearly: { label: 'سالانه', amount: 2990000, perMonth: 249000, period: 'سال', save: '۱۷٪ صرفه‌جویی' },
-};
-
 onMounted(async () => {
   try {
     const { data } = await client.get('/customer/subscription');
@@ -31,12 +27,7 @@ onMounted(async () => {
   } finally { loading.value = false; }
 });
 
-function isActive() {
-  const s = subscription.value;
-  return s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date();
-}
-
-async function onConfirm(method) {
+async function onConfirm(paymentMethod) {
   try {
     const { data } = await client.post('/customer/subscription/subscribe', {
       tier: selectedTier.value,
@@ -48,18 +39,17 @@ async function onConfirm(method) {
     currentPlan.value = data.plan;
     await auth.fetchMe();
     showPay.value = false;
-    toast.success(`You're on ${data.plan.label}!`, { title: 'Plan upgraded 🎉' });
+    toast.success(`اشتراک شما به «${data.plan.label}» ارتقا یافت!`, { title: 'عضویت فعال شد 🎉' });
     router.push('/');
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Subscription failed', { title: 'Payment failed' });
+    toast.error(e.response?.data?.error?.message || 'پرداخت ناموفق بود', { title: 'خطا در پرداخت' });
   }
 }
 
-async function cancel() {
+async function cancelSub() {
   if (!confirm('عضویت تا پایان دوره فعلی فعال می‌ماند. آیا مطمئنید؟')) return;
-  await client.post('/customer/subscription/cancel');
-  const { data } = await client.get('/customer/subscription');
-  subscription.value = data.subscription;
+  const { data } = await client.post('/customer/subscription/cancel');
+  sub.value = data;
 }
 async function resumeSub() {
   const { data } = await client.post('/customer/subscription/resume');
@@ -67,7 +57,7 @@ async function resumeSub() {
 }
 
 const selected = computed(() => availablePlans.value.find((p) => p.tier === selectedTier.value));
-const selectedPrice = computed(() => (selected.value?.price?.[billing.value] || 0).toFixed(2));
+const selectedPrice = computed(() => selected.value?.price?.[billing.value] || 0);
 const currentTier = computed(() => sub.value?.tier || currentPlan.value?.tier || 'basic');
 const isCurrentlyPaid = computed(() => sub.value && sub.value.tier !== 'basic' && new Date(sub.value.currentPeriodEnd) > new Date());
 
@@ -82,9 +72,13 @@ function pickTier(t) {
   selectedTier.value = t;
 }
 
-function checkFeature(value) {
-  if (value === false || value === 'none' || value === 'limited' || value === 'basic_email' || value === 'basic' || value === 'partner' || value == null) return false;
-  return true;
+function fmtPrice(n) {
+  if (!n) return 'رایگان';
+  return toman(n);
+}
+
+function fmtPeriod(b) {
+  return b === 'monthly' ? 'ماهانه' : 'سالانه';
 }
 </script>
 
@@ -92,7 +86,7 @@ function checkFeature(value) {
   <div class="min-h-screen pb-12 safe-top bg-cream-100">
     <header class="px-5 pt-4 pb-3 flex items-center bg-white border-b border-cream-200">
       <button @click="router.back()" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
       </button>
       <div class="flex-1 text-center font-semibold -mr-8">عضویت</div>
     </header>
@@ -100,40 +94,40 @@ function checkFeature(value) {
     <div v-if="loading" class="px-5 mt-6"><div class="h-64 bg-cream-200 rounded-3xl animate-pulse"></div></div>
 
     <template v-else>
-      <!-- Currently subscribed banner -->
+      <!-- بنر اشتراک فعلی -->
       <div v-if="isCurrentlyPaid" class="px-5 mt-5">
         <div class="rounded-3xl bg-gradient-to-br text-white p-6 shadow-lift relative overflow-hidden" :class="tierBg(currentTier)">
           <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
-          <span class="chip bg-white/15 text-white">{{ currentPlan?.badge || 'Active' }}</span>
-          <div class="mt-3 text-3xl font-bold">{{ currentPlan?.label }} Plan</div>
-          <div class="opacity-90 mt-1 capitalize">{{ sub.plan }} · ${{ sub.amountUSD?.toFixed(2) }}</div>
+          <span class="chip bg-white/15 text-white">{{ currentPlan?.badge || 'فعال' }}</span>
+          <div class="mt-3 text-3xl font-bold">عضویت {{ currentPlan?.label }}</div>
+          <div class="opacity-90 mt-1">{{ fmtPeriod(sub.plan) }} · {{ fmtPrice(sub.amountUSD) }}</div>
           <div class="mt-3 text-sm opacity-90">
-            Next billing: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
+            تمدید بعدی: <span class="font-semibold">{{ persianDate(sub.currentPeriodEnd) }}</span>
           </div>
           <div v-if="sub.cancelAtPeriodEnd" class="mt-2 text-sm bg-black/20 rounded-xl px-3 py-2">
-            Cancelling on {{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric' }) }}
+            در تاریخ {{ persianDate(sub.currentPeriodEnd) }} لغو می‌شود
           </div>
         </div>
 
         <div class="mt-3 flex gap-2">
           <button v-if="!sub.cancelAtPeriodEnd" @click="cancelSub" class="ios-card flex-1 p-3 text-coral-600 font-semibold text-center">
-            Cancel
+            لغو عضویت
           </button>
-          <button v-else @click="resumeSub" class="ios-button-primary flex-1">Resume</button>
+          <button v-else @click="resumeSub" class="ios-button-primary flex-1">فعال‌سازی مجدد</button>
         </div>
       </div>
 
-      <!-- Plan picker -->
+      <!-- انتخاب پلن -->
       <div class="px-5 mt-5">
         <div class="text-center">
-          <h1 class="text-2xl font-bold tracking-tight">Pick your plan</h1>
-          <p class="text-ink-500 mt-1 text-sm">Save more, every time you go out.</p>
+          <h1 class="text-2xl font-bold tracking-tight">پلن خود را انتخاب کنید</h1>
+          <p class="text-ink-500 mt-1 text-sm">هر بار که بیرون می‌روید بیشتر صرفه‌جویی کنید.</p>
         </div>
 
         <div class="mt-4 flex justify-center">
           <div class="inline-flex bg-cream-200 rounded-full p-1">
-            <button @click="billing='monthly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">Monthly</button>
-            <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly · save</button>
+            <button @click="billing='monthly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">ماهانه</button>
+            <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">سالانه · تخفیف ویژه</button>
           </div>
         </div>
 
@@ -151,15 +145,15 @@ function checkFeature(value) {
             <div v-if="p.badge" class="absolute -top-2 right-4 chip text-white text-[10px]" :class="p.tier === 'gold' ? 'bg-coral-500' : p.tier === 'premium' ? 'bg-purple-600' : 'bg-ink-500'">
               {{ p.badge }}
             </div>
-            <div v-if="currentTier === p.tier && isCurrentlyPaid" class="absolute -top-2 left-4 chip bg-teal-600 text-white text-[10px]">Current</div>
+            <div v-if="currentTier === p.tier && isCurrentlyPaid" class="absolute -top-2 left-4 chip bg-teal-600 text-white text-[10px]">پلن فعلی</div>
             <div class="flex items-start justify-between">
               <div>
                 <div class="text-xl font-bold">{{ p.label }}</div>
                 <div class="text-xs text-ink-500">{{ p.description }}</div>
               </div>
-              <div class="text-right">
-                <div class="text-2xl font-bold">${{ (p.price[billing] || 0).toFixed(2) }}</div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-500">/ {{ billing === 'monthly' ? 'mo' : 'yr' }}</div>
+              <div class="text-left">
+                <div class="text-xl font-bold">{{ fmtPrice(p.price[billing] || 0) }}</div>
+                <div class="text-[10px] uppercase tracking-wider text-ink-500">{{ billing === 'monthly' ? 'ماهانه' : 'سالانه' }}</div>
               </div>
             </div>
 
@@ -181,17 +175,17 @@ function checkFeature(value) {
           @click="showPay = true"
           class="ios-button-primary w-full mt-5"
         >
-          Get {{ selected?.label }} for ${{ selectedPrice }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
+          عضویت {{ selected?.label }} — {{ fmtPrice(selectedPrice) }} {{ fmtPeriod(billing) }}
         </button>
-        <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">7-day money-back guarantee · Cancel anytime</div>
+        <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">۷ روز ضمانت بازگشت وجه · لغو در هر زمان</div>
       </div>
     </template>
 
-    <ApplePaySheet
+    <IranPaySheet
       v-if="showPay && selected"
-      :amount="parseFloat(selectedPrice)"
-      merchant-name="Happy Hour"
-      :item-name="`${selected.label} ${billing} membership`"
+      :amount="selectedPrice"
+      merchant-name="هپی اَور"
+      :item-name="`عضویت ${selected.label} (${fmtPeriod(billing)})`"
       @confirm="onConfirm"
       @close="showPay = false"
     />

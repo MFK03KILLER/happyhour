@@ -6,11 +6,11 @@ const route = useRoute();
 const router = useRouter();
 
 const tabs = [
-  { to: '/', label: 'Home', icon: 'fa-house' },
-  { to: '/browse', label: 'Browse', icon: 'fa-magnifying-glass' },
-  { to: '/wallet', label: 'Wallet', icon: 'fa-wallet' },
-  { to: '/orders', label: 'Orders', icon: 'fa-receipt' },
-  { to: '/profile', label: 'Profile', icon: 'fa-user' },
+  { to: '/', label: 'خانه', icon: 'fa-house' },
+  { to: '/browse', label: 'جستجو', icon: 'fa-magnifying-glass' },
+  { to: '/wallet', label: 'کیف پول', icon: 'fa-wallet' },
+  { to: '/orders', label: 'سفارش‌ها', icon: 'fa-receipt' },
+  { to: '/profile', label: 'حساب من', icon: 'fa-user' },
 ];
 
 function isActive(to) {
