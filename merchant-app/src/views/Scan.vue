@@ -28,7 +28,7 @@ async function onDetected(text) {
     result.value = data;
     stage.value = 'success';
   } catch (e) {
-    errorText.value = e.response?.data?.error?.message || 'Scan failed';
+    errorText.value = e.response?.data?.error?.message || 'اسکن ناموفق بود';
     errorCode.value = e.response?.data?.error?.code || '';
     stage.value = 'error';
   }
@@ -46,7 +46,7 @@ function reset() { stage.value = 'idle'; result.value = null; errorText.value = 
           <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">پنل پرسنل</div>
           <div class="text-2xl font-bold mt-0.5">{{ auth.user?.fullName }}</div>
         </div>
-        <button @click="signOut" class="text-xs opacity-80 active:opacity-50">Sign out</button>
+        <button @click="signOut" class="text-xs opacity-80 active:opacity-50">خروج</button>
       </div>
     </header>
 
@@ -122,15 +122,15 @@ function reset() { stage.value = 'idle'; result.value = null; errorText.value = 
         <div class="mx-auto w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center animate-pop-in">
           <i class="fa-solid fa-hourglass-half text-3xl text-amber-600"></i>
         </div>
-        <div class="mt-4 text-xl font-bold">Outside Happy Hour</div>
+        <div class="mt-4 text-xl font-bold">خارج از ساعات هپی اَور</div>
         <p class="text-ink-700 text-sm mt-2 leading-relaxed">{{ errorText }}</p>
-        <div class="mt-4 ios-card p-3 bg-white text-left">
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">What to tell the customer</div>
+        <div class="mt-4 ios-card p-3 bg-white text-right">
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">به مشتری چه بگویید</div>
           <p class="text-sm text-ink-700 mt-1">
-            This coupon is only valid during the merchant's happy hour window. Ask them to come back during the times shown on their coupon, and you'll be able to scan it then.
+            این کوپن فقط در بازه‌ی هپی اَور فروشگاه معتبر است. از مشتری بخواهید در ساعت‌هایی که روی کوپن نوشته شده مراجعه کند تا بتوانید کد را اسکن کنید.
           </p>
         </div>
-        <button @click="reset" class="ios-button-primary mt-5">OK, got it</button>
+        <button @click="reset" class="ios-button-primary mt-5">متوجه شدم</button>
       </div>
       <div v-else class="ios-card p-6 text-center">
         <div class="mx-auto w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center animate-pop-in">

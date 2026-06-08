@@ -10,13 +10,13 @@ const auth = useAuthStore();
 const showTerms = ref(false);
 
 const items = [
-  { to: '/vendor', label: 'Dashboard', icon: 'home', perm: null },
-  { to: '/vendor/analytics', label: 'Analytics', icon: 'chart', perm: 'view_stats' },
-  { to: '/vendor/merchants', label: 'Locations', icon: 'store', perm: null },
-  { to: '/vendor/coupons', label: 'Coupons', icon: 'tag', perm: null },
-  { to: '/vendor/team', label: 'Team', icon: 'users', perm: 'view_team' },
-  { to: '/vendor/activity', label: 'Activity', icon: 'log', perm: 'view_stats' },
-  { to: '/vendor/pricing', label: 'Pricing', icon: 'dollar', perm: null },
+  { to: '/vendor', label: 'داشبورد', icon: 'home', perm: null },
+  { to: '/vendor/analytics', label: 'تحلیل‌ها', icon: 'chart', perm: 'view_stats' },
+  { to: '/vendor/merchants', label: 'شعب', icon: 'store', perm: null },
+  { to: '/vendor/coupons', label: 'کوپن‌ها', icon: 'tag', perm: null },
+  { to: '/vendor/team', label: 'تیم', icon: 'users', perm: 'view_team' },
+  { to: '/vendor/activity', label: 'فعالیت‌ها', icon: 'log', perm: 'view_stats' },
+  { to: '/vendor/pricing', label: 'پلن و قیمت', icon: 'dollar', perm: null },
 ];
 
 function can(perm) { if (!perm) return true; return (auth.user?.permissions || []).includes(perm); }
@@ -52,10 +52,10 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </nav>
       <div class="p-3 border-t border-cream-200 space-y-1">
-        <button @click="showTerms = true" class="w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold text-ink-500 hover:bg-cream-100">
-          <i class="fa-regular fa-file-lines mr-1.5"></i>Merchant Terms of Service
+        <button @click="showTerms = true" class="w-full text-right px-3 py-2 rounded-2xl text-xs font-semibold text-ink-500 hover:bg-cream-100">
+          <i class="fa-regular fa-file-lines mr-1.5"></i>قوانین مرچنت
         </button>
-        <button @click="doLogout" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">Sign out</button>
+        <button @click="doLogout" class="w-full text-right px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">خروج</button>
       </div>
     </aside>
 
@@ -70,10 +70,10 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </div>
       <router-view />
-      <!-- Footer for mobile -->
+      <!-- فوتر موبایل -->
       <footer class="md:hidden border-t border-cream-200 mt-4 px-5 py-3 bg-white">
         <button @click="showTerms = true" class="text-xs text-ink-500 underline">
-          <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
+          <i class="fa-regular fa-file-lines mr-1"></i>قوانین مرچنت
         </button>
       </footer>
     </main>

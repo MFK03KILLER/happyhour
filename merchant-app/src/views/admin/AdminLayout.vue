@@ -9,17 +9,17 @@ const auth = useAuthStore();
 const mobileOpen = ref(false);
 
 const items = [
-  { to: '/admin', label: 'Dashboard', icon: 'home' },
-  { to: '/admin/revenue', label: 'Revenue', icon: 'dollar' },
-  { to: '/admin/payments', label: 'Payments', icon: 'card' },
-  { to: '/admin/vendors', label: 'Vendors', icon: 'building' },
-  { to: '/admin/merchants', label: 'Merchants', icon: 'store' },
-  { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
-  { to: '/admin/users', label: 'Users', icon: 'users' },
-  { to: '/admin/features', label: 'Features', icon: 'flag' },
-  { to: '/admin/terms', label: 'Terms', icon: 'doc' },
-  { to: '/admin/site-content', label: 'Site Content', icon: 'doc' },
-  { to: '/admin/audit', label: 'Audit log', icon: 'log' },
+  { to: '/admin', label: 'داشبورد', icon: 'home' },
+  { to: '/admin/revenue', label: 'درآمد', icon: 'dollar' },
+  { to: '/admin/payments', label: 'پرداخت‌ها', icon: 'card' },
+  { to: '/admin/vendors', label: 'وندورها', icon: 'building' },
+  { to: '/admin/merchants', label: 'فروشگاه‌ها', icon: 'store' },
+  { to: '/admin/coupons', label: 'کوپن‌ها', icon: 'tag' },
+  { to: '/admin/users', label: 'کاربران', icon: 'users' },
+  { to: '/admin/features', label: 'قابلیت‌ها', icon: 'flag' },
+  { to: '/admin/terms', label: 'قوانین', icon: 'doc' },
+  { to: '/admin/site-content', label: 'محتوای سایت', icon: 'doc' },
+  { to: '/admin/audit', label: 'لاگ ممیزی', icon: 'log' },
 ];
 
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);

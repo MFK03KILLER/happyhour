@@ -81,8 +81,8 @@ function renderMd(md) {
     <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-3xl max-h-[92vh] flex flex-col shadow-lift">
       <div class="border-b border-cream-200 px-5 py-3 flex items-center justify-between rounded-t-3xl bg-white sticky top-0">
         <div class="min-w-0">
-          <div class="font-bold truncate">{{ audience === 'merchant' ? 'Merchant Terms & Conditions' : 'Terms of Service' }}</div>
-          <div v-if="terms" class="text-xs text-ink-500">Version {{ terms.version }} · Updated {{ new Date(terms.updatedAt).toLocaleDateString() }}</div>
+          <div class="font-bold truncate">{{ audience === 'merchant' ? 'قوانین و شرایط مرچنت' : 'شرایط استفاده' }}</div>
+          <div v-if="terms" class="text-xs text-ink-500">نسخه {{ terms.version }} · به‌روز شده {{ new Date(terms.updatedAt).toLocaleDateString('fa-IR-u-ca-persian') }}</div>
         </div>
         <button v-if="!requireAccept" @click="emit('close')" class="w-8 h-8 -mr-2 rounded-full active:bg-cream-200 flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-xmark"></i>
@@ -99,18 +99,18 @@ function renderMd(md) {
           <label class="flex items-start gap-3 pb-3 cursor-pointer select-none">
             <input v-model="agreed" type="checkbox" class="mt-0.5 w-5 h-5 accent-teal-600 flex-shrink-0" />
             <span class="text-sm text-ink-700 leading-relaxed">
-              I have read and agree to the Merchant Terms above
-              <span v-if="terms" class="text-ink-300">(v{{ terms.version }})</span>.
+              متن قوانین بالا را خوانده‌ام و می‌پذیرم
+              <span v-if="terms" class="text-ink-300">(نسخه {{ terms.version }})</span>.
             </span>
           </label>
           <div class="flex gap-2">
-            <button @click="emit('close')" class="ios-card flex-1 py-3 font-semibold text-coral-600">Decline & sign out</button>
+            <button @click="emit('close')" class="ios-card flex-1 py-3 font-semibold text-coral-600">رد و خروج از حساب</button>
             <button @click="accept" :disabled="!agreed || submitting" class="ios-button-primary flex-1">
-              {{ submitting ? 'Saving…' : 'I agree, continue' }}
+              {{ submitting ? 'در حال ذخیره…' : 'می‌پذیرم، ادامه' }}
             </button>
           </div>
         </template>
-        <button v-else @click="emit('close')" class="ios-button-primary w-full">Got it</button>
+        <button v-else @click="emit('close')" class="ios-button-primary w-full">متوجه شدم</button>
       </div>
     </div>
   </div>
