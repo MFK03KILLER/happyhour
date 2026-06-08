@@ -151,7 +151,7 @@ onUnmounted(stopAll);
       <button @click="router.back()" class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center active:scale-95">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
-      <div class="font-semibold">Show to merchant</div>
+      <div class="font-semibold">به فروشگاه نشان دهید</div>
       <div class="w-10"></div>
     </header>
 
@@ -162,11 +162,11 @@ onUnmounted(stopAll);
         </div>
         <div class="flex-1 min-w-0 text-sm">
           <div class="font-bold">
-            <span v-if="usable && minutesUntilClose && minutesUntilClose < 30">⚠️ Hurry — closes in {{ minutesUntilClose }} min</span>
-            <span v-else-if="usable">Redeem now — merchant will accept this</span>
+            <span v-if="usable && minutesUntilClose && minutesUntilClose < 30">⚠️ عجله کنید — {{ minutesUntilClose }} دقیقه تا بسته شدن</span>
+            <span v-else-if="usable">الان استفاده کنید — فروشگاه می‌پذیرد</span>
             <span v-else>{{ nextOpenLabel }}</span>
           </div>
-          <div class="text-xs opacity-90 mt-0.5">Active {{ windowDaysLabel }} · {{ fmtTime(activeWindow.start) }}–{{ fmtTime(activeWindow.end) }}</div>
+          <div class="text-xs opacity-90 mt-0.5">فعال {{ windowDaysLabel }} · {{ fmtTime(activeWindow.start) }}–{{ fmtTime(activeWindow.end) }}</div>
         </div>
       </div>
     </div>
@@ -176,10 +176,10 @@ onUnmounted(stopAll);
 
       <div v-else-if="qrImage" class="text-center w-full" :class="usable === false ? 'opacity-60' : ''">
         <div class="mx-auto bg-white p-5 rounded-3xl shadow-lift inline-block" :class="usable ? 'animate-pulse-soft' : ''">
-          <img :src="qrImage" class="w-64 h-64 object-contain" alt="QR code" />
+          <img :src="qrImage" class="w-64 h-64 object-contain" alt="کد QR" />
         </div>
-        <div class="mt-6 text-xs uppercase tracking-wider opacity-70 font-semibold">Refreshes in</div>
-        <div class="text-4xl font-bold mt-1 tabular-nums">{{ expiresIn }}s</div>
+        <div class="mt-6 text-xs uppercase tracking-wider opacity-70 font-semibold">به‌روزرسانی تا</div>
+        <div class="text-4xl font-bold mt-1 tabular-nums">{{ expiresIn }} ثانیه</div>
         <div v-if="purchased?.couponId" class="mt-3 text-sm font-bold">{{ purchased.couponId.title }}</div>
         <div v-if="purchased?.couponId?.vendorId" class="text-xs opacity-70">{{ purchased.couponId.vendorId.name }}</div>
       </div>
