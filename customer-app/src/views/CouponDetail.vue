@@ -16,7 +16,6 @@ function openDirections(m) {
 
 const route = useRoute();
 const router = useRouter();
-const flags = useFlagsStore();
 const coupon = ref(null);
 const loading = ref(true);
 const claiming = ref(false);
