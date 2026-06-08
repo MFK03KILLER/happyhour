@@ -4,6 +4,7 @@ import { computed, onMounted } from 'vue';
 import { useAuthStore } from './stores/auth';
 import { useFlagsStore } from './stores/flags';
 import MerchantTabBar from './components/MerchantTabBar.vue';
+import AcceptMerchantTermsGate from './components/AcceptMerchantTermsGate.vue';
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -20,6 +21,7 @@ const showTabs = computed(() => auth.isMerchantStaff && route.path !== '/login')
       </transition>
     </router-view>
     <MerchantTabBar v-if="showTabs" />
+    <AcceptMerchantTermsGate />
   </div>
 </template>
 

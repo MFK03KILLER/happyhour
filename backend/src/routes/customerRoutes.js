@@ -65,7 +65,37 @@ router.post('/subscription/resume', writeLimiter, subCtrl.resume);
  *         name: limit
  *         schema: { type: integer }
  */
-router.get('/coupons/browse', validate(browseQuerySchema, 'query'), ctrl.browse);
+router.get('/coupons/browse', ctrl.browse);
+
+/**
+ * @openapi
+ * /customer/discover:
+ *   get:
+ *     tags: [Customer]
+ *     summary: Discover merchants near a location with sort/filter
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/discover', ctrl.discoverMerchants);
+
+/**
+ * @openapi
+ * /customer/merchants/{id}:
+ *   get:
+ *     tags: [Customer]
+ *     summary: Merchant detail with their active coupons
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/merchants/:id', ctrl.merchantDetail);
+
+/**
+ * @openapi
+ * /customer/daily-status:
+ *   get:
+ *     tags: [Customer]
+ *     summary: Get today's claim count and remaining quota
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/daily-status', ctrl.dailyStatus);
 
 /**
  * @openapi

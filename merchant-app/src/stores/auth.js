@@ -21,7 +21,10 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = data.refreshToken;
       localStorage.setItem('hh_m_access_token', data.accessToken);
       localStorage.setItem('hh_m_refresh_token', data.refreshToken);
-      return data.user;
+      // Belt-and-suspenders: fetch the full /auth/me so we always have the
+      // latest permissions + planTier (in case the login response shape ever drifts).
+      try { await this.fetchMe(); } catch {}
+      return this.user;
     },
     async fetchMe() {
       if (!this.accessToken) return null;

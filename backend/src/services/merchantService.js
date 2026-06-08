@@ -1,12 +1,47 @@
 const merchantRepo = require('../repositories/merchantRepository');
-const { NotFoundError } = require('../utils/errors');
+const Merchant = require('../models/Merchant');
+const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 function slugify(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-async function create(data) {
+function haversineKm(lat1, lng1, lat2, lng2) {
+  if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null;
+  const R = 6371;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+async function create(data, opts = {}) {
   if (!data.slug) data.slug = slugify(data.name);
+  // Enforce locations limit per vendor plan
+  // opts.bypassPlanLimits: pass `true` from admin endpoints.
+  if (data.vendorId && !opts.bypassPlanLimits) {
+    const planService = require('./planService');
+    const Vendor = require('../models/Vendor');
+    const vendor = await Vendor.findById(data.vendorId);
+    if (vendor && vendor.ownerUserId) {
+      const User = require('../models/User');
+      const owner = await User.findById(vendor.ownerUserId);
+      if (owner) {
+        const { plan } = await planService.getUserPlan(owner, 'merchant');
+        const limit = plan?.limits?.locations || 1;
+        const currentCount = await Merchant.countDocuments({ vendorId: data.vendorId });
+        if (currentCount >= limit) {
+          const err = new BadRequestError(
+            `You have ${currentCount} location${currentCount === 1 ? '' : 's'} but your ${plan.label} plan allows ${limit}. Upgrade to add more.`,
+          );
+          err.code = 'PLAN_LIMIT_EXCEEDED';
+          err.details = { currentCount, limit, tier: plan.tier, planLabel: plan.label, kind: 'locations' };
+          throw err;
+        }
+      }
+    }
+  }
   return merchantRepo.create(data);
 }
 async function update(id, data) {
@@ -38,4 +73,33 @@ async function listByVendor(vendorId) {
   return merchantRepo.findByVendor(vendorId);
 }
 
-module.exports = { create, update, remove, list, getById, getBySlug, listByVendor };
+async function discover({ category, search, lat, lng, sort = 'distance', order = 'asc', priceMin, priceMax, ratingMin, page = 1, limit = 30 }) {
+  const filter = { status: 'active' };
+  if (category) filter.category = category;
+  if (search) filter.name = { $regex: search, $options: 'i' };
+  if (priceMin != null) filter.priceLevel = { ...(filter.priceLevel || {}), $gte: priceMin };
+  if (priceMax != null) filter.priceLevel = { ...(filter.priceLevel || {}), $lte: priceMax };
+  if (ratingMin != null) filter.rating = { $gte: ratingMin };
+
+  let items = await Merchant.find(filter).populate('vendorId').lean();
+  if (lat != null && lng != null) {
+    items = items.map((m) => ({ ...m, distanceKm: haversineKm(lat, lng, m.address && m.address.lat, m.address && m.address.lng) }));
+  }
+  const dir = order === 'desc' ? -1 : 1;
+  if (sort === 'distance' && lat != null) {
+    items.sort((a, b) => {
+      const aa = a.distanceKm == null ? Infinity : a.distanceKm;
+      const bb = b.distanceKm == null ? Infinity : b.distanceKm;
+      return (aa - bb) * dir;
+    });
+  } else if (sort === 'rating') {
+    items.sort((a, b) => ((b.rating || 0) - (a.rating || 0)) * dir);
+  } else if (sort === 'price') {
+    items.sort((a, b) => ((a.priceLevel || 0) - (b.priceLevel || 0)) * dir);
+  }
+  const total = items.length;
+  const paged = items.slice((page - 1) * limit, (page - 1) * limit + limit);
+  return { items: paged, total, page, limit };
+}
+
+module.exports = { create, update, remove, list, getById, getBySlug, listByVendor, discover, haversineKm };

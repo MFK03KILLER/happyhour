@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const merchantService = require('../services/merchantService');
 const couponService = require('../services/couponService');
 const statsService = require('../services/statsService');
+const roleService = require('../services/roleService');
+const analyticsService = require('../services/analyticsService');
+const holidayService = require('../services/holidayService');
 const userRepo = require('../repositories/userRepository');
 const { ForbiddenError, ConflictError, NotFoundError } = require('../utils/errors');
 
@@ -75,21 +78,103 @@ exports.listTeam = asyncHandler(async (req, res) => {
 
 exports.createTeamMember = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
-  const { email, password, fullName, merchantId, permissions } = req.body;
+  const { email, password, fullName, merchantId, roleSlug, permissions } = req.body;
   const existing = await userRepo.findByEmail(email);
   if (existing) throw new ConflictError('Email already in use');
   const passwordHash = await bcrypt.hash(password, 12);
+  let perms = permissions;
+  let chosenRole = roleSlug;
+  if (roleSlug) {
+    perms = await roleService.permissionsForRole(roleSlug);
+    if (!perms.length) throw new NotFoundError('Role not found');
+  }
+  if (!perms || !perms.length) {
+    chosenRole = 'vendor_cashier';
+    perms = await roleService.permissionsForRole('vendor_cashier');
+  }
   const user = await userRepo.create({
-    email,
-    passwordHash,
-    fullName,
+    email, passwordHash, fullName,
     role: 'merchant_staff',
     vendorId,
     merchantId: merchantId || undefined,
-    permissions: permissions && permissions.length ? permissions : ['scan_only'],
+    roleSlug: chosenRole,
+    permissions: perms,
     status: 'active',
   });
   res.status(201).json(user);
+});
+
+exports.updateTeamMember = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const user = await userRepo.findById(req.params.id);
+  if (!user) throw new NotFoundError('User not found');
+  if (user.vendorId?.toString() !== vendorId.toString()) throw new ForbiddenError('Not in your team');
+  const update = {};
+  if (req.body.fullName) update.fullName = req.body.fullName;
+  if (req.body.merchantId !== undefined) update.merchantId = req.body.merchantId || undefined;
+  if (req.body.status) update.status = req.body.status;
+  if (req.body.roleSlug) {
+    const perms = await roleService.permissionsForRole(req.body.roleSlug);
+    if (!perms.length) throw new NotFoundError('Role not found');
+    update.roleSlug = req.body.roleSlug;
+    update.permissions = perms;
+  }
+  if (req.body.password) update.passwordHash = await bcrypt.hash(req.body.password, 12);
+  const updated = await userRepo.update(req.params.id, update);
+  res.json(updated);
+});
+
+exports.listRoles = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const items = await roleService.listAvailable(vendorId);
+  res.json({ items });
+});
+
+exports.analytics = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.vendorAnalytics(vendorId, req.query);
+  res.json(data);
+});
+
+exports.suggestions = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.vendorSuggestions(vendorId);
+  res.json({ items: data });
+});
+
+exports.couponPerformance = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.couponPerformanceByLocation(vendorId, req.params.id);
+  if (!data) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Coupon not found' } });
+  res.json(data);
+});
+
+exports.bestCouponNow = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const data = await analyticsService.bestCouponNow(vendorId);
+  res.json(data);
+});
+
+exports.activityFeed = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const items = await analyticsService.vendorActivityFeed(vendorId, { limit: parseInt(req.query.limit || '50', 10) });
+  res.json({ items });
+});
+
+exports.exportRedemptionsCsv = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const csv = await analyticsService.redemptionsExportCsv(vendorId, { from: req.query.from, to: req.query.to });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="redemptions-${new Date().toISOString().slice(0,10)}.csv"`);
+  res.send(csv);
+});
+
+exports.bulkCouponAction = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { ids, action } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'ids required' } });
+  const result = await couponService.bulkUpdate({ vendorId, ids, action });
+  res.json({ modifiedCount: result.modifiedCount || result.deletedCount, action });
 });
 
 exports.removeTeamMember = asyncHandler(async (req, res) => {
@@ -105,4 +190,57 @@ exports.stats = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
   const data = await statsService.vendorStats(vendorId);
   res.json(data);
+});
+
+// Record this vendor user's acceptance of the current Merchant TOS version.
+exports.acceptTerms = asyncHandler(async (req, res) => {
+  const siteSettingService = require('../services/siteSettingService');
+  const User = require('../models/User');
+  const current = await siteSettingService.getTerms('merchant');
+  const submittedVersion = Number(req.body.version);
+  if (!submittedVersion || submittedVersion !== current.version) {
+    const { BadRequestError } = require('../utils/errors');
+    throw new BadRequestError(`You must accept the current Merchant Terms (v${current.version}).`);
+  }
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } },
+  });
+  res.json({ acceptedMerchantTerms: { version: current.version, acceptedAt: new Date() } });
+});
+
+// Holidays — vendor can manage holidays for any of their merchants
+async function assertOwnsMerchant(vendorId, merchantId) {
+  const m = await merchantService.getById(merchantId);
+  if (!m) throw new NotFoundError('Merchant not found');
+  const mvid = m.vendorId?._id || m.vendorId;
+  if (String(mvid) !== String(vendorId)) throw new ForbiddenError('Not your merchant');
+  return m;
+}
+
+exports.listHolidays = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId } = req.query;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const year = req.query.year ? parseInt(req.query.year, 10) : undefined;
+  const data = await holidayService.listForMerchant(merchantId, { year });
+  res.json(data);
+});
+
+exports.addHoliday = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId, date, name } = req.body;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const h = await holidayService.addCustom({ merchantId, date, name, userId: req.user._id });
+  res.status(201).json(h);
+});
+
+exports.deleteHoliday = asyncHandler(async (req, res) => {
+  const vendorId = ensureVendor(req);
+  const { merchantId } = req.query;
+  if (!merchantId) throw new ForbiddenError('merchantId required');
+  await assertOwnsMerchant(vendorId, merchantId);
+  const h = await holidayService.removeCustom({ holidayId: req.params.id, merchantId });
+  res.json(h);
 });

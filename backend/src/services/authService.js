@@ -1,9 +1,13 @@
 const bcrypt = require('bcryptjs');
 const userRepo = require('../repositories/userRepository');
 const otpService = require('./otpService');
+const siteSettingService = require('./siteSettingService');
 const { signAccessToken, signRefreshToken, verifyRefreshToken, hashToken } = require('../utils/crypto');
 const { UnauthorizedError, BadRequestError } = require('../utils/errors');
 const User = require('../models/User');
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
 
 async function requestPhoneOtp({ phone }) {
   return otpService.requestOtp({ phone, purpose: 'login' });
@@ -18,12 +22,16 @@ async function loginWithOtp({ phone, code, fullName, userAgent }) {
       err.code = 'FULL_NAME_REQUIRED';
       throw err;
     }
+    // First-time signup via OTP — stamp current consumer terms version as accepted
+    // (UI shows the agreement notice on the OTP screen so submitting = consent).
+    const terms = await siteSettingService.getTerms('consumer').catch(() => null);
     user = await User.create({
       phone: verified.phone,
       fullName,
       role: 'customer',
       status: 'active',
       phoneVerifiedAt: new Date(),
+      acceptedTerms: terms ? { version: terms.version, acceptedAt: new Date() } : undefined,
     });
   } else {
     if (user.status !== 'active') throw new UnauthorizedError('حساب کاربری فعال نیست');
@@ -57,14 +65,23 @@ async function issueTokens(user, userAgent) {
   return {
     accessToken,
     refreshToken,
+    // Include fields the UI immediately needs (permissions especially) so we
+    // don't have to do a second /auth/me roundtrip just to render the menu.
     user: {
       id: user._id,
       phone: user.phone,
+      email: user.email,
       fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
       role: user.role,
       vendorId: user.vendorId,
       merchantId: user.merchantId,
-      permissions: user.permissions,
+      permissions: user.permissions || [],
+      roleSlug: user.roleSlug || null,
+      planTier: user.planTier || 'basic',
+      status: user.status,
+      acceptedTerms: user.acceptedTerms || null,
+      acceptedMerchantTerms: user.acceptedMerchantTerms || null,
     },
   };
 }
@@ -88,4 +105,22 @@ async function logout(userId, refreshToken) {
   await userRepo.pullRefreshToken(userId, tokenHash);
 }
 
-module.exports = { requestPhoneOtp, loginWithOtp, loginWithPassword, refresh, logout, issueTokens };
+async function changePassword(userId, currentPassword, newPassword) {
+  const user = await userRepo.findById(userId);
+  if (!user) throw new BadRequestError('کاربر یافت نشد');
+  if (!user.passwordHash) throw new BadRequestError('این حساب رمز عبور ندارد');
+  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!ok) throw new UnauthorizedError('رمز عبور فعلی نادرست است');
+  user.passwordHash = await bcrypt.hash(newPassword, 12);
+  await user.save();
+}
+
+module.exports = {
+  requestPhoneOtp,
+  loginWithOtp,
+  loginWithPassword,
+  refresh,
+  logout,
+  changePassword,
+  issueTokens,
+};

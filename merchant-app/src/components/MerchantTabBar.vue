@@ -1,14 +1,30 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useAuthStore } from '../stores/auth';
 
 const route = useRoute();
 const router = useRouter();
-const tabs = [
-  { to: '/', label: 'اسکن', icon: 'scan' },
-  { to: '/history', label: 'تاریخچه', icon: 'list' },
-  { to: '/stats', label: 'آمار', icon: 'chart' },
-  { to: '/settings', label: 'تنظیمات', icon: 'store' },
-];
+const auth = useAuthStore();
+
+function can(p) { return (auth.user?.permissions || []).includes(p); }
+
+const tabs = computed(() => {
+  const t = [{ to: '/', label: 'Scan', icon: 'fa-qrcode' }];
+  if (can('view_stats')) {
+    t.push({ to: '/history', label: 'History', icon: 'fa-list' });
+    t.push({ to: '/stats', label: 'Stats', icon: 'fa-chart-line' });
+  }
+  if (can('manage_coupons') || can('view_coupons')) {
+    t.push({ to: '/my-coupons', label: 'Coupons', icon: 'fa-ticket' });
+  }
+  if (can('manage_hours')) {
+    t.push({ to: '/holidays', label: 'Holidays', icon: 'fa-calendar-xmark' });
+  }
+  t.push({ to: '/settings', label: 'Store', icon: 'fa-store' });
+  return t;
+});
+
 function isActive(to) { return to === '/' ? route.path === '/' : route.path.startsWith(to); }
 </script>
 
@@ -22,10 +38,7 @@ function isActive(to) { return to === '/' ? route.path === '/' : route.path.star
         class="flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-full transition-all active:scale-95"
         :class="isActive(t.to) ? 'text-teal-600' : 'text-ink-500'"
       >
-        <svg v-if="t.icon==='scan'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M21 7V5a2 2 0 0 0-2-2h-2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 12h18"/></svg>
-        <svg v-if="t.icon==='list'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-        <svg v-if="t.icon==='chart'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 19V5M4 19h16M8 16V11M12 16V8M16 16v-3"/></svg>
-        <svg v-if="t.icon==='store'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 9V7l2-4h12l2 4v2"/><path d="M4 9a3 3 0 0 0 6 0 3 3 0 0 0 4 0 3 3 0 0 0 6 0"/><path d="M5 9v11h14V9"/></svg>
+        <i class="fa-solid text-lg" :class="t.icon"></i>
         <span class="text-[10px] font-medium">{{ t.label }}</span>
       </button>
     </div>

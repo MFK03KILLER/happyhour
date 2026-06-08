@@ -2,10 +2,12 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
-import IranPaySheet from '../components/IranPaySheet.vue';
+import ApplePaySheet from '../components/ApplePaySheet.vue';
+import { useToastStore } from '../stores/toast';
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToastStore();
 const bag = ref(null);
 const loading = ref(true);
 const showPay = ref(false);
@@ -36,9 +38,10 @@ async function onConfirm(paymentMethod) {
   try {
     await client.post(`/customer/surprise-bags/${bag.value._id}/buy`, { paymentMethod, fulfillment: fulfillment.value });
     showPay.value = false;
+    toast.success('Reserved! Pick up during the window shown on the bag.', { title: 'Bag reserved 🛍️' });
     router.push('/wallet');
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Purchase failed');
+    toast.error(e.response?.data?.error?.message || 'Purchase failed', { title: 'Payment failed' });
   }
 }
 

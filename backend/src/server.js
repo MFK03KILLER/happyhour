@@ -8,6 +8,14 @@ async function start() {
     await connectDB();
     const flagService = require('./services/featureFlagService');
     await flagService.syncRegistry();
+    const roleService = require('./services/roleService');
+    await roleService.syncSystemRoles();
+    const refreshed = await roleService.syncUserPermissionsFromRoles();
+    if (refreshed > 0) logger.info(`Refreshed permissions on ${refreshed} user(s) from current role definitions`);
+    const siteSettingService = require('./services/siteSettingService');
+    await siteSettingService.ensureSeed();
+    const holidayService = require('./services/holidayService');
+    await holidayService.seedUSFederalHolidays();
     const app = buildApp();
     app.listen(env.PORT, () => {
       logger.info(`Happy Hour API running on http://localhost:${env.PORT}`);

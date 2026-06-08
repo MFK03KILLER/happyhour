@@ -14,6 +14,9 @@ const env = {
   MOCK_PAYMENTS: process.env.MOCK_PAYMENTS !== 'false',
   QR_SIGNING_SECRET: process.env.QR_SIGNING_SECRET || 'dev_qr_secret',
   QR_TTL_SECONDS: parseInt(process.env.QR_TTL_SECONDS || '60', 10),
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  APPLE_SERVICE_ID: process.env.APPLE_SERVICE_ID || '',
+  APPLE_TEAM_ID: process.env.APPLE_TEAM_ID || '',
 };
 
 module.exports = env;

@@ -31,8 +31,21 @@ const couponSchema = new mongoose.Schema({
   deliveryFeeUSD: { type: Number, default: 0, min: 0 },
   status: { type: String, enum: ['draft', 'active', 'paused', 'expired', 'sold_out'], default: 'active', index: true },
   categorySlug: { type: String, index: true },
+  tags: { type: [String], default: [], index: true },
+  featured: { type: Boolean, default: false, index: true },
+  todaysOffer: { type: Boolean, default: false, index: true },
+  popupOffer: { type: Boolean, default: false },
+  activeWindow: {
+    days: [{ type: String, enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'daily'] }],
+    start: String,
+    end: String,
+  },
+  // When true (default), this coupon is unavailable on US federal holidays + the merchant's custom holidays.
+  // Set to false if the merchant WANTS the coupon to keep running through holidays.
+  disabledOnHolidays: { type: Boolean, default: true },
 }, { timestamps: true });
 
 couponSchema.index({ offerKind: 1, status: 1, validUntil: 1 });
+couponSchema.index({ featured: 1, todaysOffer: 1, status: 1 });
 
 module.exports = mongoose.model('Coupon', couponSchema);

@@ -143,5 +143,37 @@ router.get('/users', ctrl.listUsers);
 router.post('/users', writeLimiter, validate(createUserSchema), ctrl.createUser);
 router.put('/users/:id', writeLimiter, ctrl.updateUser);
 router.delete('/users/:id', writeLimiter, ctrl.deleteUser);
+router.get('/roles', ctrl.listRoles);
+
+/**
+ * @openapi
+ * /admin/site-settings/terms:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get the current Terms of Service (markdown + version)
+ *     security: [{ bearerAuth: [] }]
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update Terms of Service. Auto-increments the version, forcing all users to re-accept on next signup.
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/site-settings/terms', ctrl.getTerms);
+router.put('/site-settings/terms', writeLimiter, ctrl.updateTerms);
+
+/**
+ * @openapi
+ * /admin/site-content:
+ *   get:
+ *     tags: [Admin]
+ *     summary: List all footer content blocks (Membership, Careers, About, etc.)
+ *     security: [{ bearerAuth: [] }]
+ * /admin/site-content/{key}:
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update one content block. Auto-bumps its version.
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/site-content', ctrl.listSiteContent);
+router.put('/site-content/:key', writeLimiter, ctrl.updateSiteContent);
 
 module.exports = router;

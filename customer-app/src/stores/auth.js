@@ -12,12 +12,25 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (s) => !!s.accessToken,
   },
   actions: {
-    async requestOtp(phone) {
-      const { data } = await client.post('/auth/otp/request', { phone });
-      return data;
+    async login(email, password) {
+      const { data } = await client.post('/auth/login', { email, password });
+      this.setSession(data);
+      try { await this.fetchMe(); } catch {}
+      return data.user;
     },
     async verifyOtp({ phone, code, fullName }) {
       const { data } = await client.post('/auth/otp/verify', { phone, code, fullName });
+      this.setSession(data);
+      try { await this.fetchMe(); } catch {}
+      return data.user;
+    },
+    async loginWithGoogle(idToken, acceptedTermsVersion) {
+      const { data } = await client.post('/auth/google', { idToken, acceptedTermsVersion });
+      this.setSession(data);
+      return data.user;
+    },
+    async loginWithApple({ idToken, fullName, acceptedTermsVersion }) {
+      const { data } = await client.post('/auth/apple', { idToken, fullName, acceptedTermsVersion });
       this.setSession(data);
       return data.user;
     },
@@ -44,6 +57,8 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = null;
       localStorage.removeItem('hh_access_token');
       localStorage.removeItem('hh_refresh_token');
+      localStorage.removeItem('hh_onboarded');
+      sessionStorage.removeItem('hh_splash_shown');
     },
   },
 });

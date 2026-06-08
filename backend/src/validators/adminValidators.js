@@ -25,7 +25,18 @@ const merchantSchema = z.object({
   slug: z.string().optional(),
   logoUrl: z.string().url().optional(),
   coverImageUrl: z.string().url().optional(),
-  category: z.enum(['restaurant', 'cafe', 'bar', 'retail', 'fitness', 'beauty', 'entertainment']),
+  category: z.enum(['dining', 'cafe', 'bar', 'activities', 'services', 'wellness', 'hotels']),
+  subCategory: z.string().optional(),
+  cuisineTags: z.array(z.string()).optional(),
+  description: z.string().optional(),
+  priceLevel: z.number().int().min(1).max(4).optional(),
+  rating: z.number().min(0).max(5).optional(),
+  ratingCount: z.number().int().min(0).optional(),
+  offPeakHours: z.array(z.object({
+    day: z.enum(['mon','tue','wed','thu','fri','sat','sun','daily']),
+    start: z.string(),
+    end: z.string(),
+  })).optional(),
   address: z.object({
     street: z.string().optional(),
     city: z.string().optional(),
@@ -65,6 +76,15 @@ const couponSchema = z.object({
   deliveryFeeUSD: z.number().min(0).optional(),
   categorySlug: z.string().optional(),
   status: z.enum(['draft', 'active', 'paused', 'expired', 'sold_out']).optional(),
+  tags: z.array(z.string()).optional(),
+  featured: z.boolean().optional(),
+  todaysOffer: z.boolean().optional(),
+  popupOffer: z.boolean().optional(),
+  activeWindow: z.object({
+    days: z.array(z.enum(['mon','tue','wed','thu','fri','sat','sun','daily'])).optional(),
+    start: z.string().optional(),
+    end: z.string().optional(),
+  }).optional(),
 });
 
 const createUserSchema = z.object({
@@ -74,8 +94,10 @@ const createUserSchema = z.object({
   role: z.enum(['admin', 'vendor', 'merchant_staff', 'customer']),
   vendorId: z.string().optional(),
   merchantId: z.string().optional(),
-  permissions: z.array(z.enum(['manage_coupons', 'view_stats', 'manage_team', 'scan_only', 'manage_merchants'])).optional(),
-  email: z.string().email().optional(),
+  roleSlug: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+  status: z.enum(['active', 'suspended', 'pending']).optional(),
+  phone: z.string().optional(),
 });
 
 module.exports = { vendorSchema, merchantSchema, couponSchema, createUserSchema };
