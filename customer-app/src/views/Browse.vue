@@ -90,12 +90,12 @@ function sortLabel(s) {
       <h1 class="text-3xl font-bold tracking-tight">تخفیف‌ها</h1>
       <div class="mt-4 relative">
         <i class="fa-solid fa-magnifying-glass absolute right-4 top-1/2 -translate-y-1/2 text-ink-300"></i>
-        <input v-model="search" @keyup.enter="load" class="input pr-11" placeholder="Search merchants, cuisines..." />
+        <input v-model="search" @keyup.enter="load" class="input pr-11" placeholder="جست‌وجوی فروشگاه، غذا..." />
       </div>
     </header>
 
     <div class="mt-4 flex gap-2 px-5 overflow-x-auto scroll-no-bar">
-      <button @click="setCat('')" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition" :class="!category ? 'bg-ink-900 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">All</button>
+      <button @click="setCat('')" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition" :class="!category ? 'bg-ink-900 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">همه</button>
       <button v-for="c in categories" :key="c._id" @click="setCat(c.slug)" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition flex items-center gap-1.5" :class="category===c.slug ? 'bg-ink-900 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">
         <i class="fa-solid" :class="c.iconUrl"></i>
         {{ c.name }}
@@ -117,7 +117,7 @@ function sortLabel(s) {
       </button>
       <button @click="showFilters = true" class="chip transition relative" :class="activeFilterCount ? 'bg-teal-600 text-white' : 'bg-white border border-ink-300/30 text-ink-700'">
         <i class="fa-solid fa-sliders text-[9px]"></i>
-        Filters
+        فیلترها
         <span v-if="activeFilterCount" class="absolute -top-1 -right-1 bg-coral-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{{ activeFilterCount }}</span>
       </button>
     </div>
@@ -128,7 +128,7 @@ function sortLabel(s) {
       </div>
       <div v-else-if="merchants.length === 0" class="text-center py-12 text-ink-500">
         <div class="text-4xl mb-2">🔍</div>
-        <div>No results — try different filters.</div>
+        <div>نتیجه‌ای یافت نشد — فیلتر دیگری امتحان کنید.</div>
       </div>
       <button v-else v-for="m in merchants" :key="m._id" @click="router.push(`/merchant-detail/${m._id}`)" class="block w-full text-left active:scale-[.985] transition">
         <div class="ios-card flex overflow-hidden">
@@ -158,13 +158,13 @@ function sortLabel(s) {
       <div class="w-full bg-white rounded-t-3xl p-6 pb-[max(env(safe-area-inset-bottom),24px)] animate-slide-up" @click.stop>
         <div class="w-10 h-1.5 bg-ink-300/30 rounded-full mx-auto mb-4"></div>
         <div class="flex items-center justify-between mb-4">
-          <div class="text-xl font-bold">Filters</div>
-          <button @click="clearFilters" class="text-sm text-teal-700 font-semibold">Clear</button>
+          <div class="text-xl font-bold">فیلترها</div>
+          <button @click="clearFilters" class="text-sm text-teal-700 font-semibold">پاک کردن</button>
         </div>
 
         <div class="space-y-5">
           <div>
-            <div class="text-xs uppercase font-semibold text-ink-500 mb-2">Price range</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 mb-2">محدوده قیمت</div>
             <div class="grid grid-cols-4 gap-2">
               <button v-for="n in 4" :key="n" @click="priceMax = (priceMax === n ? null : n)" class="py-2.5 rounded-2xl border-2 transition active:scale-95" :class="priceMax === n ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-ink-300/20 text-ink-700'">
                 <span class="font-bold">{{ '$'.repeat(n) }}</span>
@@ -173,7 +173,7 @@ function sortLabel(s) {
           </div>
 
           <div>
-            <div class="text-xs uppercase font-semibold text-ink-500 mb-2">Minimum rating</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 mb-2">حداقل امتیاز</div>
             <div class="grid grid-cols-5 gap-2">
               <button v-for="r in [3, 3.5, 4, 4.5, 5]" :key="r" @click="ratingMin = (ratingMin === r ? null : r)" class="py-2.5 rounded-2xl border-2 transition active:scale-95 flex items-center justify-center gap-1 text-sm" :class="ratingMin === r ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-ink-300/20 text-ink-700'">
                 <i class="fa-solid fa-star text-yellow-500 text-[10px]"></i>
@@ -183,7 +183,7 @@ function sortLabel(s) {
           </div>
         </div>
 
-        <button @click="applyFilters" class="ios-button-primary w-full mt-6">Apply filters</button>
+        <button @click="applyFilters" class="ios-button-primary w-full mt-6">اعمال فیلتر</button>
       </div>
     </div>
   </div>

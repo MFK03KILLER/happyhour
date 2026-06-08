@@ -17,10 +17,10 @@ const palette = {
 const gradient = computed(() => palette[props.variant] || palette.today);
 
 const variantLabel = computed(() => ({
-  today: "Today's Offer",
-  popup: 'Pop-up Offer',
-  always: 'Always Available',
-}[props.variant] || 'Offer'));
+  today: 'آفر امروز',
+  popup: 'آفر ویژه',
+  always: 'همیشه فعال',
+}[props.variant] || 'آفر'));
 
 const badge = computed(() => {
   const t = props.coupon.offerType;
@@ -81,11 +81,11 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
             </div>
             <span v-if="outsideHours" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/25 text-[9px] font-bold uppercase">
               <i class="fa-solid fa-hourglass-half text-[8px]"></i>
-              Outside hours
+              خارج از ساعت
             </span>
             <span v-if="coupon.unavailableToday" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/30 text-[9px] font-bold uppercase">
               <i class="fa-solid fa-calendar-xmark text-[8px]"></i>
-              Closed today · {{ coupon.unavailableToday.name }}
+              امروز تعطیل · {{ coupon.unavailableToday.name }}
             </span>
           </div>
 
@@ -96,10 +96,10 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
               class="bg-white rounded-full px-4 py-1.5 text-xs font-bold whitespace-nowrap text-ink-900 active:scale-95 transition shadow-soft inline-flex items-center gap-1"
             >Claim <i class="fa-solid fa-arrow-right text-[10px]"></i></button>
             <button v-else-if="coupon.unavailableToday" disabled class="bg-white/15 backdrop-blur rounded-full px-3 py-1.5 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 opacity-80">
-              <i class="fa-solid fa-calendar-xmark text-[9px]"></i> Try again tomorrow
+              <i class="fa-solid fa-calendar-xmark text-[9px]"></i> فردا امتحان کنید
             </button>
             <button v-else class="bg-white/25 backdrop-blur rounded-full px-3 py-1.5 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1">
-              <i class="fa-solid fa-lock text-[9px]"></i> Subscribe to unlock
+              <i class="fa-solid fa-lock text-[9px]"></i> برای دسترسی عضو شوید
             </button>
           </div>
         </div>

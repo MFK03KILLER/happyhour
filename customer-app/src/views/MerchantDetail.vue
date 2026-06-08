@@ -176,15 +176,15 @@ function offPeakLabel() {
       <div class="mt-4 flex gap-2">
         <button @click="openDirections" class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
           <i class="fa-solid fa-diamond-turn-right text-teal-700"></i>
-          <span class="font-semibold text-sm">Directions</span>
+          <span class="font-semibold text-sm">مسیریابی</span>
         </button>
         <a v-if="merchant.phone" :href="`tel:${merchant.phone}`" class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
           <i class="fa-solid fa-phone text-teal-700"></i>
-          <span class="font-semibold text-sm">Call</span>
+          <span class="font-semibold text-sm">تماس</span>
         </a>
         <button class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
           <i class="fa-solid fa-circle-info text-teal-700"></i>
-          <span class="font-semibold text-sm">About</span>
+          <span class="font-semibold text-sm">درباره</span>
         </button>
       </div>
 
@@ -207,8 +207,8 @@ function offPeakLabel() {
           <i class="fa-solid fa-clock"></i>
         </div>
         <div class="flex-1">
-          <div class="font-bold text-sm text-coral-600">Happy Hour: {{ offPeakLabel() }}</div>
-          <div class="text-xs text-ink-500 mt-0.5">Coupons available during these hours</div>
+          <div class="font-bold text-sm text-coral-600">هپی اَور: {{ offPeakLabel() }}</div>
+          <div class="text-xs text-ink-500 mt-0.5">کوپن‌ها در این ساعت‌ها قابل استفاده هستند</div>
         </div>
       </div>
     </div>
@@ -217,7 +217,7 @@ function offPeakLabel() {
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-fire text-coral-500"></i>
-          <h2 class="text-lg font-bold">Today's Offers</h2>
+          <h2 class="text-lg font-bold">آفرهای امروز</h2>
         </div>
         <span class="chip bg-coral-500/10 text-coral-600 text-[10px]">{{ todaysOffers.length }}</span>
       </div>
@@ -234,7 +234,7 @@ function offPeakLabel() {
     <section v-if="popupOffers.length" class="px-5 mt-7">
       <div class="flex items-center gap-2 mb-3">
         <i class="fa-solid fa-bolt text-purple-500"></i>
-        <h2 class="text-lg font-bold">Pop-up Offers</h2>
+        <h2 class="text-lg font-bold">آفرهای ویژه پاپ‌آپ</h2>
       </div>
       <div class="space-y-3">
         <TicketCoupon
@@ -247,7 +247,7 @@ function offPeakLabel() {
     </section>
 
     <section v-if="otherOffers.length" class="px-5 mt-7">
-      <h2 class="text-lg font-bold mb-3">More Offers</h2>
+      <h2 class="text-lg font-bold mb-3">آفرهای بیشتر</h2>
       <div class="space-y-3">
         <TicketCoupon
           v-for="c in otherOffers" :key="c._id"
@@ -261,11 +261,11 @@ function offPeakLabel() {
     <div v-if="!isSubscribed" class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
       <div class="flex items-center justify-between mb-2">
         <div>
-          <div class="text-xs text-ink-500">Member-only</div>
-          <div class="font-bold">Subscribe to unlock all</div>
+          <div class="text-xs text-ink-500">ویژه اعضا</div>
+          <div class="font-bold">عضو شوید و همه را باز کنید</div>
         </div>
-        <div class="text-right">
-          <div class="text-lg font-bold text-teal-700">$4.99 / mo</div>
+        <div class="text-left">
+          <div class="text-lg font-bold text-teal-700">۴۹۹٬۰۰۰ تومان / ماه</div>
         </div>
       </div>
       <button @click="router.push('/subscribe')" class="ios-button-primary w-full">

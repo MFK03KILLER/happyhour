@@ -83,11 +83,11 @@ function statusLabel(s) {
   <div class="pb-28 safe-top">
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">Wallet</h1>
-        <p class="text-ink-500 mt-1">Your claimed coupons.</p>
+        <h1 class="text-3xl font-bold tracking-tight">کیف پول</h1>
+        <p class="text-ink-500 mt-1">کوپن‌های دریافت‌شده شما.</p>
       </div>
       <div class="ios-card p-3 text-center">
-        <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">Today</div>
+        <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">امروز</div>
         <div class="text-xl font-bold text-teal-700">{{ daily.remaining }}<span class="text-sm text-ink-500">/{{ daily.limit }}</span></div>
       </div>
     </header>
@@ -95,7 +95,7 @@ function statusLabel(s) {
     <div class="mx-5 mt-3 ios-card p-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200">
       <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
       <p class="text-xs text-amber-900 leading-relaxed">
-        <strong>Heads up:</strong> Each coupon is only redeemable during its <strong>happy hour window</strong>. The merchant can only accept your coupon during those times. Check the time on each card below before you go!
+        <strong>توجه:</strong> هر کوپن فقط در <strong>بازه‌ی هپی اَور</strong> خودش قابل استفاده است. فروشگاه فقط در آن ساعت‌ها کوپن را می‌پذیرد. قبل از رفتن، ساعت روی هر کارت را چک کنید!
       </p>
     </div>
 
@@ -106,9 +106,9 @@ function statusLabel(s) {
       <div class="mx-auto w-20 h-20 rounded-3xl bg-cream-200 flex items-center justify-center">
         <i class="fa-solid fa-wallet text-3xl text-ink-300"></i>
       </div>
-      <div class="mt-4 font-semibold">No coupons yet</div>
-      <p class="text-ink-500 text-sm mt-1">Browse offers and claim your favorites.</p>
-      <router-link to="/browse" class="ios-button-primary inline-block mt-5">Browse offers</router-link>
+      <div class="mt-4 font-semibold">هنوز کوپنی ندارید</div>
+      <p class="text-ink-500 text-sm mt-1">آفرها را مرور و کوپن مورد علاقه را دریافت کنید.</p>
+      <router-link to="/browse" class="ios-button-primary inline-block mt-5">مشاهده آفرها</router-link>
     </div>
     <div v-else class="px-5 mt-4 space-y-4">
       <div v-for="p in items" :key="p._id" class="ios-card overflow-hidden">
@@ -117,12 +117,12 @@ function statusLabel(s) {
             <img :src="p.couponId?.heroImageUrl" class="w-full h-full object-cover bg-cream-200" />
             <div v-if="isUsableNow(p) && p.status === 'active' && p.usesRemaining > 0" class="absolute bottom-1.5 left-1.5 right-1.5">
               <span class="block text-center text-[9px] font-bold uppercase tracking-wider bg-green-500 text-white rounded-full py-0.5">
-                Usable now
+                الان قابل استفاده
               </span>
             </div>
             <div v-else-if="!isUsableNow(p) && p.status === 'active'" class="absolute bottom-1.5 left-1.5 right-1.5">
               <span class="block text-center text-[9px] font-bold uppercase tracking-wider bg-amber-500 text-white rounded-full py-0.5">
-                Outside hours
+                خارج از ساعت
               </span>
             </div>
           </div>
@@ -134,19 +134,19 @@ function statusLabel(s) {
               <div class="flex items-center gap-1.5">
                 <i :class="isUsableNow(p) ? 'fa-solid fa-circle-check' : 'fa-regular fa-clock'"></i>
                 <span class="font-bold">
-                  {{ isUsableNow(p) ? 'Redeem now' : nextWindowText(p) || 'Outside active hours' }}
+                  {{ isUsableNow(p) ? 'الان استفاده کنید' : nextWindowText(p) || 'خارج از ساعت فعال' }}
                 </span>
               </div>
               <div class="mt-0.5 opacity-80">
-                Active {{ windowDaysLabel(activeWindow(p).days) }} · {{ fmtTime(activeWindow(p).start) }}–{{ fmtTime(activeWindow(p).end) }}
+                فعال {{ windowDaysLabel(activeWindow(p).days) }} · {{ fmtTime(activeWindow(p).start) }}–{{ fmtTime(activeWindow(p).end) }}
               </div>
             </div>
             <div v-else class="mt-2 text-xs text-ink-500">
-              <i class="fa-solid fa-circle-check text-green-600 mr-1"></i> Anytime
+              <i class="fa-solid fa-circle-check text-green-600 mr-1"></i> در هر زمان قابل استفاده
             </div>
 
             <div class="flex items-center gap-2 mt-2">
-              <span class="chip bg-teal-50 text-teal-700 text-[10px]">{{ p.usesRemaining }} / {{ p.couponId?.maxUsesPerCustomer }} use{{ p.couponId?.maxUsesPerCustomer > 1 ? 's' : '' }} left</span>
+              <span class="chip bg-teal-50 text-teal-700 text-[10px]">{{ p.usesRemaining }} از {{ p.couponId?.maxUsesPerCustomer }} استفاده باقی مانده</span>
               <span class="chip bg-cream-200 text-ink-700 text-[10px]">{{ statusLabel(p.status) }}</span>
             </div>
             <div class="mt-3">
@@ -155,8 +155,8 @@ function statusLabel(s) {
                 v-if="p.status === 'active' && p.usesRemaining > 0"
                 class="text-sm font-semibold active:opacity-70"
                 :class="isUsableNow(p) ? 'text-teal-700' : 'text-amber-700'"
-              >Show to merchant <i class="fa-solid fa-arrow-right text-[10px] ml-0.5"></i></router-link>
-              <div v-else class="text-sm text-ink-300">Not redeemable</div>
+              >نمایش به فروشگاه <i class="fa-solid fa-arrow-left text-[10px] mr-0.5"></i></router-link>
+              <div v-else class="text-sm text-ink-300">قابل استفاده نیست</div>
             </div>
           </div>
         </div>
