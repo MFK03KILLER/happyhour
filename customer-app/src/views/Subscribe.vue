@@ -16,7 +16,6 @@ const showPay = ref(false);
 const selectedTier = ref('gold');
 const billing = ref('monthly');
 const loading = ref(true);
-const showPay = ref(false);
 
 const plans = {
   monthly: { label: 'ماهانه', amount: 299000, perMonth: 299000, period: 'ماه' },
