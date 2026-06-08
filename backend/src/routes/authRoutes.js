@@ -4,7 +4,8 @@ const validate = require('../middlewares/validate');
 const { authenticate } = require('../middlewares/auth');
 const { authLimiter } = require('../middlewares/rateLimit');
 const {
-  registerSchema,
+  requestOtpSchema,
+  verifyOtpSchema,
   loginSchema,
   refreshSchema,
   changePasswordSchema,
