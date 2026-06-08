@@ -48,7 +48,7 @@ async function save() {
     draft.value = { title: data.title, content: data.content };
     savedAt.value = new Date();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Save failed');
+    alert(e.response?.data?.error?.message || 'ذخیره ناموفق بود');
   } finally { saving.value = false; }
 }
 
@@ -73,7 +73,7 @@ const grouped = computed(() => {
 });
 
 function sectionLabel(s) {
-  return { membership: 'Membership', company: 'Company', help: 'Help & Support', legal: 'Legal' }[s] || s;
+  return { membership: 'اشتراک', company: 'شرکت', help: 'راهنما و پشتیبانی', legal: 'قوانین' }[s] || s;
 }
 
 const wordCount = computed(() => draft.value.content.trim().split(/\s+/).filter(Boolean).length);
@@ -119,8 +119,8 @@ onMounted(load);
 
 <template>
   <div class="p-5 md:p-8">
-    <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Site Content</h1>
-    <p class="text-ink-500 mt-1">All clickable links in the customer-app footer. Pick a block on the left to edit its content. Saving bumps that block's version.</p>
+    <h1 class="text-2xl md:text-3xl font-bold tracking-tight">محتوای سایت</h1>
+    <p class="text-ink-500 mt-1">همه‌ی لینک‌های فوتر اپلیکیشن مشتری. یک بخش را از سمت راست انتخاب کنید تا محتوای آن را ویرایش کنید. با ذخیره، نسخه‌ی آن بخش ارتقا می‌یابد.</p>
 
     <div v-if="loading" class="mt-6 ios-card h-96 animate-pulse"></div>
 
@@ -147,14 +147,14 @@ onMounted(load);
         <div class="border-b border-cream-200 px-4 py-3 flex flex-wrap items-center gap-3 bg-cream-50">
           <input
             v-model="draft.title"
-            placeholder="Title"
+            placeholder="عنوان"
             class="flex-1 min-w-[200px] bg-white border border-ink-300/20 rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-teal-600"
           />
           <div class="flex gap-1">
-            <button @click="preview = false" class="px-3 py-1.5 rounded-full text-xs font-semibold" :class="!preview ? 'bg-teal-600 text-white' : 'text-ink-500'">Edit</button>
-            <button @click="preview = true" class="px-3 py-1.5 rounded-full text-xs font-semibold" :class="preview ? 'bg-teal-600 text-white' : 'text-ink-500'">Preview</button>
+            <button @click="preview = false" class="px-3 py-1.5 rounded-full text-xs font-semibold" :class="!preview ? 'bg-teal-600 text-white' : 'text-ink-500'">ویرایش</button>
+            <button @click="preview = true" class="px-3 py-1.5 rounded-full text-xs font-semibold" :class="preview ? 'bg-teal-600 text-white' : 'text-ink-500'">پیش‌نمایش</button>
           </div>
-          <div class="text-[11px] text-ink-500">{{ wordCount }} words · {{ draft.content.length }} chars · <span class="font-mono">{{ selectedKey }}</span></div>
+          <div class="text-[11px] text-ink-500">{{ wordCount }} کلمه · {{ draft.content.length }} کاراکتر · <span class="font-mono">{{ selectedKey }}</span></div>
         </div>
 
         <textarea
@@ -162,32 +162,32 @@ onMounted(load);
           v-model="draft.content"
           class="w-full p-4 font-mono text-sm focus:outline-none"
           rows="22"
-          placeholder="Markdown — use # heading, ## subheading, - list, > quote, [link](url), **bold**, *italic*"
+          placeholder="با markdown بنویسید — # عنوان، ## زیرعنوان، - فهرست، > نقل قول، [لینک](url)، **پررنگ**، *کج*"
         ></textarea>
 
         <div v-else class="p-5 prose-sm" v-html="renderMd(draft.content)"></div>
 
         <div class="border-t border-cream-200 px-4 py-3 flex items-center gap-2 flex-wrap bg-white">
           <button :disabled="!dirty || saving" @click="save" class="ios-button-primary">
-            {{ saving ? 'Saving…' : dirty ? 'Save & bump version' : 'No changes' }}
+            {{ saving ? 'در حال ذخیره…' : dirty ? 'ذخیره و ارتقای نسخه' : 'بدون تغییر' }}
           </button>
-          <button :disabled="!dirty" @click="reset" class="ios-card px-4 py-2.5 text-sm font-semibold text-ink-700">Reset</button>
-          <span v-if="savedAt" class="text-xs text-teal-700 font-semibold">✓ Saved {{ savedAt.toLocaleTimeString() }}</span>
+          <button :disabled="!dirty" @click="reset" class="ios-card px-4 py-2.5 text-sm font-semibold text-ink-700">بازنشانی</button>
+          <span v-if="savedAt" class="text-xs text-teal-700 font-semibold">✓ ذخیره شد در {{ savedAt.toLocaleTimeString('fa-IR') }}</span>
         </div>
       </div>
 
       <div v-else class="ios-card p-6 text-center text-ink-500 text-sm">
-        ← Pick a block from the left to start editing.
+        ← یک بخش از سمت راست انتخاب کنید تا شروع به ویرایش کنید.
       </div>
     </div>
 
     <div class="mt-8 ios-card p-5 bg-cream-100 border border-ink-300/20">
-      <div class="text-sm font-bold mb-1">ℹ️ How site content works</div>
+      <div class="text-sm font-bold mb-1">ℹ️ نحوه کار محتوای سایت</div>
       <ul class="text-sm text-ink-700 space-y-1 list-disc list-inside">
-        <li>The customer-app footer fetches each block on demand when the user clicks the link.</li>
-        <li>Every save bumps that one block's version (Membership and Careers don't affect each other).</li>
-        <li>Every save is audit-logged with previous + new content.</li>
-        <li>Footer link <strong>"Terms of Use"</strong> opens the existing Consumer Terms document (Admin → Terms → Consumer tab), not edited here.</li>
+        <li>فوتر اپلیکیشن مشتری وقتی کاربر روی لینک کلیک کند، هر بخش را به‌صورت آنی بار می‌کند.</li>
+        <li>هر ذخیره نسخه‌ی همان بخش را ارتقا می‌دهد (اشتراک و فرصت‌های شغلی روی هم اثر ندارند).</li>
+        <li>هر ذخیره در لاگ ممیزی با محتوای قبلی و جدید ثبت می‌شود.</li>
+        <li>لینک <strong>«شرایط استفاده»</strong> در فوتر، سند موجود قوانین مشتری را باز می‌کند (پنل ادمین → قوانین → تب مشتری)، اینجا ویرایش نمی‌شود.</li>
       </ul>
     </div>
   </div>
