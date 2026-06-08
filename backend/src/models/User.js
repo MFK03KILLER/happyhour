@@ -7,9 +7,12 @@ const refreshTokenSchema = new mongoose.Schema({
 }, { _id: false });
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+  // Persian (farsi) version identifies users by phone, English version by email.
+  // Both optional + sparse-unique so each branch can ignore the other and we
+  // don't trip "email required" on phone-only Persian users.
+  email: { type: String, unique: true, sparse: true, lowercase: true, trim: true, index: true },
   passwordHash: String,
-  phone: String,
+  phone: { type: String, unique: true, sparse: true, index: true },
   fullName: { type: String, required: true },
   avatarUrl: String,
   authProvider: { type: String, enum: ['password', 'google', 'apple'], default: 'password' },
