@@ -127,33 +127,33 @@ onMounted(load);
   <div class="p-5 md:p-8">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Users</h1>
-        <p class="text-ink-500 mt-1">All accounts · {{ items.length }} total</p>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">کاربران</h1>
+        <p class="text-ink-500 mt-1">همه‌ی حساب‌ها · مجموع {{ items.length }}</p>
       </div>
-      <button @click="openNew" class="ios-button-primary"><i class="fa-solid fa-user-plus mr-2"></i>New user</button>
+      <button @click="openNew" class="ios-button-primary"><i class="fa-solid fa-user-plus mr-2"></i>کاربر جدید</button>
     </div>
 
     <div v-if="lastCreated" class="mt-4 ios-card p-4 bg-green-50 border border-green-300">
-      <div class="font-bold text-green-700"><i class="fa-solid fa-circle-check mr-1"></i>User created</div>
-      <p class="text-sm text-ink-700 mt-1">Share these credentials with <strong>{{ lastCreated.name }}</strong>:</p>
+      <div class="font-bold text-green-700"><i class="fa-solid fa-circle-check mr-1"></i>کاربر ساخته شد</div>
+      <p class="text-sm text-ink-700 mt-1">این اطلاعات ورود را با <strong>{{ lastCreated.name }}</strong> به اشتراک بگذارید:</p>
       <div class="mt-2 font-mono text-sm">
         <div>{{ lastCreated.email }}</div>
         <div>{{ lastCreated.password }}</div>
       </div>
-      <button @click="lastCreated = null" class="text-xs text-green-700 font-semibold mt-2">Dismiss</button>
+      <button @click="lastCreated = null" class="text-xs text-green-700 font-semibold mt-2">بستن</button>
     </div>
 
     <div class="mt-4 ios-card p-3 flex gap-2 flex-wrap">
       <div class="relative flex-1 min-w-[200px]">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-300"></i>
-        <input v-model="search" @keyup.enter="load" class="input pl-9" placeholder="Search by name or email..." />
+        <input v-model="search" @keyup.enter="load" class="input pl-9" placeholder="جست‌وجو بر اساس نام یا ایمیل..." />
       </div>
       <select v-model="filterRole" @change="load" class="input md:max-w-[160px]">
-        <option value="">All roles</option>
-        <option value="admin">Admin</option>
-        <option value="vendor">Vendor</option>
-        <option value="merchant_staff">Merchant Staff</option>
-        <option value="customer">Customer</option>
+        <option value="">همه نقش‌ها</option>
+        <option value="admin">ادمین</option>
+        <option value="vendor">وندور</option>
+        <option value="merchant_staff">پرسنل فروشگاه</option>
+        <option value="customer">مشتری</option>
       </select>
     </div>
 
@@ -162,7 +162,7 @@ onMounted(load);
     </div>
     <div v-else-if="items.length === 0" class="mt-12 text-center text-ink-500">
       <i class="fa-solid fa-users text-4xl text-ink-300"></i>
-      <div class="mt-3">No users match.</div>
+      <div class="mt-3">کاربری با این معیار یافت نشد.</div>
     </div>
     <div v-else class="mt-6 ios-card divide-y divide-cream-200">
       <div v-for="u in items" :key="u._id" class="p-4 flex items-center gap-3" :class="u.status === 'suspended' ? 'opacity-60' : ''">
@@ -182,13 +182,13 @@ onMounted(load);
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <button @click="toggleStatus(u)" class="text-sm font-semibold" :class="u.status === 'active' ? 'text-amber-600' : 'text-green-700'" :title="u.status === 'active' ? 'Suspend' : 'Activate'">
+          <button @click="toggleStatus(u)" class="text-sm font-semibold" :class="u.status === 'active' ? 'text-amber-600' : 'text-green-700'" :title="u.status === 'active' ? 'تعلیق' : 'فعال‌سازی'">
             <i class="fa-solid" :class="u.status === 'active' ? 'fa-pause' : 'fa-play'"></i>
           </button>
-          <button @click="openEdit(u)" class="text-sm font-semibold text-teal-700" title="Edit">
+          <button @click="openEdit(u)" class="text-sm font-semibold text-teal-700" title="ویرایش">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
-          <button @click="del(u)" class="text-sm font-semibold text-coral-600" title="Delete">
+          <button @click="del(u)" class="text-sm font-semibold text-coral-600" title="حذف">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
@@ -198,42 +198,42 @@ onMounted(load);
     <div v-if="showForm" class="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-0 md:p-6">
       <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] overflow-y-auto max-h-[90vh]">
         <div class="flex items-center justify-between mb-4">
-          <div class="text-xl font-bold">{{ editing ? 'Edit user' : 'New user' }}</div>
-          <button @click="showForm = false" class="text-ink-500">Cancel</button>
+          <div class="text-xl font-bold">{{ editing ? 'ویرایش کاربر' : 'کاربر جدید' }}</div>
+          <button @click="showForm = false" class="text-ink-500">انصراف</button>
         </div>
         <form @submit.prevent="save" class="space-y-3">
-          <input v-model="form.fullName" class="input" placeholder="Full name" required />
-          <input v-model="form.email" type="email" class="input" placeholder="Email" :disabled="!!editing" required />
+          <input v-model="form.fullName" class="input" placeholder="نام و نام خانوادگی" required />
+          <input v-model="form.email" type="email" class="input" placeholder="ایمیل" :disabled="!!editing" required />
           <div class="flex gap-2">
-            <input v-model="form.password" type="text" class="input flex-1" :placeholder="editing ? 'New password (blank = unchanged)' : 'Password (min 8 chars)'" :minlength="editing ? 0 : 8" :required="!editing" />
-            <button type="button" @click="genPwd" class="ios-card px-3 text-sm font-semibold text-teal-700 active:scale-95">Generate</button>
+            <input v-model="form.password" type="text" class="input flex-1" :placeholder="editing ? 'رمز جدید (خالی = تغییر نکند)' : 'رمز عبور (حداقل ۸ کاراکتر)'" :minlength="editing ? 0 : 8" :required="!editing" />
+            <button type="button" @click="genPwd" class="ios-card px-3 text-sm font-semibold text-teal-700 active:scale-95">تولید</button>
           </div>
 
-          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">Account type</div>
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">نوع حساب</div>
           <select v-model="form.role" class="input">
-            <option value="customer">Customer</option>
-            <option value="merchant_staff">Merchant Staff</option>
-            <option value="vendor">Vendor Owner</option>
-            <option value="admin">Platform Admin</option>
+            <option value="customer">مشتری</option>
+            <option value="merchant_staff">پرسنل فروشگاه</option>
+            <option value="vendor">مالک وندور</option>
+            <option value="admin">ادمین پلتفرم</option>
           </select>
           <select v-model="form.status" class="input">
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-            <option value="pending">Pending</option>
+            <option value="active">فعال</option>
+            <option value="suspended">معلق</option>
+            <option value="pending">در انتظار</option>
           </select>
 
           <template v-if="form.role === 'vendor' || form.role === 'merchant_staff'">
             <select v-model="form.vendorId" class="input">
-              <option value="">— Select vendor —</option>
+              <option value="">— انتخاب وندور —</option>
               <option v-for="v in vendors" :key="v._id" :value="v._id">{{ v.name }}</option>
             </select>
             <select v-if="form.role === 'merchant_staff'" v-model="form.merchantId" class="input">
-              <option value="">— Select location (optional) —</option>
+              <option value="">— انتخاب شعبه (اختیاری) —</option>
               <option v-for="m in merchants" :key="m._id" :value="m._id">{{ m.name }}</option>
             </select>
 
-            <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">Role preset</div>
-            <p class="text-xs text-ink-500">Selecting a role auto-fills permissions. You can fine-tune below.</p>
+            <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">قالب نقش</div>
+            <p class="text-xs text-ink-500">با انتخاب یک نقش، دسترسی‌های پیش‌فرض آن خودکار پر می‌شود. می‌توانید زیر آن را دستی تنظیم کنید.</p>
             <div class="space-y-2 max-h-56 overflow-y-auto">
               <label v-for="r in filteredRoles" :key="r.slug" class="flex items-start gap-3 p-3 rounded-2xl border-2 cursor-pointer transition" :class="form.roleSlug === r.slug ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'">
                 <input type="radio" :value="r.slug" v-model="form.roleSlug" class="mt-1" @change="form.permissions = [...r.permissions]" />
@@ -244,7 +244,7 @@ onMounted(load);
               </label>
             </div>
 
-            <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">Permissions ({{ form.permissions.length }})</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">دسترسی‌ها ({{ form.permissions.length }})</div>
             <div class="grid grid-cols-2 gap-2">
               <label v-for="p in ALL_PERMS" :key="p" class="flex items-center gap-2 p-2 rounded-xl text-xs cursor-pointer" :class="form.permissions.includes(p) ? 'bg-teal-50 text-teal-800 font-semibold' : 'bg-cream-100 text-ink-500'">
                 <input type="checkbox" :checked="form.permissions.includes(p)" @change="togglePerm(p)" />
