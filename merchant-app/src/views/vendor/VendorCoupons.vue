@@ -166,17 +166,17 @@ onMounted(load);
   <div class="p-5 md:p-8">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Coupons</h1>
-        <p class="text-ink-500 mt-1">Offers customers can claim during your happy hour</p>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">کوپن‌ها</h1>
+        <p class="text-ink-500 mt-1">آفرهایی که مشتری در بازه‌ی هپی اَور می‌تواند دریافت کند</p>
       </div>
       <div class="flex gap-2 flex-wrap">
         <button v-if="can('view_payments')" @click="downloadCsv" class="ios-card px-4 py-2.5 text-sm font-semibold text-teal-700">
-          <i class="fa-solid fa-file-csv mr-1"></i>Export CSV
+          <i class="fa-solid fa-file-csv mr-1"></i>خروجی CSV
         </button>
         <button v-if="can('manage_coupons')" @click="selectMode = !selectMode; clearSelection()" class="ios-card px-4 py-2.5 text-sm font-semibold" :class="selectMode ? 'text-coral-600' : 'text-ink-700'">
-          <i class="fa-solid mr-1" :class="selectMode ? 'fa-xmark' : 'fa-check-double'"></i>{{ selectMode ? 'Cancel' : 'Select' }}
+          <i class="fa-solid mr-1" :class="selectMode ? 'fa-xmark' : 'fa-check-double'"></i>{{ selectMode ? 'لغو' : 'انتخاب' }}
         </button>
-        <button v-if="can('manage_coupons')" @click="openNew" class="ios-button-primary"><i class="fa-solid fa-plus mr-2"></i>New coupon</button>
+        <button v-if="can('manage_coupons')" @click="openNew" class="ios-button-primary"><i class="fa-solid fa-plus mr-2"></i>کوپن جدید</button>
       </div>
     </div>
 
@@ -186,21 +186,21 @@ onMounted(load);
           <i class="fa-solid" :class="overLimit ? 'fa-triangle-exclamation' : 'fa-ticket'"></i>
         </div>
         <div>
-          <div class="font-bold text-sm">{{ activeCount }} of {{ couponLimit >= 9999 ? '∞' : couponLimit }} active coupons used</div>
-          <div class="text-xs text-ink-500">Plan: <span class="font-semibold">{{ planLabel }}</span><span v-if="overLimit && couponLimit < 9999"> · Limit reached — pause one or upgrade</span></div>
+          <div class="font-bold text-sm">{{ activeCount }} از {{ couponLimit >= 9999 ? '∞' : couponLimit }} کوپن فعال استفاده شده</div>
+          <div class="text-xs text-ink-500">پلن: <span class="font-semibold">{{ planLabel }}</span><span v-if="overLimit && couponLimit < 9999"> · به سقف رسید — یکی را موقتاً متوقف کن یا ارتقا بده</span></div>
         </div>
       </div>
-      <router-link v-if="overLimit && couponLimit < 9999" to="/vendor/pricing" class="bg-teal-600 text-white px-3 py-1.5 rounded-full text-xs font-bold active:scale-95"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Upgrade</router-link>
-      <router-link v-else to="/vendor/pricing" class="text-xs font-semibold text-teal-700">View plans →</router-link>
+      <router-link v-if="overLimit && couponLimit < 9999" to="/vendor/pricing" class="bg-teal-600 text-white px-3 py-1.5 rounded-full text-xs font-bold active:scale-95"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>ارتقا</router-link>
+      <router-link v-else to="/vendor/pricing" class="text-xs font-semibold text-teal-700">مشاهده پلن‌ها ←</router-link>
     </div>
 
     <div v-if="selectMode && selected.length" class="mt-4 ios-card p-3 flex items-center gap-2 flex-wrap bg-teal-50">
-      <div class="font-bold text-teal-700 mr-2"><i class="fa-solid fa-check-double mr-1"></i>{{ selected.length }} selected</div>
-      <button @click="bulk('activate')" class="ios-card px-3 py-1.5 text-xs font-semibold text-green-700 bg-white"><i class="fa-solid fa-play mr-1"></i>Activate</button>
-      <button @click="bulk('pause')" class="ios-card px-3 py-1.5 text-xs font-semibold text-amber-700 bg-white"><i class="fa-solid fa-pause mr-1"></i>Pause</button>
-      <button @click="bulk('feature_on')" class="ios-card px-3 py-1.5 text-xs font-semibold text-yellow-700 bg-white"><i class="fa-solid fa-star mr-1"></i>Feature</button>
-      <button @click="bulk('feature_off')" class="ios-card px-3 py-1.5 text-xs font-semibold text-ink-700 bg-white"><i class="fa-regular fa-star mr-1"></i>Unfeature</button>
-      <button @click="bulk('delete')" class="ios-card px-3 py-1.5 text-xs font-semibold text-coral-700 bg-white"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+      <div class="font-bold text-teal-700 mr-2"><i class="fa-solid fa-check-double mr-1"></i>{{ selected.length }} انتخاب شده</div>
+      <button @click="bulk('activate')" class="ios-card px-3 py-1.5 text-xs font-semibold text-green-700 bg-white"><i class="fa-solid fa-play mr-1"></i>فعال‌سازی</button>
+      <button @click="bulk('pause')" class="ios-card px-3 py-1.5 text-xs font-semibold text-amber-700 bg-white"><i class="fa-solid fa-pause mr-1"></i>توقف</button>
+      <button @click="bulk('feature_on')" class="ios-card px-3 py-1.5 text-xs font-semibold text-yellow-700 bg-white"><i class="fa-solid fa-star mr-1"></i>برجسته</button>
+      <button @click="bulk('feature_off')" class="ios-card px-3 py-1.5 text-xs font-semibold text-ink-700 bg-white"><i class="fa-regular fa-star mr-1"></i>غیر برجسته</button>
+      <button @click="bulk('delete')" class="ios-card px-3 py-1.5 text-xs font-semibold text-coral-700 bg-white"><i class="fa-solid fa-trash mr-1"></i>حذف</button>
     </div>
 
     <div v-if="loading" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -208,7 +208,7 @@ onMounted(load);
     </div>
     <div v-else-if="items.length === 0" class="mt-6 text-center py-12 text-ink-500">
       <i class="fa-solid fa-ticket text-4xl text-ink-300"></i>
-      <div class="mt-3">No coupons yet.</div>
+      <div class="mt-3">هنوز کوپنی ندارید.</div>
     </div>
     <div v-else class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div v-for="c in items" :key="c._id" class="ios-card overflow-hidden relative" :class="selectMode && selected.includes(c._id) ? 'ring-4 ring-teal-500' : ''">
@@ -218,10 +218,10 @@ onMounted(load);
         <div class="relative">
           <img :src="c.heroImageUrl" class="w-full h-32 object-cover" />
           <div class="absolute top-2 left-2 flex gap-1 flex-wrap">
-            <span v-if="c.status === 'paused'" class="chip bg-ink-700 text-white text-[10px]"><i class="fa-solid fa-pause text-[9px]"></i> Paused</span>
-            <span v-if="c.todaysOffer" class="chip bg-coral-500 text-white text-[10px]"><i class="fa-solid fa-fire text-[9px]"></i> Today</span>
-            <span v-if="c.popupOffer" class="chip bg-purple-500 text-white text-[10px]"><i class="fa-solid fa-bolt text-[9px]"></i> Pop-up</span>
-            <span v-if="c.featured" class="chip bg-yellow-400 text-yellow-900 text-[10px]"><i class="fa-solid fa-star text-[9px]"></i> Featured</span>
+            <span v-if="c.status === 'paused'" class="chip bg-ink-700 text-white text-[10px]"><i class="fa-solid fa-pause text-[9px]"></i> متوقف</span>
+            <span v-if="c.todaysOffer" class="chip bg-coral-500 text-white text-[10px]"><i class="fa-solid fa-fire text-[9px]"></i> امروز</span>
+            <span v-if="c.popupOffer" class="chip bg-purple-500 text-white text-[10px]"><i class="fa-solid fa-bolt text-[9px]"></i> ویژه</span>
+            <span v-if="c.featured" class="chip bg-yellow-400 text-yellow-900 text-[10px]"><i class="fa-solid fa-star text-[9px]"></i> برجسته</span>
           </div>
         </div>
         <div class="p-4">
@@ -235,9 +235,9 @@ onMounted(load);
             </span>
           </div>
           <div class="flex gap-3 mt-3 pt-3 border-t border-cream-200">
-            <button v-if="can('view_stats')" @click="openPerformance(c)" class="text-sm font-semibold text-purple-700"><i class="fa-solid fa-chart-line mr-1"></i>Performance</button>
-            <button v-if="can('manage_coupons')" @click="openEdit(c)" class="text-sm font-semibold text-teal-700"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
-            <button v-if="can('manage_coupons')" @click="del(c._id)" class="text-sm font-semibold text-coral-600"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+            <button v-if="can('view_stats')" @click="openPerformance(c)" class="text-sm font-semibold text-purple-700"><i class="fa-solid fa-chart-line mr-1"></i>عملکرد</button>
+            <button v-if="can('manage_coupons')" @click="openEdit(c)" class="text-sm font-semibold text-teal-700"><i class="fa-solid fa-pen-to-square mr-1"></i>ویرایش</button>
+            <button v-if="can('manage_coupons')" @click="del(c._id)" class="text-sm font-semibold text-coral-600"><i class="fa-solid fa-trash mr-1"></i>حذف</button>
           </div>
         </div>
       </div>
@@ -247,17 +247,17 @@ onMounted(load);
       <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] overflow-y-auto max-h-[90vh]" @click.stop>
         <div class="flex items-center justify-between mb-4">
           <div>
-            <div class="text-xs uppercase tracking-wider text-ink-500 font-bold">Performance by location</div>
+            <div class="text-xs uppercase tracking-wider text-ink-500 font-bold">عملکرد بر اساس شعبه</div>
             <div class="text-xl font-bold mt-0.5">{{ showPerformance.title }}</div>
           </div>
-          <button @click="showPerformance = null" class="text-ink-500">Close</button>
+          <button @click="showPerformance = null" class="text-ink-500">بستن</button>
         </div>
         <div v-if="!performance" class="space-y-3">
           <div v-for="i in 3" :key="i" class="h-16 bg-cream-200 rounded-2xl animate-pulse"></div>
         </div>
         <div v-else-if="performance.breakdown.length === 0" class="text-center py-10 text-ink-500">
           <i class="fa-solid fa-chart-line text-3xl text-ink-300 mb-2"></i>
-          <div>No redemptions yet at any location.</div>
+          <div>هنوز در هیچ شعبه‌ای استفاده‌ای ثبت نشده.</div>
         </div>
         <div v-else class="space-y-2">
           <div v-for="(b, idx) in performance.breakdown" :key="b.merchantId" class="ios-card p-4 flex items-center gap-3" :class="b.count === 0 ? 'opacity-60' : ''">
@@ -269,7 +269,7 @@ onMounted(load);
             </div>
             <div class="text-right flex-shrink-0">
               <div class="font-bold text-teal-700">{{ b.count }}</div>
-              <div class="text-[10px] text-ink-300">redemption{{ b.count !== 1 ? 's' : '' }}</div>
+              <div class="text-[10px] text-ink-300">استفاده</div>
             </div>
           </div>
         </div>
