@@ -1,5 +1,17 @@
 const { z } = require('zod');
 
+// Phone-OTP (Persian flow)
+const requestOtpSchema = z.object({
+  phone: z.string().min(8).max(20),
+});
+
+const verifyOtpSchema = z.object({
+  phone: z.string().min(8).max(20),
+  code: z.string().length(6),
+  fullName: z.string().min(2).max(100).optional(),
+});
+
+// Email-password register (kept for API back-compat; Persian seed doesn't use it)
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
@@ -8,6 +20,7 @@ const registerSchema = z.object({
   acceptedTermsVersion: z.number().int().positive(),
 });
 
+// Login uses phone+password (Persian merchant/admin path; consumer goes through OTP).
 const loginSchema = z.object({
   phone: z.string().min(8).max(20),
   password: z.string().min(1).max(128),
@@ -34,6 +47,8 @@ const appleSignInSchema = z.object({
 });
 
 module.exports = {
+  requestOtpSchema,
+  verifyOtpSchema,
   registerSchema,
   loginSchema,
   refreshSchema,
