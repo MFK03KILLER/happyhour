@@ -244,3 +244,40 @@ exports.updateSiteContent = asyncHandler(async (req, res) => {
   });
   res.json(updated.value);
 });
+
+// ---------- Plan prices (admin-editable subscription prices) ----------
+const plans = require('../config/plans');
+
+exports.getPlanPrices = asyncHandler(async (req, res) => {
+  // base = hardcoded defaults; overrides = admin's saved values (if any);
+  // effective = what's live right now (defaults merged with overrides).
+  const overrides = await siteSettingService.getPlanPrices();
+  res.json({
+    base: plans.basePrices(),
+    overrides: overrides || { customer: {}, merchant: {} },
+    effective: {
+      customer: plans.publicSummary('customer').map((p) => ({ tier: p.tier, label: p.label, price: p.price })),
+      merchant: plans.publicSummary('merchant').map((p) => ({ tier: p.tier, label: p.label, price: p.price })),
+    },
+  });
+});
+
+exports.updatePlanPrices = asyncHandler(async (req, res) => {
+  const before = await siteSettingService.getPlanPrices();
+  const updated = await siteSettingService.setPlanPrices({
+    overrides: req.body.overrides || { customer: {}, merchant: {} },
+    userId: req.user._id,
+  });
+  // Apply immediately so live subscriptions + /public/plans reflect the new prices without a restart
+  plans.setPriceOverrides(updated.value);
+  await auditService.log({
+    actorUserId: req.user._id,
+    action: 'plan_prices.update',
+    targetType: 'SiteSetting',
+    targetId: 'plan_prices',
+    before,
+    after: updated.value,
+    req,
+  });
+  res.json(updated.value);
+});

@@ -44,7 +44,7 @@ const CUSTOMER_PLANS = {
     tier: 'gold',
     audience: 'customer',
     label: 'طلایی',
-    price: { monthly: 499000, yearly: 4990000 },
+    price: { monthly: 999000, yearly: 9990000 },
     description: 'محبوب‌ترین — صرفه‌جویی روزانه.',
     badge: 'محبوب‌ترین',
     features: {
@@ -242,14 +242,42 @@ const MERCHANT_PLANS = {
   },
 };
 
+// ------------- بازنویسی قیمت از پنل ادمین -------------
+// قیمت‌ها در DB (SiteSetting key='plan_prices') قابل ویرایش هستند. در بوت سرور
+// مقدار ذخیره‌شده توی این کش بارگذاری می‌شود و getPlan همگام (sync) باقی می‌ماند.
+// ساختار: { customer: { gold: {monthly, yearly}, premium: {...} }, merchant: {...} }
+let PRICE_OVERRIDES = { customer: {}, merchant: {} };
+
+function setPriceOverrides(obj) {
+  if (!obj || typeof obj !== 'object') return;
+  PRICE_OVERRIDES = {
+    customer: (obj.customer && typeof obj.customer === 'object') ? obj.customer : {},
+    merchant: (obj.merchant && typeof obj.merchant === 'object') ? obj.merchant : {},
+  };
+}
+
+// قیمت موثر یک پلن را با اعمال override برمی‌گرداند (immutable — نسخه‌ی مرج‌شده می‌سازد)
+function effectivePrice(plan) {
+  const ov = (PRICE_OVERRIDES[plan.audience] || {})[plan.tier];
+  if (!ov) return plan.price;
+  return {
+    monthly: (ov.monthly != null && !Number.isNaN(Number(ov.monthly))) ? Number(ov.monthly) : plan.price.monthly,
+    yearly: (ov.yearly != null && !Number.isNaN(Number(ov.yearly))) ? Number(ov.yearly) : plan.price.yearly,
+  };
+}
+
+function withOverride(plan) {
+  return { ...plan, price: effectivePrice(plan) };
+}
+
 function getPlan(tier, audience = 'customer') {
   const set = audience === 'merchant' ? MERCHANT_PLANS : CUSTOMER_PLANS;
-  return set[tier] || set.basic;
+  return withOverride(set[tier] || set.basic);
 }
 
 function listPlans(audience = 'customer') {
   const set = audience === 'merchant' ? MERCHANT_PLANS : CUSTOMER_PLANS;
-  return Object.values(set);
+  return Object.values(set).map(withOverride);
 }
 
 // خروجی public بدون فیلدهای خصوصی، مناسب /public/plans
@@ -269,10 +297,20 @@ function publicSummary(audience = 'customer') {
   }));
 }
 
+// قیمت‌های پایه (default، بدون override) — برای ویرایشگر ادمین که باید مقدار خام را نشان دهد
+function basePrices() {
+  const out = { customer: {}, merchant: {} };
+  for (const p of Object.values(CUSTOMER_PLANS)) out.customer[p.tier] = { ...p.price, label: p.label };
+  for (const p of Object.values(MERCHANT_PLANS)) out.merchant[p.tier] = { ...p.price, label: p.label };
+  return out;
+}
+
 module.exports = {
   CUSTOMER_PLANS,
   MERCHANT_PLANS,
   getPlan,
   listPlans,
   publicSummary,
+  setPriceOverrides,
+  basePrices,
 };

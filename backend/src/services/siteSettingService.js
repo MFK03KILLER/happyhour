@@ -438,11 +438,38 @@ async function setContent({ key, title, content, userId }) {
   }, userId);
 }
 
+// ------------- Plan price overrides (admin-editable subscription prices) -------------
+const KEY_PLAN_PRICES = 'plan_prices';
+
+// Returns the stored override object, or null if admin hasn't customized prices.
+// Shape: { customer: { gold:{monthly,yearly}, premium:{...} }, merchant: {...} }
+async function getPlanPrices() {
+  const found = await SiteSetting.findOne({ key: KEY_PLAN_PRICES });
+  return found ? found.value : null;
+}
+
+async function setPlanPrices({ overrides, userId }) {
+  const value = {
+    customer: (overrides && overrides.customer) ? overrides.customer : {},
+    merchant: (overrides && overrides.merchant) ? overrides.merchant : {},
+  };
+  return set(KEY_PLAN_PRICES, value, userId);
+}
+
+// Load stored overrides into the in-memory plans cache. Call on boot + after each save.
+async function applyPlanPrices() {
+  const plans = require('../config/plans');
+  const stored = await getPlanPrices();
+  if (stored) plans.setPriceOverrides(stored);
+  return stored;
+}
+
 module.exports = {
   get, set, ensureSeed,
   getTerms, updateTerms,
   getContent, listContent, setContent, isContentKey,
-  KEY_CONSUMER, KEY_MERCHANT, KEY_LEGACY,
+  getPlanPrices, setPlanPrices, applyPlanPrices,
+  KEY_CONSUMER, KEY_MERCHANT, KEY_LEGACY, KEY_PLAN_PRICES,
   SITE_CONTENT_BLOCKS,
   DEFAULTS,
 };

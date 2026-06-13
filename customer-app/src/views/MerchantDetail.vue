@@ -60,8 +60,13 @@ onMounted(async () => {
     merchant.value = m.data.merchant;
     coupons.value = m.data.coupons;
     subscription.value = s.data.subscription;
+    const gold = (s.data.available || []).find((p) => p.tier === 'gold');
+    if (gold) goldPrice.value = gold.price.monthly;
   } finally { loading.value = false; }
 });
+
+const goldPrice = ref(null);
+const goldPriceLabel = computed(() => goldPrice.value != null ? Number(goldPrice.value).toLocaleString('fa-IR') : '۹۹۹٬۰۰۰');
 
 const isSubscribed = computed(() => {
   const s = subscription.value;
@@ -265,7 +270,7 @@ function offPeakLabel() {
           <div class="font-bold">عضو شوید و همه را باز کنید</div>
         </div>
         <div class="text-left">
-          <div class="text-lg font-bold text-teal-700">۴۹۹٬۰۰۰ تومان / ماه</div>
+          <div class="text-lg font-bold text-teal-700">{{ goldPriceLabel }} تومان / ماه</div>
         </div>
       </div>
       <button @click="router.push('/subscribe')" class="ios-button-primary w-full">

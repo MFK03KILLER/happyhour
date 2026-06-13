@@ -176,4 +176,19 @@ router.put('/site-settings/terms', writeLimiter, ctrl.updateTerms);
 router.get('/site-content', ctrl.listSiteContent);
 router.put('/site-content/:key', writeLimiter, ctrl.updateSiteContent);
 
+/**
+ * @openapi
+ * /admin/plan-prices:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get subscription plan prices (base defaults + admin overrides + effective)
+ *     security: [{ bearerAuth: [] }]
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update subscription plan prices. Applies immediately, no restart needed.
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/plan-prices', ctrl.getPlanPrices);
+router.put('/plan-prices', writeLimiter, ctrl.updatePlanPrices);
+
 module.exports = router;

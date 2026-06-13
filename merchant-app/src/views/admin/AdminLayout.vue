@@ -17,6 +17,7 @@ const items = [
   { to: '/admin/coupons', label: 'کوپن‌ها', icon: 'tag' },
   { to: '/admin/users', label: 'کاربران', icon: 'users' },
   { to: '/admin/features', label: 'قابلیت‌ها', icon: 'flag' },
+  { to: '/admin/plans', label: 'قیمت اشتراک', icon: 'dollar' },
   { to: '/admin/terms', label: 'قوانین', icon: 'doc' },
   { to: '/admin/site-content', label: 'محتوای سایت', icon: 'doc' },
   { to: '/admin/audit', label: 'لاگ ممیزی', icon: 'log' },

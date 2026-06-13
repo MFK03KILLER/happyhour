@@ -15,11 +15,22 @@ const categories = ref([]);
 const nearbyMerchants = ref([]);
 const trendingOffers = ref([]);
 const loading = ref(true);
+const goldPrice = ref(null); // قیمت ماهانه‌ی پلن طلایی — از پنل ادمین قابل تغییر
 
 onMounted(async () => {
   daily.refresh();
+  loadGoldPrice();
   await loadData();
 });
+
+async function loadGoldPrice() {
+  try {
+    const { data } = await client.get('/public/plans', { params: { audience: 'customer' } });
+    const gold = (data.plans || []).find((p) => p.tier === 'gold');
+    if (gold) goldPrice.value = gold.price.monthly;
+  } catch {}
+}
+const goldPriceLabel = computed(() => goldPrice.value != null ? Number(goldPrice.value).toLocaleString('fa-IR') : '۹۹۹٬۰۰۰');
 
 watch(coords, (v) => { if (v) loadData(); });
 
@@ -86,7 +97,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
           <div class="text-3xl font-bold mt-1">۳ آفر هر روز</div>
           <div class="mt-1 text-white/90 text-sm">با تخفیف ویژه در بیش از ۱۰۰ مکان منتخب تهران غذا بخور، نوشیدنی بخر و تفریح کن.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            عضویت ماهانه · ۴۹۹٬۰۰۰ تومان ←
+            عضویت ماهانه · {{ goldPriceLabel }} تومان ←
           </button>
         </div>
       </div>
