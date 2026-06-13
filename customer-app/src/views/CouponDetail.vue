@@ -43,13 +43,13 @@ async function claim() {
   try {
     const { data } = await client.post(`/customer/coupons/${coupon.value._id}/claim`);
     if (data.activeNow !== false) {
-      toast.success('Saved to your wallet — show it at the counter to redeem.', { title: 'Coupon claimed! 🎉' });
+      toast.success('در کیف پول شما ذخیره شد — برای استفاده آن را در صندوق نشان دهید.', { title: 'کوپن دریافت شد! 🎉' });
     } else {
-      toast.warning('Claimed, but only redeemable during happy hour.', { title: 'Outside active hours', ttl: 7000 });
+      toast.warning('دریافت شد، اما فقط در ساعات هپی اَور قابل استفاده است.', { title: 'خارج از ساعات فعال', ttl: 7000 });
     }
     router.push('/wallet');
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
+    toast.error(e.response?.data?.error?.message || 'دریافت کوپن ممکن نشد', { title: 'دریافت ناموفق بود' });
   } finally {
     claiming.value = false;
   }
@@ -135,7 +135,7 @@ function offerTypeLabel(t) {
         </div>
         <div class="text-left">
           <div class="text-xs text-ink-300">از</div>
-          <div class="text-lg font-bold text-teal-700">۲۹۹٬۰۰۰ تومان / ماه</div>
+          <div class="text-lg font-bold text-teal-700">۹۹۹٬۰۰۰ تومان / ماه</div>
         </div>
       </div>
       <button @click="claim" class="ios-button-primary w-full text-base" :disabled="claiming">

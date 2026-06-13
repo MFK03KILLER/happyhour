@@ -38,10 +38,10 @@ async function onConfirm(paymentMethod) {
   try {
     await client.post(`/customer/surprise-bags/${bag.value._id}/buy`, { paymentMethod, fulfillment: fulfillment.value });
     showPay.value = false;
-    toast.success('Reserved! Pick up during the window shown on the bag.', { title: 'Bag reserved 🛍️' });
+    toast.success('رزرو شد! در بازه‌ای که روی پاکت نمایش داده شده مراجعه کنید.', { title: 'پاکت رزرو شد 🛍️' });
     router.push('/wallet');
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Purchase failed', { title: 'Payment failed' });
+    toast.error(e.response?.data?.error?.message || 'خرید ناموفق بود', { title: 'پرداخت ناموفق بود' });
   }
 }
 

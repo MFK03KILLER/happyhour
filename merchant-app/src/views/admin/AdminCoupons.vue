@@ -109,7 +109,7 @@ onMounted(load);
         </div>
         <form @submit.prevent="save" class="space-y-3">
           <select v-model="form.vendorId" class="input" required>
-            <option value="">انتخاب بیزنس</option>
+            <option value="">انتخاب کسب‌وکار</option>
             <option v-for="v in vendors" :key="v._id" :value="v._id">{{ v.name }}</option>
           </select>
           <input v-model="form.title" class="input" placeholder="عنوان (مثل چلو کباب کوبیده)" required />

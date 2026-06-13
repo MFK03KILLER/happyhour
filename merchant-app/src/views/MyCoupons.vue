@@ -76,12 +76,12 @@ async function save() {
 }
 
 async function del(id) {
-  if (!confirm('Delete this coupon?')) return;
+  if (!confirm('این کوپن حذف شود؟')) return;
   try {
     await client.delete(`/merchant/coupons/${id}`);
     await load();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Delete failed');
+    alert(e.response?.data?.error?.message || 'حذف ناموفق بود');
   }
 }
 

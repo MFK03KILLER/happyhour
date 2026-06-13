@@ -17,8 +17,8 @@ const showTerms = ref(false);
 function can(p) { return (auth.user?.permissions || []).includes(p); }
 
 const DAYS = [
-  { key: 'mon', label: 'Mon' }, { key: 'tue', label: 'Tue' }, { key: 'wed', label: 'Wed' },
-  { key: 'thu', label: 'Thu' }, { key: 'fri', label: 'Fri' }, { key: 'sat', label: 'Sat' }, { key: 'sun', label: 'Sun' },
+  { key: 'mon', label: 'دوشنبه' }, { key: 'tue', label: 'سه‌شنبه' }, { key: 'wed', label: 'چهارشنبه' },
+  { key: 'thu', label: 'پنجشنبه' }, { key: 'fri', label: 'جمعه' }, { key: 'sat', label: 'شنبه' }, { key: 'sun', label: 'یکشنبه' },
 ];
 
 onMounted(load);
@@ -70,11 +70,11 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     <header class="bg-gradient-to-br from-teal-700 to-teal-800 text-white safe-top px-5 pb-8 rounded-b-3xl">
       <div class="pt-2 flex items-center justify-between">
         <div>
-          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">Your location</div>
-          <h1 class="text-2xl font-bold mt-0.5">Store</h1>
+          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">شعبه شما</div>
+          <h1 class="text-2xl font-bold mt-0.5">فروشگاه</h1>
         </div>
         <button v-if="can('manage_hours') && !editing" @click="openEdit" class="bg-white text-teal-700 px-4 py-2 rounded-full text-sm font-bold active:scale-95">
-          <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+          <i class="fa-solid fa-pen-to-square mr-1"></i>ویرایش
         </button>
       </div>
     </header>
@@ -86,57 +86,57 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     <template v-else-if="editing && form">
       <div class="px-5 -mt-6 space-y-3">
         <div class="ios-card p-5 space-y-3">
-          <div class="text-xs uppercase font-semibold text-ink-500">Basic info</div>
-          <input v-model="form.name" class="input" placeholder="Location name" required />
-          <input v-model="form.description" class="input" placeholder="Short description" />
-          <input v-model="form.subCategory" class="input" placeholder="Sub-category (e.g. Pizza, Steakhouse)" />
+          <div class="text-xs uppercase font-semibold text-ink-500">اطلاعات پایه</div>
+          <input v-model="form.name" class="input" placeholder="نام شعبه" required />
+          <input v-model="form.description" class="input" placeholder="توضیح کوتاه" />
+          <input v-model="form.subCategory" class="input" placeholder="زیردسته (مثلاً پیتزا، استیک‌هاوس)" />
           <div>
-            <div class="text-xs text-ink-500 mb-1">Price level</div>
+            <div class="text-xs text-ink-500 mb-1">سطح قیمت</div>
             <div class="grid grid-cols-4 gap-2">
               <button v-for="n in 4" :key="n" type="button" @click="form.priceLevel = n" class="py-2 rounded-2xl border-2 font-bold transition active:scale-95" :class="form.priceLevel === n ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-ink-300/20 text-ink-700'">
-                {{ '$'.repeat(n) }}
+                {{ '﷼'.repeat(n) }}
               </button>
             </div>
           </div>
-          <input v-model="form.phone" type="tel" class="input" placeholder="Phone" />
+          <input v-model="form.phone" type="tel" class="input" placeholder="تلفن" dir="ltr" />
         </div>
 
         <div class="ios-card p-5 space-y-2">
-          <div class="text-xs uppercase font-semibold text-ink-500">Address</div>
-          <input v-model="form.address.street" class="input" placeholder="Street" />
+          <div class="text-xs uppercase font-semibold text-ink-500">آدرس</div>
+          <input v-model="form.address.street" class="input" placeholder="خیابان" />
           <div class="grid grid-cols-2 gap-2">
-            <input v-model="form.address.city" class="input" placeholder="City" />
-            <input v-model="form.address.state" class="input" placeholder="State" />
+            <input v-model="form.address.city" class="input" placeholder="شهر" />
+            <input v-model="form.address.state" class="input" placeholder="استان" />
           </div>
-          <input v-model="form.address.zip" class="input" placeholder="ZIP" />
+          <input v-model="form.address.zip" class="input" placeholder="کد پستی" dir="ltr" />
           <div class="grid grid-cols-2 gap-2">
-            <input v-model.number="form.address.lat" type="number" step="0.0001" class="input" placeholder="Latitude" />
-            <input v-model.number="form.address.lng" type="number" step="0.0001" class="input" placeholder="Longitude" />
+            <input v-model.number="form.address.lat" type="number" step="0.0001" class="input" placeholder="عرض جغرافیایی" dir="ltr" />
+            <input v-model.number="form.address.lng" type="number" step="0.0001" class="input" placeholder="طول جغرافیایی" dir="ltr" />
           </div>
         </div>
 
         <div class="ios-card p-5">
-          <div class="text-xs uppercase font-semibold text-ink-500 mb-2"><i class="fa-regular fa-clock"></i> Happy hour times</div>
-          <p class="text-xs text-ink-500 mb-3">Coupons are only redeemable during these hours.</p>
+          <div class="text-xs uppercase font-semibold text-ink-500 mb-2"><i class="fa-regular fa-clock"></i> ساعات هپی اَور</div>
+          <p class="text-xs text-ink-500 mb-3">کوپن‌ها فقط در این ساعات قابل استفاده هستند.</p>
           <div v-for="(slot, i) in form.offPeakHours" :key="i" class="ios-card p-3 mb-2 space-y-2">
             <select v-model="slot.day" class="input text-sm">
-              <option value="daily">Daily</option>
+              <option value="daily">روزانه</option>
               <option v-for="d in DAYS" :key="d.key" :value="d.key">{{ d.label }}</option>
             </select>
             <div class="grid grid-cols-2 gap-2">
               <input v-model="slot.start" type="time" class="input text-sm" />
               <input v-model="slot.end" type="time" class="input text-sm" />
             </div>
-            <button type="button" @click="removeSlot(i)" class="text-coral-600 text-xs font-semibold"><i class="fa-solid fa-trash mr-1"></i>Remove</button>
+            <button type="button" @click="removeSlot(i)" class="text-coral-600 text-xs font-semibold"><i class="fa-solid fa-trash mr-1"></i>حذف</button>
           </div>
           <button type="button" @click="addSlot" class="ios-card w-full p-3 text-teal-700 font-semibold active:scale-95">
-            <i class="fa-solid fa-plus mr-1"></i>Add slot
+            <i class="fa-solid fa-plus mr-1"></i>افزودن بازه
           </button>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button @click="editing = false" class="ios-card flex-1 py-3 font-semibold text-ink-700">Cancel</button>
-          <button @click="save" :disabled="saving" class="ios-button-primary flex-1">{{ saving ? 'Saving…' : 'Save changes' }}</button>
+          <button @click="editing = false" class="ios-card flex-1 py-3 font-semibold text-ink-700">انصراف</button>
+          <button @click="save" :disabled="saving" class="ios-button-primary flex-1">{{ saving ? 'در حال ذخیره…' : 'ذخیره تغییرات' }}</button>
         </div>
       </div>
     </template>
@@ -168,7 +168,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
       </div>
 
       <div v-if="merchant.offPeakHours?.length" class="ios-card p-5">
-        <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider"><i class="fa-regular fa-clock"></i> Happy Hours</div>
+        <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider"><i class="fa-regular fa-clock"></i> ساعات هپی اَور</div>
         <div class="mt-2 space-y-1.5">
           <div v-for="(s, i) in merchant.offPeakHours" :key="i" class="flex justify-between text-sm">
             <span class="font-semibold capitalize">{{ s.day }}</span>
@@ -192,11 +192,11 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
       </div>
 
       <button @click="doLogout" class="ios-card w-full p-4 text-coral-600 font-semibold active:bg-cream-100 text-center">
-        Sign out
+        خروج
       </button>
 
       <button @click="showTerms = true" class="block mx-auto text-xs text-ink-500 underline pt-2">
-        <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
+        <i class="fa-regular fa-file-lines mr-1"></i>قوانین و مقررات فروشگاه
       </button>
     </div>
 

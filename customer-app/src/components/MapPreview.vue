@@ -65,7 +65,7 @@ function openFullMap() {
     <div class="absolute inset-0 bg-transparent pointer-events-none"></div>
     <div class="absolute top-3 right-3 bg-white rounded-full px-3 py-1.5 shadow-soft text-xs font-bold flex items-center gap-1.5 pointer-events-none">
       <i class="fa-solid fa-diamond-turn-right text-teal-700"></i>
-      <span>Directions</span>
+      <span>مسیریابی</span>
     </div>
   </div>
 </template>

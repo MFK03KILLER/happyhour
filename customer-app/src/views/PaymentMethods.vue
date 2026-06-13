@@ -14,7 +14,7 @@ const router = useRouter();
 
     <div class="px-5 mt-6 space-y-3">
       <div class="ios-card p-5 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold">Z</div>
+        <div class="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold">ز</div>
         <div class="flex-1">
           <div class="font-bold">زیبال</div>
           <div class="text-xs text-ink-500">پرداخت با کارت بانکی</div>

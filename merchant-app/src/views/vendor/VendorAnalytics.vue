@@ -29,11 +29,12 @@ const weekdayMax = computed(() => Math.max(1, ...(data.value?.weekday || []).map
 const trendMax = computed(() => Math.max(1, ...(data.value?.dailyTrend || []).map((d) => d.count)));
 
 function fmtHour(h) {
-  const ampm = h >= 12 ? 'PM' : 'AM';
+  const ampm = h >= 12 ? 'ب.ظ' : 'ق.ظ';
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}${ampm}`;
+  const fa = String(h12).replace(/\d/g, (x) => '۰۱۲۳۴۵۶۷۸۹'[x]);
+  return `${fa} ${ampm}`;
 }
-function weekdayName(d) { return { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' }[d] || d; }
+function weekdayName(d) { return { sun: 'یک‌شنبه', mon: 'دوشنبه', tue: 'سه‌شنبه', wed: 'چهارشنبه', thu: 'پنج‌شنبه', fri: 'جمعه', sat: 'شنبه' }[d] || d; }
 function severityClasses(s) {
   return {
     critical: 'border-coral-300 bg-coral-50 text-coral-700',
@@ -52,18 +53,18 @@ function iconBg(s) {
     opportunity: 'bg-purple-600',
   }[s] || 'bg-ink-700';
 }
-function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0); }
+function fmtMoney(n) { return `${new Intl.NumberFormat('fa-IR').format(n || 0)} تومان`; }
 </script>
 
 <template>
   <div class="p-5 md:p-8">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Analytics</h1>
-        <p class="text-ink-500 mt-1">Performance insights & recommendations</p>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">تحلیل‌ها</h1>
+        <p class="text-ink-500 mt-1">بینش‌های عملکرد و پیشنهادها</p>
       </div>
       <div class="inline-flex bg-cream-200 rounded-full p-1">
-        <button v-for="r in [{k:'7d',l:'7d'},{k:'30d',l:'30d'},{k:'90d',l:'90d'}]" :key="r.k" @click="range = r.k"
+        <button v-for="r in [{k:'7d',l:'۷ روز'},{k:'30d',l:'۳۰ روز'},{k:'90d',l:'۹۰ روز'}]" :key="r.k" @click="range = r.k"
           class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
           :class="range === r.k ? 'bg-white shadow-soft' : 'text-ink-500'">{{ r.l }}</button>
       </div>
@@ -76,31 +77,31 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
     <template v-else-if="data">
       <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="ios-card p-5 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
-          <div class="text-xs uppercase tracking-wider font-semibold opacity-80">Redemptions</div>
+          <div class="text-xs uppercase tracking-wider font-semibold opacity-80">استفاده‌ها</div>
           <div class="text-3xl font-bold mt-2">{{ data.totalRedemptions }}</div>
-          <div class="text-xs opacity-80 mt-1">Avg {{ data.avgPerDay }} / day</div>
+          <div class="text-xs opacity-80 mt-1">میانگین {{ data.avgPerDay }} در روز</div>
         </div>
         <div class="ios-card p-5">
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Value delivered</div>
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">ارزش ارائه‌شده</div>
           <div class="text-3xl font-bold mt-2">{{ fmtMoney(data.totalSavings) }}</div>
-          <div class="text-xs text-ink-300 mt-1">Customer savings</div>
+          <div class="text-xs text-ink-300 mt-1">صرفه‌جویی مشتریان</div>
         </div>
         <div class="ios-card p-5">
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Unique customers</div>
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">مشتریان یکتا</div>
           <div class="text-3xl font-bold mt-2">{{ data.uniqueCustomers }}</div>
-          <div class="text-xs text-ink-300 mt-1">{{ data.repeatCustomers }} returning ({{ data.repeatRate }}%)</div>
+          <div class="text-xs text-ink-300 mt-1">{{ data.repeatCustomers }} بازگشتی ({{ data.repeatRate }}٪)</div>
         </div>
         <div class="ios-card p-5">
-          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Active coupons</div>
+          <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">کوپن‌های فعال</div>
           <div class="text-3xl font-bold mt-2">{{ data.activeCoupons }}</div>
-          <div class="text-xs text-ink-300 mt-1">Live offers</div>
+          <div class="text-xs text-ink-300 mt-1">آفرهای فعال</div>
         </div>
       </div>
 
       <div v-if="suggestions.length" class="mt-6">
         <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold mb-3 flex items-center gap-2">
           <i class="fa-solid fa-wand-magic-sparkles text-teal-600"></i>
-          Recommendations
+          پیشنهادها
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div v-for="(s, i) in suggestions" :key="i" class="ios-card p-4 border-2" :class="severityClasses(s.severity)">
@@ -123,15 +124,15 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
       <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="ios-card p-5">
           <div class="flex items-center justify-between mb-4">
-            <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Daily trend</div>
+            <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">روند روزانه</div>
           </div>
-          <div v-if="!data.dailyTrend.length" class="text-sm text-ink-300 py-8 text-center">No data yet.</div>
+          <div v-if="!data.dailyTrend.length" class="text-sm text-ink-300 py-8 text-center">هنوز داده‌ای وجود ندارد.</div>
           <div v-else class="flex items-end gap-1 h-32">
             <div v-for="d in data.dailyTrend" :key="d._id"
               class="flex-1 bg-gradient-to-t from-teal-600 to-teal-400 rounded-t group relative min-w-[6px]"
               :style="{ height: `${Math.max(3, (d.count / trendMax) * 100)}%` }">
               <div class="opacity-0 group-hover:opacity-100 absolute -top-9 left-1/2 -translate-x-1/2 bg-ink-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap transition pointer-events-none z-10">
-                <div class="font-bold">{{ d.count }} scans</div>
+                <div class="font-bold">{{ d.count }} اسکن</div>
                 <div>{{ d._id }}</div>
               </div>
             </div>
@@ -139,7 +140,7 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
         </div>
 
         <div class="ios-card p-5">
-          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">Busiest hours</div>
+          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">پرترددترین ساعات</div>
           <div class="flex items-end gap-1 h-32">
             <div v-for="h in data.hourly" :key="h.hour" class="flex-1 group relative">
               <div class="bg-gradient-to-t from-coral-500 to-coral-400 rounded-t transition-all min-w-[4px]"
@@ -150,13 +151,13 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
             </div>
           </div>
           <div class="flex justify-between mt-2 text-[10px] text-ink-300">
-            <span>12AM</span><span>6AM</span><span>12PM</span><span>6PM</span><span>11PM</span>
+            <span>۱۲ ق.ظ</span><span>۶ ق.ظ</span><span>۱۲ ب.ظ</span><span>۶ ب.ظ</span><span>۱۱ ب.ظ</span>
           </div>
         </div>
       </div>
 
       <div class="mt-6 ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">Weekday distribution</div>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">توزیع روزهای هفته</div>
         <div class="flex items-end gap-3 h-32">
           <div v-for="d in data.weekday" :key="d.day" class="flex-1 flex flex-col items-center gap-2">
             <div class="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t transition-all"
@@ -172,10 +173,10 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
 
       <div class="mt-6 ios-card p-5">
         <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Top performing coupons</div>
-          <router-link to="/vendor/coupons" class="text-xs font-semibold text-teal-700">Manage →</router-link>
+          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">پراستفاده‌ترین کوپن‌ها</div>
+          <router-link to="/vendor/coupons" class="text-xs font-semibold text-teal-700">مدیریت →</router-link>
         </div>
-        <div v-if="!data.topCoupons.length" class="text-sm text-ink-300 py-6 text-center">No coupon redemptions yet.</div>
+        <div v-if="!data.topCoupons.length" class="text-sm text-ink-300 py-6 text-center">هنوز هیچ استفاده‌ای از کوپن ثبت نشده است.</div>
         <div v-else class="space-y-3">
           <div v-for="(t, idx) in data.topCoupons" :key="t._id" class="flex items-center gap-3 p-2 rounded-xl hover:bg-cream-100">
             <div class="w-7 h-7 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-sm font-bold">{{ idx + 1 }}</div>
@@ -186,14 +187,14 @@ function fmtMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency'
             </div>
             <div class="text-right flex-shrink-0">
               <div class="font-bold text-teal-700">{{ t.count }}</div>
-              <div class="text-[10px] text-ink-300">redemptions</div>
+              <div class="text-[10px] text-ink-300">استفاده</div>
             </div>
           </div>
         </div>
       </div>
 
       <div v-if="data.inventorySnapshot?.length" class="mt-6 ios-card p-5">
-        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">Inventory · Surprise Bags</div>
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">موجودی · بسته‌های شگفت‌انگیز</div>
         <div class="space-y-2">
           <div v-for="c in data.inventorySnapshot" :key="c._id" class="flex items-center justify-between p-2 rounded-xl hover:bg-cream-100">
             <div class="font-semibold text-sm truncate">{{ c.title }}</div>

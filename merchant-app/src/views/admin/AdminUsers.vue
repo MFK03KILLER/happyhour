@@ -83,15 +83,15 @@ async function save() {
 }
 
 async function del(u) {
-  if (u._id === auth.user?._id) return alert('Cannot delete your own account');
-  if (!confirm(`Permanently delete ${u.fullName}?`)) return;
+  if (u._id === auth.user?._id) return alert('نمی‌توانید حساب خودتان را حذف کنید');
+  if (!confirm(`${u.fullName} برای همیشه حذف شود؟`)) return;
   await client.delete(`/admin/users/${u._id}`);
   await load();
 }
 
 async function toggleStatus(u) {
   const next = u.status === 'active' ? 'suspended' : 'active';
-  if (!confirm(`${next === 'suspended' ? 'Suspend' : 'Activate'} ${u.fullName}?`)) return;
+  if (!confirm(`${u.fullName} ${next === 'suspended' ? 'معلق' : 'فعال'} شود؟`)) return;
   await client.put(`/admin/users/${u._id}`, { status: next });
   await load();
 }

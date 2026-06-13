@@ -21,10 +21,10 @@ defineProps({ landing: Boolean });
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-lift">
           <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 8l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
         </div>
-        <div class="text-2xl font-bold tracking-tight">Happy Hour</div>
+        <div class="text-2xl font-bold tracking-tight">هپی اَور</div>
       </div>
       <p class="mt-3 text-cream-50/80 text-sm leading-relaxed">
-        America's friendliest coupon club. Save up to 50% at the spots you already love.
+        باشگاه تخفیف محبوب ایران. تا ۵۰٪ در مکان‌هایی که دوست دارید صرفه‌جویی کنید.
       </p>
     </div>
 

@@ -8,26 +8,26 @@ const steps = [
   {
     icon: 'fa-mug-hot',
     color: 'from-teal-500 to-teal-700',
-    title: 'Welcome to Happy Hour!',
-    body: 'Save up to 70% at hundreds of restaurants, cafés, bars, and spas across the Bay Area. We help local businesses fill their quiet hours, and you save big.',
+    title: 'به هپی اَور خوش آمدید!',
+    body: 'تا ۷۰٪ در صدها رستوران، کافه، و مرکز زیبایی و آرامش صرفه‌جویی کنید. ما به کسب‌وکارهای محلی کمک می‌کنیم ساعات خلوتشان را پر کنند و شما هم تخفیف چشمگیری می‌گیرید.',
   },
   {
     icon: 'fa-ticket',
     color: 'from-coral-500 to-coral-600',
-    title: '3 coupons every day',
-    body: 'Your $4.99/month membership lets you claim up to 3 coupons per day. The counter resets every midnight. Pick the best deals near you!',
+    title: 'هر روز ۳ کوپن',
+    body: 'با عضویت ماهانه ۹۹۹٬۰۰۰ تومانی می‌توانید روزانه تا ۳ کوپن دریافت کنید. این شمارنده هر نیمه‌شب صفر می‌شود. بهترین پیشنهادهای نزدیک خودتان را انتخاب کنید!',
   },
   {
     icon: 'fa-clock',
     color: 'from-amber-500 to-amber-600',
-    title: 'Use during Happy Hour',
-    body: 'Each coupon is only valid during the merchant\'s happy hour window — usually 2-5pm. You can claim anytime, but redeem only during those hours. Check your Wallet for exact times.',
+    title: 'در ساعات هپی اَور استفاده کنید',
+    body: 'هر کوپن فقط در بازه هپی اَور فروشگاه معتبر است — معمولاً ساعت ۲ تا ۵ بعدازظهر. می‌توانید هر زمان کوپن بگیرید، اما فقط در همان ساعات از آن استفاده کنید. برای دیدن ساعات دقیق به کیف پول خود سر بزنید.',
   },
   {
     icon: 'fa-location-dot',
     color: 'from-purple-500 to-purple-700',
-    title: 'Find spots nearby',
-    body: 'We sort merchants by distance from you. Allow location access and we\'ll show you the best deals within walking distance.',
+    title: 'مکان‌های نزدیک را پیدا کنید',
+    body: 'ما فروشگاه‌ها را بر اساس فاصله‌شان از شما مرتب می‌کنیم. دسترسی به موقعیت مکانی را فعال کنید تا بهترین پیشنهادها را در فاصله‌ای نزدیک به شما نشان دهیم.',
   },
 ];
 
@@ -63,9 +63,9 @@ function finish() {
           </div>
 
           <div class="flex gap-2 mt-5">
-            <button v-if="step > 0" @click="step--" class="ios-card flex-1 py-3 font-semibold text-ink-700">Back</button>
+            <button v-if="step > 0" @click="step--" class="ios-card flex-1 py-3 font-semibold text-ink-700">بازگشت</button>
             <button @click="next" class="ios-button-primary flex-1">
-              {{ step === steps.length - 1 ? "Let's go!" : 'Next' }}
+              {{ step === steps.length - 1 ? 'بزن بریم!' : 'بعدی' }}
             </button>
           </div>
         </div>

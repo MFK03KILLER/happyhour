@@ -23,8 +23,8 @@ const form = ref(blankForm());
 const cuisineInput = ref('');
 
 const DAYS = [
-  { key: 'mon', label: 'Mon' }, { key: 'tue', label: 'Tue' }, { key: 'wed', label: 'Wed' },
-  { key: 'thu', label: 'Thu' }, { key: 'fri', label: 'Fri' }, { key: 'sat', label: 'Sat' }, { key: 'sun', label: 'Sun' },
+  { key: 'mon', label: 'دوشنبه' }, { key: 'tue', label: 'سه‌شنبه' }, { key: 'wed', label: 'چهارشنبه' },
+  { key: 'thu', label: 'پنجشنبه' }, { key: 'fri', label: 'جمعه' }, { key: 'sat', label: 'شنبه' }, { key: 'sun', label: 'یکشنبه' },
 ];
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
@@ -94,19 +94,19 @@ async function save() {
     showForm.value = false;
     await load();
   } catch (e) {
-    saveError.value = e.response?.data?.error?.message || e.message || 'Save failed';
+    saveError.value = e.response?.data?.error?.message || e.message || 'ذخیره ناموفق بود';
   } finally {
     saving.value = false;
   }
 }
 
 async function del(id) {
-  if (!confirm('Delete this location?')) return;
+  if (!confirm('این شعبه حذف شود؟')) return;
   try {
     await client.delete(`/vendor/merchants/${id}`);
     await load();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Delete failed');
+    alert(e.response?.data?.error?.message || 'حذف ناموفق بود');
   }
 }
 
@@ -120,7 +120,7 @@ onMounted(load);
         <h1 class="text-2xl md:text-3xl font-bold">شعب شما</h1>
         <p class="text-ink-500 mt-1">شعب فروشگاهی</p>
       </div>
-      <button v-if="can('manage_merchants')" @click="openNew" class="ios-button-primary"><i class="fa-solid fa-plus mr-2"></i>New location</button>
+      <button v-if="can('manage_merchants')" @click="openNew" class="ios-button-primary"><i class="fa-solid fa-plus mr-2"></i>شعبه جدید</button>
     </div>
 
     <div v-if="loading" class="mt-6 space-y-3">
@@ -128,7 +128,7 @@ onMounted(load);
     </div>
     <div v-else-if="items.length === 0" class="mt-6 text-ink-500 text-center py-12">
       <i class="fa-solid fa-store text-4xl text-ink-300"></i>
-      <div class="mt-3">No locations yet.</div>
+      <div class="mt-3">هنوز شعبه‌ای ثبت نشده است.</div>
     </div>
     <div v-else class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div v-for="m in items" :key="m._id" class="ios-card overflow-hidden">
@@ -149,12 +149,12 @@ onMounted(load);
             <div v-if="m.offPeakHours?.length" class="mt-2">
               <span class="chip bg-coral-500/10 text-coral-600 text-[10px]">
                 <i class="fa-regular fa-clock"></i>
-                Happy Hour: {{ m.offPeakHours[0].start }}-{{ m.offPeakHours[0].end }}
+                هپی اَور: {{ m.offPeakHours[0].start }}-{{ m.offPeakHours[0].end }}
               </span>
             </div>
             <div v-if="can('manage_merchants')" class="flex gap-3 mt-2">
-              <button @click="openEdit(m)" class="text-sm font-semibold text-teal-700 active:opacity-50"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
-              <button @click="del(m._id)" class="text-sm font-semibold text-coral-600 active:opacity-50"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+              <button @click="openEdit(m)" class="text-sm font-semibold text-teal-700 active:opacity-50"><i class="fa-solid fa-pen-to-square mr-1"></i>ویرایش</button>
+              <button @click="del(m._id)" class="text-sm font-semibold text-coral-600 active:opacity-50"><i class="fa-solid fa-trash mr-1"></i>حذف</button>
             </div>
           </div>
         </div>
@@ -164,27 +164,27 @@ onMounted(load);
     <div v-if="showForm" class="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-0 md:p-6">
       <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] overflow-y-auto max-h-[90vh]">
         <div class="flex items-center justify-between mb-4">
-          <div class="text-xl font-bold">{{ editing ? 'Edit location' : 'New location' }}</div>
-          <button @click="showForm = false" class="text-ink-500">Cancel</button>
+          <div class="text-xl font-bold">{{ editing ? 'ویرایش شعبه' : 'شعبه جدید' }}</div>
+          <button @click="showForm = false" class="text-ink-500">انصراف</button>
         </div>
 
         <form @submit.prevent="save" class="space-y-3">
-          <div class="text-xs uppercase font-semibold text-ink-500">Basic info</div>
-          <input v-model="form.name" class="input" placeholder="Location name (e.g. Pizza My Heart — Palo Alto)" required />
+          <div class="text-xs uppercase font-semibold text-ink-500">اطلاعات پایه</div>
+          <input v-model="form.name" class="input" placeholder="نام شعبه (مثلاً پیتزا دلخواه — شعبه ولیعصر)" required />
           <select v-model="form.category" class="input">
-            <option value="dining">Dining</option>
-            <option value="cafe">Café</option>
-            <option value="bar">Bar</option>
-            <option value="activities">Activities</option>
-            <option value="wellness">Wellness</option>
-            <option value="hotels">Hotels</option>
-            <option value="services">Services</option>
+            <option value="dining">رستوران</option>
+            <option value="cafe">کافه</option>
+            <option value="bar">نوشیدنی</option>
+            <option value="activities">تفریحی</option>
+            <option value="wellness">سلامت و زیبایی</option>
+            <option value="hotels">هتل</option>
+            <option value="services">خدمات</option>
           </select>
-          <input v-model="form.subCategory" class="input" placeholder="Sub-category (e.g. Pizza, Steakhouse)" />
-          <input v-model="form.description" class="input" placeholder="Short description" />
+          <input v-model="form.subCategory" class="input" placeholder="زیردسته (مثلاً پیتزا، کبابی)" />
+          <input v-model="form.description" class="input" placeholder="توضیح کوتاه" />
 
           <div>
-            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">Price level</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">سطح قیمت</div>
             <div class="grid grid-cols-4 gap-2">
               <button v-for="n in 4" :key="n" type="button" @click="form.priceLevel = n" class="py-2 rounded-2xl border-2 transition active:scale-95 font-bold" :class="form.priceLevel === n ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-ink-300/20 text-ink-700'">
                 {{ '$'.repeat(n) }}
@@ -193,10 +193,10 @@ onMounted(load);
           </div>
 
           <div>
-            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">Cuisine tags</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">برچسب‌های نوع غذا</div>
             <div class="flex gap-2">
-              <input v-model="cuisineInput" @keyup.enter.prevent="addCuisine" class="input flex-1" placeholder="e.g. Italian, Vegan, Family-friendly" />
-              <button type="button" @click="addCuisine" class="ios-card px-4 font-semibold text-teal-700 active:scale-95">Add</button>
+              <input v-model="cuisineInput" @keyup.enter.prevent="addCuisine" class="input flex-1" placeholder="مثلاً ایتالیایی، گیاهی، مناسب خانواده" />
+              <button type="button" @click="addCuisine" class="ios-card px-4 font-semibold text-teal-700 active:scale-95">افزودن</button>
             </div>
             <div v-if="form.cuisineTags.length" class="flex flex-wrap gap-1.5 mt-2">
               <span v-for="t in form.cuisineTags" :key="t" class="chip bg-teal-50 text-teal-700 cursor-pointer" @click="removeCuisine(t)">
@@ -205,44 +205,44 @@ onMounted(load);
             </div>
           </div>
 
-          <div class="text-xs uppercase font-semibold text-ink-500 pt-3 border-t border-cream-200">Address</div>
-          <input v-model="form.address.street" class="input" placeholder="Street address" />
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-3 border-t border-cream-200">نشانی</div>
+          <input v-model="form.address.street" class="input" placeholder="نشانی خیابان" />
           <div class="grid grid-cols-2 gap-2">
-            <input v-model="form.address.city" class="input" placeholder="City" />
-            <input v-model="form.address.state" class="input" placeholder="State" />
+            <input v-model="form.address.city" class="input" placeholder="شهر" />
+            <input v-model="form.address.state" class="input" placeholder="استان" />
           </div>
-          <input v-model="form.address.zip" class="input" placeholder="ZIP" />
+          <input v-model="form.address.zip" class="input" placeholder="کد پستی" />
           <div class="grid grid-cols-2 gap-2">
-            <input v-model.number="form.address.lat" type="number" step="0.0001" class="input" placeholder="Latitude" />
-            <input v-model.number="form.address.lng" type="number" step="0.0001" class="input" placeholder="Longitude" />
+            <input v-model.number="form.address.lat" type="number" step="0.0001" class="input" placeholder="عرض جغرافیایی" />
+            <input v-model.number="form.address.lng" type="number" step="0.0001" class="input" placeholder="طول جغرافیایی" />
           </div>
 
-          <input v-model="form.phone" type="tel" class="input" placeholder="Phone" />
+          <input v-model="form.phone" type="tel" class="input" placeholder="تلفن" />
 
           <div class="text-xs uppercase font-semibold text-ink-500 pt-3 border-t border-cream-200">
-            <i class="fa-regular fa-clock"></i> Happy Hour times
+            <i class="fa-regular fa-clock"></i> ساعات هپی اَور
           </div>
-          <p class="text-xs text-ink-500">Set when your coupons are active. Customers can only claim during these hours.</p>
+          <p class="text-xs text-ink-500">تعیین کنید کوپن‌های شما چه زمانی فعال هستند. مشتریان فقط در این ساعات می‌توانند کوپن دریافت کنند.</p>
           <div v-for="(slot, i) in form.offPeakHours" :key="i" class="ios-card p-3 space-y-2">
             <select v-model="slot.day" class="input text-sm">
-              <option value="daily">Daily</option>
+              <option value="daily">هر روز</option>
               <option v-for="d in DAYS" :key="d.key" :value="d.key">{{ d.label }}</option>
             </select>
             <div class="grid grid-cols-2 gap-2">
               <input v-model="slot.start" type="time" class="input text-sm" />
               <input v-model="slot.end" type="time" class="input text-sm" />
             </div>
-            <button type="button" @click="removeOffPeakSlot(i)" class="text-coral-600 text-xs font-semibold"><i class="fa-solid fa-trash mr-1"></i>Remove</button>
+            <button type="button" @click="removeOffPeakSlot(i)" class="text-coral-600 text-xs font-semibold"><i class="fa-solid fa-trash mr-1"></i>حذف</button>
           </div>
           <button type="button" @click="addOffPeakSlot" class="ios-card w-full p-3 text-teal-700 font-semibold active:scale-95">
-            <i class="fa-solid fa-plus mr-1"></i> Add happy hour slot
+            <i class="fa-solid fa-plus mr-1"></i> افزودن بازه هپی اَور
           </button>
 
           <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
-            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
+            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">مشاهده تعرفه‌ها و ارتقا ←</router-link>
           </div>
-          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-3">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create location') }}</button>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-3">{{ saving ? 'در حال ذخیره…' : (editing ? 'ذخیره تغییرات' : 'ساخت شعبه') }}</button>
         </form>
       </div>
     </div>

@@ -26,8 +26,8 @@ onMounted(() => {
       <div class="mx-auto w-24 h-24 rounded-3xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lift">
         <i class="fa-solid fa-mug-hot text-5xl text-white"></i>
       </div>
-      <div class="mt-6 text-4xl font-bold tracking-tight">Happy Hour</div>
-      <div class="mt-2 text-sm font-medium opacity-80">Eat. Drink. Save.</div>
+      <div class="mt-6 text-4xl font-bold tracking-tight">هپی اَور</div>
+      <div class="mt-2 text-sm font-medium opacity-80">بخور. بنوش. صرفه‌جویی کن.</div>
     </div>
 
     <div class="absolute bottom-12 inset-x-0 flex justify-center">

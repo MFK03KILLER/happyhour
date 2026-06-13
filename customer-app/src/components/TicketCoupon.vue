@@ -22,13 +22,14 @@ const variantLabel = computed(() => ({
   always: 'همیشه فعال',
 }[props.variant] || 'آفر'));
 
+function faNum(n) { return Number(n || 0).toLocaleString('fa-IR'); }
 const badge = computed(() => {
   const t = props.coupon.offerType;
-  if (t === 'BOGO') return { big: '1+1', small: 'BOGO' };
-  if (t === 'PERCENT_OFF') return { big: `${props.coupon.discountValue || 0}%`, small: 'OFF' };
-  if (t === 'FLAT_OFF') return { big: `$${props.coupon.discountValue || 0}`, small: 'OFF' };
-  if (t === 'FREE_ITEM') return { big: 'FREE', small: 'ITEM' };
-  return { big: 'DEAL', small: '' };
+  if (t === 'BOGO') return { big: '۱+۱', small: 'دوتایی' };
+  if (t === 'PERCENT_OFF') return { big: `${faNum(props.coupon.discountValue)}٪`, small: 'تخفیف' };
+  if (t === 'FLAT_OFF') return { big: faNum(props.coupon.discountValue), small: 'تومان تخفیف' };
+  if (t === 'FREE_ITEM') return { big: 'رایگان', small: 'هدیه' };
+  return { big: 'آفر', small: '' };
 });
 
 const windowText = computed(() => {
@@ -94,7 +95,7 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
               v-if="!locked && !coupon.unavailableToday"
               @click="onClaim"
               class="bg-white rounded-full px-4 py-1.5 text-xs font-bold whitespace-nowrap text-ink-900 active:scale-95 transition shadow-soft inline-flex items-center gap-1"
-            >Claim <i class="fa-solid fa-arrow-right text-[10px]"></i></button>
+            >دریافت <i class="fa-solid fa-arrow-left text-[10px]"></i></button>
             <button v-else-if="coupon.unavailableToday" disabled class="bg-white/15 backdrop-blur rounded-full px-3 py-1.5 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 opacity-80">
               <i class="fa-solid fa-calendar-xmark text-[9px]"></i> فردا امتحان کنید
             </button>

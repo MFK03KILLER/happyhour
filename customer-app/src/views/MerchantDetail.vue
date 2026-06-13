@@ -85,11 +85,11 @@ function variantFor(c) {
 
 async function onClaim(coupon) {
   if (!isSubscribed.value) {
-    toast.info('Become a member to claim coupons', { title: 'Membership required', action: { label: 'Subscribe →', handler: () => router.push('/subscribe') } });
+    toast.info('برای دریافت کوپن عضو شوید', { title: 'نیازمند عضویت', action: { label: 'عضویت ←', handler: () => router.push('/subscribe') } });
     return;
   }
   if (daily.isExhausted) {
-    toast.warning(`You've used all ${daily.limit} of today's coupons. Reset at midnight.`, { title: 'Daily limit reached' });
+    toast.warning(`شما هر ۳ کوپن امروز را استفاده کرده‌اید. نیمه‌شب صفر می‌شود.`, { title: 'سقف روزانه پر شد' });
     return;
   }
   claiming.value = coupon._id;
@@ -98,20 +98,20 @@ async function onClaim(coupon) {
     daily.optimisticIncrement();
     const activeNow = data.activeNow !== false;
     if (activeNow) {
-      toast.success('Saved to your wallet. Show it at the counter to redeem.', {
-        title: 'Coupon claimed! 🎉',
-        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
+      toast.success('در کیف پول شما ذخیره شد. برای استفاده آن را در صندوق فروشگاه نشان دهید.', {
+        title: 'کوپن دریافت شد! 🎉',
+        action: { label: 'کیف پول', handler: () => router.push('/wallet') },
       });
     } else {
       const w = windowLabel(coupon);
-      toast.warning(`Claimed, but you can only redeem during happy hour${w ? ` (${w})` : ''}. Come back during these hours.`, {
-        title: 'Outside happy hour',
+      toast.warning(`دریافت شد، اما فقط در ساعات هپی اَور${w ? ` (${w})` : ''} قابل استفاده است. در آن ساعات مراجعه کنید.`, {
+        title: 'خارج از ساعات هپی اَور',
         ttl: 9000,
-        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
+        action: { label: 'کیف پول', handler: () => router.push('/wallet') },
       });
     }
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Could not claim coupon', { title: 'Claim failed' });
+    toast.error(e.response?.data?.error?.message || 'دریافت کوپن ممکن نشد', { title: 'دریافت ناموفق بود' });
   } finally { claiming.value = null; }
 }
 

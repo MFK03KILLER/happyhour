@@ -36,7 +36,7 @@ async function addCustom() {
     showAdd.value = false;
     await load();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Failed to add holiday');
+    alert(e.response?.data?.error?.message || 'افزودن تعطیلی ناموفق بود');
   } finally { saving.value = false; }
 }
 
@@ -46,7 +46,7 @@ async function removeCustom(h) {
     await client.delete(`/merchant/holidays/${h._id}`);
     await load();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Failed to remove');
+    alert(e.response?.data?.error?.message || 'حذف ناموفق بود');
   }
 }
 

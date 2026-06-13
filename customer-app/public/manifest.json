@@ -1,11 +1,13 @@
 {
-  "name": "Happy Hour - Coupons & Rewards",
-  "short_name": "Happy Hour",
+  "name": "هپی اَور — کوپن و تخفیف",
+  "short_name": "هپی اَور",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FBF6EE",
   "theme_color": "#0E5C5C",
   "orientation": "portrait",
+  "lang": "fa",
+  "dir": "rtl",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }

@@ -89,7 +89,7 @@ function kindLabel(k) { return { subscription: 'عضویت', coupon_purchase: '�
           <div class="ios-card p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">شعب</div>
             <div class="text-2xl md:text-3xl font-bold mt-2">{{ persianNumber(stats.totalMerchants) }}</div>
-            <div class="text-xs text-ink-300 mt-1">{{ persianNumber(stats.totalVendors) }} بیزنس</div>
+            <div class="text-xs text-ink-300 mt-1">{{ persianNumber(stats.totalVendors) }} وندور</div>
           </div>
         </div>
       </div>

@@ -89,19 +89,19 @@ async function save() {
     showForm.value = false;
     await load();
   } catch (e) {
-    saveError.value = e.response?.data?.error?.message || e.message || 'Save failed';
+    saveError.value = e.response?.data?.error?.message || e.message || 'ذخیره ناموفق بود';
   } finally {
     saving.value = false;
   }
 }
 
 async function del(id) {
-  if (!confirm('Delete this coupon?')) return;
+  if (!confirm('این کوپن حذف شود؟')) return;
   try {
     await client.delete(`/vendor/coupons/${id}`);
     await load();
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Delete failed');
+    alert(e.response?.data?.error?.message || 'حذف ناموفق بود');
   }
 }
 
@@ -279,18 +279,18 @@ onMounted(load);
     <div v-if="showForm" class="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-0 md:p-6">
       <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] overflow-y-auto max-h-[90vh]">
         <div class="flex items-center justify-between mb-4">
-          <div class="text-xl font-bold">{{ editing ? 'Edit coupon' : 'New coupon' }}</div>
-          <button @click="showForm = false" class="text-ink-500">Cancel</button>
+          <div class="text-xl font-bold">{{ editing ? 'ویرایش کوپن' : 'کوپن جدید' }}</div>
+          <button @click="showForm = false" class="text-ink-500">انصراف</button>
         </div>
 
         <form @submit.prevent="save" class="space-y-3">
-          <input v-model="form.title" class="input" placeholder="Title (e.g. Buy 1 Pizza, Get 1 Free)" required />
-          <input v-model="form.subtitle" class="input" placeholder="Short subtitle" />
-          <textarea v-model="form.description" class="input" rows="2" placeholder="Description / terms"></textarea>
-          <input v-model="form.heroImageUrl" class="input" placeholder="Hero image URL (Unsplash etc)" />
+          <input v-model="form.title" class="input" placeholder="عنوان (مثلاً: یکی بخر دوتا ببر)" required />
+          <input v-model="form.subtitle" class="input" placeholder="زیرعنوان کوتاه" />
+          <textarea v-model="form.description" class="input" rows="2" placeholder="توضیحات / شرایط"></textarea>
+          <input v-model="form.heroImageUrl" class="input" placeholder="لینک تصویر اصلی" />
 
           <div>
-            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">Offer type</div>
+            <div class="text-xs uppercase font-semibold text-ink-500 mb-1.5">نوع آفر</div>
             <div class="grid grid-cols-3 gap-2">
               <button type="button" v-for="t in ['BOGO','PERCENT_OFF','FREE_ITEM','FLAT_OFF','BUNDLE']" :key="t" @click="form.offerType = t" class="rounded-2xl py-2.5 border-2 text-xs font-bold transition active:scale-95" :class="form.offerType === t ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-ink-300/20 text-ink-700'">
                 {{ offerTypeLabel(t) }}
@@ -298,51 +298,51 @@ onMounted(load);
             </div>
           </div>
 
-          <input v-if="['PERCENT_OFF','FLAT_OFF'].includes(form.offerType)" v-model.number="form.discountValue" type="number" min="0" class="input" :placeholder="form.offerType === 'PERCENT_OFF' ? 'Discount %' : 'Discount $'" />
+          <input v-if="['PERCENT_OFF','FLAT_OFF'].includes(form.offerType)" v-model.number="form.discountValue" type="number" min="0" class="input" :placeholder="form.offerType === 'PERCENT_OFF' ? 'درصد تخفیف' : 'مبلغ تخفیف (تومان)'" />
 
-          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">Highlights</div>
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">برجسته‌سازی</div>
           <div class="space-y-2">
             <label class="flex items-center gap-3 p-3 rounded-2xl bg-coral-500/5 cursor-pointer">
               <input type="checkbox" v-model="form.todaysOffer" class="w-5 h-5" />
               <div>
-                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-fire text-coral-500"></i> Today's Offer</div>
-                <div class="text-xs text-ink-500">Highlight as a daily offer (top of merchant page)</div>
+                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-fire text-coral-500"></i> آفر امروز</div>
+                <div class="text-xs text-ink-500">نمایش به‌عنوان آفر روزانه (بالای صفحه‌ی فروشگاه)</div>
               </div>
             </label>
             <label class="flex items-center gap-3 p-3 rounded-2xl bg-purple-500/5 cursor-pointer">
               <input type="checkbox" v-model="form.popupOffer" class="w-5 h-5" />
               <div>
-                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-bolt text-purple-500"></i> Pop-up Offer</div>
-                <div class="text-xs text-ink-500">Limited-time special with extra emphasis</div>
+                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-bolt text-purple-500"></i> آفر ویژه (پاپ‌آپ)</div>
+                <div class="text-xs text-ink-500">پیشنهاد محدود با تأکید بیشتر</div>
               </div>
             </label>
             <label class="flex items-center gap-3 p-3 rounded-2xl bg-yellow-400/10 cursor-pointer">
               <input type="checkbox" v-model="form.featured" class="w-5 h-5" />
               <div>
-                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-500"></i> Featured</div>
-                <div class="text-xs text-ink-500">Show in homepage trending section</div>
+                <div class="font-semibold flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-500"></i> ویژه</div>
+                <div class="text-xs text-ink-500">نمایش در بخش پرطرفدارهای صفحه‌ی اصلی</div>
               </div>
             </label>
           </div>
 
           <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">
-            <i class="fa-solid fa-calendar-xmark"></i> Holidays
+            <i class="fa-solid fa-calendar-xmark"></i> تعطیلات
           </div>
           <label class="flex items-center gap-3 p-3 rounded-2xl bg-cream-100 cursor-pointer">
             <input type="checkbox" v-model="form.disabledOnHolidays" class="w-5 h-5" />
             <div>
-              <div class="font-semibold">Disable on holidays</div>
-              <div class="text-xs text-ink-500">Pause this coupon on US federal holidays + each location's custom holidays. Uncheck to keep it active during holidays (e.g. when you WANT a holiday promo).</div>
+              <div class="font-semibold">غیرفعال در تعطیلات</div>
+              <div class="text-xs text-ink-500">این کوپن در تعطیلات رسمی و تعطیلات اختصاصی هر شعبه متوقف می‌شود. اگر می‌خواهید در تعطیلات هم فعال بماند (مثلاً برای جشنواره‌ی تعطیلات) این گزینه را بردارید.</div>
             </div>
           </label>
 
           <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">
-            <i class="fa-regular fa-clock"></i> Active window
+            <i class="fa-regular fa-clock"></i> بازه‌ی فعال
           </div>
-          <p class="text-xs text-ink-500">Customers can only claim during these hours. Set this to your slow times to drive traffic.</p>
+          <p class="text-xs text-ink-500">مشتریان فقط در این ساعات می‌توانند کوپن را دریافت کنند. آن را روی ساعات خلوت خود تنظیم کنید تا مشتری جذب شود.</p>
 
           <div class="flex gap-1 flex-wrap">
-            <button type="button" @click="toggleDay('daily')" class="chip transition" :class="(form.activeWindow.days || []).includes('daily') ? 'bg-teal-600 text-white' : 'bg-cream-200 text-ink-700'">Daily</button>
+            <button type="button" @click="toggleDay('daily')" class="chip transition" :class="(form.activeWindow.days || []).includes('daily') ? 'bg-teal-600 text-white' : 'bg-cream-200 text-ink-700'">روزانه</button>
             <button type="button" v-for="d in DAYS" :key="d.key" @click="toggleDay(d.key)" class="chip transition" :class="(form.activeWindow.days || []).includes(d.key) ? 'bg-teal-600 text-white' : 'bg-cream-200 text-ink-700'">
               {{ d.label }}
             </button>
@@ -350,17 +350,17 @@ onMounted(load);
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <div class="text-[10px] uppercase text-ink-500 mb-1">Start</div>
+              <div class="text-[10px] uppercase text-ink-500 mb-1">شروع</div>
               <input v-model="form.activeWindow.start" type="time" class="input" />
             </div>
             <div>
-              <div class="text-[10px] uppercase text-ink-500 mb-1">End</div>
+              <div class="text-[10px] uppercase text-ink-500 mb-1">پایان</div>
               <input v-model="form.activeWindow.end" type="time" class="input" />
             </div>
           </div>
 
-          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">Locations</div>
-          <p class="text-xs text-ink-500">Leave empty to allow all your locations.</p>
+          <div class="text-xs uppercase font-semibold text-ink-500 pt-2 border-t border-cream-200">شعب</div>
+          <p class="text-xs text-ink-500">خالی بگذارید تا برای همه‌ی شعب شما فعال باشد.</p>
           <div class="space-y-2 max-h-40 overflow-y-auto">
             <label v-for="m in merchants" :key="m._id" class="flex items-center gap-2 p-2 rounded-xl hover:bg-cream-100 cursor-pointer">
               <input type="checkbox" :value="m._id" v-model="form.merchantIds" />
@@ -370,9 +370,9 @@ onMounted(load);
 
           <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
-            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
+            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">مشاهده قیمت‌ها و ارتقا ←</router-link>
           </div>
-          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create coupon') }}</button>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2">{{ saving ? 'در حال ذخیره…' : (editing ? 'ذخیره تغییرات' : 'ساخت کوپن') }}</button>
         </form>
       </div>
     </div>

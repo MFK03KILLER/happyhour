@@ -51,7 +51,7 @@ async function onAccept(version) {
     await auth.fetchMe();
     showForced.value = false;
   } catch (e) {
-    alert(e.response?.data?.error?.message || 'Could not record acceptance — please retry');
+    alert(e.response?.data?.error?.message || 'ثبت پذیرش قوانین ناموفق بود — لطفاً دوباره تلاش کنید');
   }
 }
 
