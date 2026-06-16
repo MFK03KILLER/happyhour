@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../stores/auth';
 
 import LandingView from '../views/Landing.vue';
@@ -44,7 +45,11 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  // Native (Capacitor) build uses hash history — path-based routes 404 under the
+  // capacitor://localhost file scheme. The web build keeps clean history-mode URLs.
+  history: Capacitor.isNativePlatform()
+    ? createWebHashHistory()
+    : createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
 });

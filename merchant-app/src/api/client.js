@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api/v1';
 
@@ -46,7 +47,8 @@ client.interceptors.response.use(
         flush(err, null);
         localStorage.removeItem('hh_m_access_token');
         localStorage.removeItem('hh_m_refresh_token');
-        window.location.href = '/login';
+        if (Capacitor.isNativePlatform()) window.location.hash = '#/login';
+        else window.location.href = '/login';
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

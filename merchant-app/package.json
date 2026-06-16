@@ -6,9 +6,19 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5174",
     "build": "vite build",
-    "preview": "vite preview --port 5174"
+    "build:native": "vite build --config vite.config.native.js --mode native",
+    "preview": "vite preview --port 5174",
+    "ios:sync": "npm run build:native && cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/device": "^8.0.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@zxing/browser": "^0.1.5",
     "axios": "^1.7.2",
     "pinia": "^2.2.0",
@@ -16,6 +26,9 @@
     "vue-router": "^4.4.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "@vitejs/plugin-vue": "^5.1.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",

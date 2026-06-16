@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../stores/auth';
 
 import LoginView from '../views/Login.vue';
@@ -73,7 +74,14 @@ const routes = [
   },
 ];
 
-const router = createRouter({ history: createWebHistory(import.meta.env.BASE_URL), routes, scrollBehavior: () => ({ top: 0 }) });
+const router = createRouter({
+  // Native (Capacitor) build uses hash history; web keeps history-mode URLs.
+  history: Capacitor.isNativePlatform()
+    ? createWebHashHistory()
+    : createWebHistory(import.meta.env.BASE_URL),
+  routes,
+  scrollBehavior: () => ({ top: 0 }),
+});
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore();

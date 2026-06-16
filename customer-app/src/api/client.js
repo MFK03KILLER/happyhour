@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api/v1';
 
@@ -13,6 +14,15 @@ function clearSession() {
 }
 
 function redirectToLogin() {
+  // Native build uses hash history (capacitor://localhost/#/route); a path-based
+  // redirect would 404 the file scheme, so navigate via the hash instead.
+  if (Capacitor.isNativePlatform()) {
+    const h = window.location.hash;
+    if (!h.startsWith('#/welcome') && !h.startsWith('#/login') && !h.startsWith('#/register')) {
+      window.location.hash = '#/welcome';
+    }
+    return;
+  }
   if (window.location.pathname !== '/welcome' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
     window.location.href = '/welcome';
   }

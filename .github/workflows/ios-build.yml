@@ -1,0 +1,64 @@
+# OPTIONAL — Cloud iOS build on a macOS runner (so you can build without a local Mac).
+#
+# This template produces the web bundle, generates the iOS project, and ARCHIVES it.
+# Signing + uploading to App Store Connect requires you to add secrets:
+#   - BUILD_CERTIFICATE_BASE64   (your Apple Distribution cert .p12, base64)
+#   - P12_PASSWORD
+#   - PROVISIONING_PROFILE_BASE64
+#   - APPSTORE_API_KEY_ID / APPSTORE_API_ISSUER_ID / APPSTORE_API_PRIVATE_KEY  (App Store Connect API key)
+# Until you add those, this builds an UNSIGNED archive just to verify the project compiles.
+#
+# Since you already have a Mac, the local path (see APPSTORE/README-FINGLISH.md §2) is simpler.
+# This file is here as a backup / CI option.
+
+name: iOS Build (optional)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Which app to build"
+        required: true
+        default: customer-app
+        type: choice
+        options: [customer-app, merchant-app]
+
+jobs:
+  build:
+    runs-on: macos-15   # Xcode 26 image
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install deps
+        working-directory: ${{ github.event.inputs.app }}
+        run: npm install
+
+      - name: Build native web bundle
+        working-directory: ${{ github.event.inputs.app }}
+        run: npm run build:native
+
+      - name: Add iOS platform
+        working-directory: ${{ github.event.inputs.app }}
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Generate icons
+        working-directory: ${{ github.event.inputs.app }}
+        run: npx capacitor-assets generate --ios || true
+
+      - name: Archive (unsigned — add signing secrets for App Store upload)
+        working-directory: ${{ github.event.inputs.app }}/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -configuration Release -sdk iphoneos \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO archive
+
+      # To upload to App Store Connect, add signing + an export step (xcodebuild -exportArchive
+      # with an ExportOptions.plist) using the secrets listed at the top of this file,
+      # then `xcrun altool`/`notarytool` or fastlane `deliver`.
