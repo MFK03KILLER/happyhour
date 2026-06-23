@@ -6,24 +6,38 @@ import 'leaflet/dist/leaflet.css';
 const props = defineProps({
   pins: { type: Array, default: () => [] },
   center: { type: Object, default: () => ({ lat: 37.7749, lng: -122.4194 }) },
-  zoom: { type: Number, default: 11 },
-  dark: { type: Boolean, default: true },
+  zoom: { type: Number, default: 14 },
+  dark: { type: Boolean, default: false },
+  userLocation: { type: Object, default: null },
+  selectedId: { type: [String, null], default: null },
 });
-const emit = defineEmits(['pin-click']);
+const emit = defineEmits(['pin-click', 'map-ready']);
 
 const mapEl = ref(null);
 let mapInstance = null;
 let markerLayer = null;
+let userMarker = null;
 
-function buildIcon(label, kind) {
-  const color = kind === 'surprise_bag' ? '#FF6B5B' : '#0E5C5C';
+function pinIcon(p, selected) {
+  const color = p.kind === 'surprise_bag' ? '#FF6B5B' : '#0E5C5C';
+  const size = selected ? 48 : 38;
+  const icon = p.icon || '📍';
   const html = `<div style="
-    background:${color};color:white;padding:3px 10px;border-radius:9999px;
-    font-weight:700;font-size:12px;font-family:Inter,sans-serif;
-    box-shadow:0 4px 12px rgba(0,0,0,.35);white-space:nowrap;
-    border:2px solid white;cursor:pointer;
-  ">${label}</div>`;
-  return L.divIcon({ html, className: '', iconSize: null, iconAnchor: [20, 14] });
+    width:${size}px;height:${size}px;border-radius:9999px;
+    background:${selected ? color : '#ffffff'};
+    border:2.5px solid ${color};
+    box-shadow:0 5px 16px rgba(0,0,0,.28);
+    display:flex;align-items:center;justify-content:center;
+    font-size:${selected ? 22 : 17}px;line-height:1;cursor:pointer;
+  ">${icon}</div>`;
+  return L.divIcon({ html, className: 'hh-pin', iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+}
+
+function userIcon() {
+  return L.divIcon({
+    html: '<div class="hh-userdot"><span class="hh-userpulse"></span></div>',
+    className: 'hh-user', iconSize: [22, 22], iconAnchor: [11, 11],
+  });
 }
 
 function renderPins() {
@@ -32,25 +46,50 @@ function renderPins() {
   markerLayer = L.layerGroup().addTo(mapInstance);
   props.pins.forEach((p) => {
     if (p.lat == null || p.lng == null) return;
-    const marker = L.marker([p.lat, p.lng], { icon: buildIcon(p.label || '•', p.kind) });
+    const selected = props.selectedId && p.id === props.selectedId;
+    const marker = L.marker([p.lat, p.lng], { icon: pinIcon(p, selected), zIndexOffset: selected ? 1000 : 0 });
     marker.on('click', () => emit('pin-click', p));
-    if (p.popup) marker.bindPopup(p.popup);
     marker.addTo(markerLayer);
   });
 }
 
+function renderUser() {
+  if (!mapInstance) return;
+  if (userMarker) { mapInstance.removeLayer(userMarker); userMarker = null; }
+  if (props.userLocation && props.userLocation.lat != null) {
+    userMarker = L.marker([props.userLocation.lat, props.userLocation.lng],
+      { icon: userIcon(), zIndexOffset: 2000, interactive: false }).addTo(mapInstance);
+  }
+}
+
+// Exposed to the parent (recenter button / row taps)
+function recenter(zoom) {
+  const u = props.userLocation;
+  if (mapInstance && u && u.lat != null) mapInstance.flyTo([u.lat, u.lng], zoom || 14, { duration: 0.6 });
+}
+function focus(lat, lng) {
+  if (mapInstance && lat != null) mapInstance.flyTo([lat, lng], 16, { duration: 0.5 });
+}
+defineExpose({ recenter, focus });
+
 onMounted(() => {
-  mapInstance = L.map(mapEl.value, { zoomControl: true, attributionControl: true }).setView([props.center.lat, props.center.lng], props.zoom);
+  const c = (props.userLocation && props.userLocation.lat != null) ? props.userLocation : props.center;
+  mapInstance = L.map(mapEl.value, { zoomControl: false, attributionControl: true })
+    .setView([c.lat, c.lng], props.zoom);
+  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
   const tileUrl = props.dark
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  L.tileLayer(tileUrl, { maxZoom: 19, attribution: '© OpenStreetMap, © CARTO' }).addTo(mapInstance);
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  L.tileLayer(tileUrl, { maxZoom: 20, attribution: '© OpenStreetMap, © CARTO' }).addTo(mapInstance);
   renderPins();
+  renderUser();
+  emit('map-ready');
 });
 
 onBeforeUnmount(() => { if (mapInstance) mapInstance.remove(); });
-
 watch(() => props.pins, renderPins, { deep: true });
+watch(() => props.selectedId, renderPins);
+watch(() => props.userLocation, renderUser, { deep: true });
 </script>
 
 <template>
@@ -58,6 +97,20 @@ watch(() => props.pins, renderPins, { deep: true });
 </template>
 
 <style>
-.leaflet-container { background: #0F172A; }
-.leaflet-control-attribution { font-size: 9px !important; opacity: 0.6; }
+.leaflet-container { background: #e8eaed; }
+.leaflet-control-attribution { font-size: 9px !important; opacity: 0.55; }
+.leaflet-control-zoom a { border-radius: 10px !important; }
+.hh-userdot {
+  width: 22px; height: 22px; border-radius: 9999px;
+  background: #2563EB; border: 3px solid #fff; position: relative;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.35), 0 2px 8px rgba(0,0,0,.3);
+}
+.hh-userpulse {
+  position: absolute; inset: -9px; border-radius: 9999px;
+  background: rgba(37,99,235,.22); animation: hh-pulse 2s ease-out infinite;
+}
+@keyframes hh-pulse {
+  0% { transform: scale(.55); opacity: .8; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
 </style>

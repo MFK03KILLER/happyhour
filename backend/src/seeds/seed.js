@@ -253,6 +253,7 @@ async function run() {
   const vendorsBySlug = await upsertVendors();
   const merchantsBySlug = await upsertMerchants(vendorsBySlug);
   await upsertCoupons(vendorsBySlug, merchantsBySlug);
+  const sfFoodCount = await require('./sfFood').seedSfFood();
   await upsertCustomers();
   await upsertVendorOwners(vendorsBySlug);
   await upsertMerchantStaff(merchantsBySlug);
@@ -264,6 +265,7 @@ async function run() {
   logger.info('Merchant:      pizza.staff@happyhour.demo / Merchant@123');
   logger.info('Customers:     customer1@happyhour.demo / Customer@123 (also customer2, customer3)');
   logger.info(`Vendors: ${VENDORS.length} · Merchants: ${MERCHANTS.length} · Coupons: ${COUPON_TEMPLATES.length}`);
+  logger.info(`SF bakeries + steakhouses added: ${sfFoodCount} (categories: bakery, steakhouse)`);
   logger.info('=========================');
   await disconnectDB();
 }
