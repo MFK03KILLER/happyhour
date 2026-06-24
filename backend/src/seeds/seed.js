@@ -243,6 +243,26 @@ async function upsertRolesSync() {
   await roleService.syncSystemRoles();
 }
 
+// Rewrite stored Unsplash image URLs to the same-origin /uimg/ proxy so images load
+// from regions where images.unsplash.com is blocked/slow (Nginx proxies them server-side).
+async function rewriteImageHosts() {
+  const TO = '/uimg/';
+  const re = /https?:\/\/images\.unsplash\.com\//g;
+  const jobs = [[Coupon, ['heroImageUrl']], [Merchant, ['logoUrl', 'coverImageUrl']], [Vendor, ['logoUrl']], [Category, ['imageUrl']]];
+  let n = 0;
+  for (const [Model, fields] of jobs) {
+    const docs = await Model.find({ $or: fields.map((f) => ({ [f]: { $regex: 'images\\.unsplash\\.com' } })) });
+    for (const d of docs) {
+      let changed = false;
+      for (const f of fields) {
+        if (typeof d[f] === 'string' && d[f].includes('images.unsplash.com')) { d[f] = d[f].replace(re, TO); changed = true; }
+      }
+      if (changed) { await d.save(); n += 1; }
+    }
+  }
+  return n;
+}
+
 async function run() {
   await connectDB();
   logger.info('Seeding database...');
@@ -259,6 +279,8 @@ async function run() {
   await upsertMerchantStaff(merchantsBySlug);
   await require('../services/siteSettingService').ensureSeed();
   await require('../services/holidayService').seedUSFederalHolidays();
+  const rewritten = await rewriteImageHosts();
+  logger.info(`Image URLs routed via /uimg/ proxy: ${rewritten}`);
   logger.info('===== SEED COMPLETE =====');
   logger.info(`Admin:         ${env.ADMIN_EMAIL} / ${env.ADMIN_PASSWORD}`);
   logger.info('Vendor owner:  pizza.owner@happyhour.demo / Vendor@123');

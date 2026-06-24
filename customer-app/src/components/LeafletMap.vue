@@ -70,10 +70,16 @@ function recenter(zoom) {
 function focus(lat, lng) {
   if (mapInstance && lat != null) mapInstance.flyTo([lat, lng], 16, { duration: 0.5 });
 }
-defineExpose({ recenter, focus });
+// Frame all restaurant pins (NOT the user — they may be far away).
+function fitToPins(pad = 48) {
+  if (!mapInstance) return;
+  const pts = props.pins.filter((p) => p.lat != null).map((p) => [p.lat, p.lng]);
+  if (pts.length) mapInstance.fitBounds(L.latLngBounds(pts), { padding: [pad, pad], maxZoom: 15 });
+}
+defineExpose({ recenter, focus, fitToPins });
 
 onMounted(() => {
-  const c = (props.userLocation && props.userLocation.lat != null) ? props.userLocation : props.center;
+  const c = props.center;
   mapInstance = L.map(mapEl.value, { zoomControl: false, attributionControl: true })
     .setView([c.lat, c.lng], props.zoom);
   L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);

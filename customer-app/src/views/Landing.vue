@@ -13,12 +13,12 @@ const features = [
 ];
 
 const partners = [
-  { name: 'Pizza My Heart', cat: 'Italian', img: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300' },
-  { name: 'Bay Brew Coffee', cat: 'Café', img: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=300' },
-  { name: 'Skyline Bowling', cat: 'Entertainment', img: 'https://images.unsplash.com/photo-1538097304804-2a1b932466a9?w=300' },
-  { name: 'Iron Forge Gym', cat: 'Fitness', img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=300' },
-  { name: 'Sunset Cinema', cat: 'Cinema', img: 'https://images.unsplash.com/photo-1489599735193-3d05d54d8ec5?w=300' },
-  { name: 'Coastal Tacos', cat: 'Mexican', img: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=300' },
+  { name: 'Pizza My Heart', cat: 'Italian', img: '/uimg/photo-1565299624946-b28f40a0ae38?w=300' },
+  { name: 'Bay Brew Coffee', cat: 'Café', img: '/uimg/photo-1442512595331-e89e73853f31?w=300' },
+  { name: 'Skyline Bowling', cat: 'Entertainment', img: '/uimg/photo-1538097304804-2a1b932466a9?w=300' },
+  { name: 'Iron Forge Gym', cat: 'Fitness', img: '/uimg/photo-1517836357463-d25dfeac3438?w=300' },
+  { name: 'Sunset Cinema', cat: 'Cinema', img: '/uimg/photo-1489599735193-3d05d54d8ec5?w=300' },
+  { name: 'Coastal Tacos', cat: 'Mexican', img: '/uimg/photo-1565299585323-38d6b0865b47?w=300' },
 ];
 
 const testimonials = [
@@ -112,7 +112,7 @@ const testimonials = [
 
                 <div class="mt-4 ios-card overflow-hidden">
                   <div class="relative aspect-[16/10]">
-                    <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600" class="w-full h-full object-cover" />
+                    <img :src="'/uimg/photo-1513104890138-7c749659a591?w=600'" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 right-3 text-white">
                       <div class="text-[10px] uppercase font-bold tracking-wider opacity-90">Pizza My Heart</div>
@@ -127,7 +127,7 @@ const testimonials = [
 
                 <div class="mt-3 ios-card overflow-hidden">
                   <div class="relative aspect-[16/10]">
-                    <img src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600" class="w-full h-full object-cover" />
+                    <img :src="'/uimg/photo-1517701550927-30cf4ba1dba5?w=600'" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 right-3 text-white">
                       <div class="text-[10px] uppercase font-bold tracking-wider opacity-90">Bay Brew Coffee</div>

@@ -20,7 +20,15 @@ const mapRef = ref(null);
 
 const SF = { lat: 37.7749, lng: -122.4194 };
 const userLoc = computed(() => coords.value || null);
-const mapCenter = computed(() => coords.value || SF);
+// Center on the cluster of restaurants (they're all in SF) so they're always visible,
+// even when the viewer is far away. The blue dot still shows the real location.
+const mapCenter = computed(() => {
+  const pts = merchants.value.filter((e) => e.merchant.address?.lat != null);
+  if (!pts.length) return coords.value || SF;
+  const lat = pts.reduce((s, e) => s + e.merchant.address.lat, 0) / pts.length;
+  const lng = pts.reduce((s, e) => s + e.merchant.address.lng, 0) / pts.length;
+  return { lat, lng };
+});
 const sheetHeight = computed(() => (sheetOpen.value ? '42vh' : '116px'));
 
 function haversineKm(a, b) {
@@ -88,6 +96,7 @@ function onPin(p) {
   const e = merchants.value.find((x) => x.id === p.id);
   if (e) selectMerchant(e);
 }
+function onMapReady() { if (mapRef.value) mapRef.value.fitToPins(); }
 function recenter() { if (mapRef.value) mapRef.value.recenter(14); }
 function directions(m) {
   const url = directionsUrl({ lat: m.address.lat, lng: m.address.lng, label: m.name });
@@ -116,7 +125,7 @@ function goMerchant(m) { router.push(`/merchant-detail/${m._id}`); }
 
     <template v-else>
       <LeafletMap ref="mapRef" :pins="pins" :user-location="userLoc" :center="mapCenter"
-        :selected-id="selectedId" :zoom="14" :dark="false" @pin-click="onPin" />
+        :selected-id="selectedId" :zoom="12" :dark="false" @pin-click="onPin" @map-ready="onMapReady" />
 
       <!-- Top bar -->
       <header class="absolute top-0 inset-x-0 z-[1000] safe-top p-3 flex items-center gap-2 pointer-events-none">

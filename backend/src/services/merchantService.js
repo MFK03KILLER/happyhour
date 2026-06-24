@@ -75,7 +75,14 @@ async function listByVendor(vendorId) {
 
 async function discover({ category, search, lat, lng, sort = 'distance', order = 'asc', priceMin, priceMax, ratingMin, page = 1, limit = 30 }) {
   const filter = { status: 'active' };
-  if (category) filter.category = category;
+  // 'nearby' = no category filter (all merchants, sorted by distance).
+  // 'bakery'/'steakhouse' live in subCategory/cuisineTags (merchant.category enum is
+  // cafe/dining); dining/cafe/bar/etc. match the enum directly.
+  if (category && category !== 'nearby') {
+    const esc = String(category).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx = new RegExp(`^${esc}$`, 'i');
+    filter.$or = [{ category }, { subCategory: rx }, { cuisineTags: rx }];
+  }
   if (search) filter.name = { $regex: search, $options: 'i' };
   if (priceMin != null) filter.priceLevel = { ...(filter.priceLevel || {}), $gte: priceMin };
   if (priceMax != null) filter.priceLevel = { ...(filter.priceLevel || {}), $lte: priceMax };
