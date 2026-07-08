@@ -7,6 +7,7 @@ const statsService = require('../services/statsService');
 const auditService = require('../services/auditService');
 const revenueService = require('../services/revenueService');
 const siteSettingService = require('../services/siteSettingService');
+const promoCodeService = require('../services/promoCodeService');
 const userRepo = require('../repositories/userRepository');
 const { ConflictError } = require('../utils/errors');
 
@@ -241,4 +242,28 @@ exports.updateSiteContent = asyncHandler(async (req, res) => {
     req,
   });
   res.json(updated.value);
+});
+
+// ---------- Promo codes ----------
+exports.listPromoCodes = asyncHandler(async (req, res) => {
+  const items = await promoCodeService.list();
+  res.json({ items });
+});
+
+exports.createPromoCode = asyncHandler(async (req, res) => {
+  const promo = await promoCodeService.create(req.body, req.user._id);
+  await auditService.log({ actorUserId: req.user._id, action: 'promo.create', targetType: 'PromoCode', targetId: promo._id.toString(), after: promo, req });
+  res.status(201).json(promo);
+});
+
+exports.updatePromoCode = asyncHandler(async (req, res) => {
+  const promo = await promoCodeService.update(req.params.id, req.body);
+  await auditService.log({ actorUserId: req.user._id, action: 'promo.update', targetType: 'PromoCode', targetId: promo._id.toString(), after: promo, req });
+  res.json(promo);
+});
+
+exports.deletePromoCode = asyncHandler(async (req, res) => {
+  const promo = await promoCodeService.remove(req.params.id);
+  await auditService.log({ actorUserId: req.user._id, action: 'promo.delete', targetType: 'PromoCode', targetId: req.params.id, before: promo, req });
+  res.status(204).end();
 });

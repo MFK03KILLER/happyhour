@@ -30,6 +30,7 @@ import AdminRevenue from '../views/admin/AdminRevenue.vue';
 import AdminFeatures from '../views/admin/AdminFeatures.vue';
 import AdminTerms from '../views/admin/AdminTerms.vue';
 import AdminSiteContent from '../views/admin/AdminSiteContent.vue';
+import AdminPromoCodes from '../views/admin/AdminPromoCodes.vue';
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
@@ -64,6 +65,7 @@ const routes = [
       { path: 'vendors', component: AdminVendors },
       { path: 'merchants', component: AdminMerchants },
       { path: 'coupons', component: AdminCoupons },
+      { path: 'promo-codes', component: AdminPromoCodes },
       { path: 'users', component: AdminUsers },
       { path: 'features', component: AdminFeatures },
       { path: 'terms', component: AdminTerms },

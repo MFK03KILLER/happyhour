@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema({
     default: 'basic',
     index: true,
   },
+  // Test / QA accounts. When true this user bypasses ALL claim & redemption
+  // restrictions: the daily claim limit, the happy-hour active-time window,
+  // and holiday blackout dates. Intended only for internal testing accounts.
+  testMode: { type: Boolean, default: false },
 }, { timestamps: true });
 
 userSchema.methods.toJSON = function () {

@@ -100,4 +100,19 @@ const createUserSchema = z.object({
   phone: z.string().optional(),
 });
 
-module.exports = { vendorSchema, merchantSchema, couponSchema, createUserSchema };
+const promoCodeSchema = z.object({
+  code: z.string().min(2).max(40),
+  description: z.string().max(200).optional(),
+  discountType: z.enum(['percent', 'fixed']),
+  discountValue: z.number().min(0),
+  audience: z.enum(['customer', 'merchant', 'all']).optional(),
+  appliesToTiers: z.array(z.string()).optional(),
+  minAmountUSD: z.number().min(0).optional(),
+  maxRedemptions: z.number().int().min(0).nullable().optional(),
+  perUserLimit: z.number().int().min(1).optional(),
+  active: z.boolean().optional(),
+  startsAt: z.coerce.date().nullable().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
+});
+
+module.exports = { vendorSchema, merchantSchema, couponSchema, createUserSchema, promoCodeSchema };

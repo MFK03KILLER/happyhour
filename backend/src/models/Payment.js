@@ -8,11 +8,17 @@ const paymentSchema = new mongoose.Schema({
   brand: String,
   status: { type: String, enum: ['succeeded', 'failed', 'refunded'], default: 'succeeded', index: true },
   mockTransactionId: { type: String, unique: true, sparse: true },
+  // Which processor handled this payment.
+  provider: { type: String, enum: ['mock', 'stripe'], default: 'mock', index: true },
+  // External processor reference (e.g. Stripe Checkout Session / PaymentIntent id).
+  providerRef: { type: String, index: true, sparse: true },
   context: {
     kind: { type: String, enum: ['subscription', 'coupon_purchase', 'other'], default: 'other', index: true },
     label: String,
     refType: String,
     refId: { type: mongoose.Schema.Types.ObjectId },
+    promoCode: String,
+    discountUSD: { type: Number, default: 0 },
   },
 }, { timestamps: true });
 

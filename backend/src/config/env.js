@@ -15,8 +15,16 @@ const env = {
   QR_SIGNING_SECRET: process.env.QR_SIGNING_SECRET || 'dev_qr_secret',
   QR_TTL_SECONDS: parseInt(process.env.QR_TTL_SECONDS || '60', 10),
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
-  APPLE_SERVICE_ID: process.env.APPLE_SERVICE_ID || '',
-  APPLE_TEAM_ID: process.env.APPLE_TEAM_ID || '',
+
+  // ---- Payments ----
+  // Public URL of the customer app, used to build Stripe success/cancel redirect URLs.
+  APP_BASE_URL: process.env.APP_BASE_URL || 'https://happyhourz.org',
+  // Stripe credentials. Leave blank to stay in mock mode (no real charges).
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+  // 'mock' | 'stripe'. Defaults to 'stripe' automatically once a secret key is set.
+  PAYMENTS_PROVIDER: process.env.PAYMENTS_PROVIDER || (process.env.STRIPE_SECRET_KEY ? 'stripe' : 'mock'),
 };
 
 module.exports = env;

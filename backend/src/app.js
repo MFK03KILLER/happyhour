@@ -19,6 +19,7 @@ const merchantRoutes = require('./routes/merchantRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const publicCtrl = require('./controllers/publicController');
+const paymentsCtrl = require('./controllers/paymentsController');
 
 function buildApp() {
   const app = express();
@@ -33,6 +34,11 @@ function buildApp() {
     },
     credentials: true,
   }));
+
+  // Stripe webhook needs the RAW request body for signature verification, so it
+  // must be registered before the JSON body parser below.
+  app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), paymentsCtrl.webhook);
+
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));
   app.use(hpp());

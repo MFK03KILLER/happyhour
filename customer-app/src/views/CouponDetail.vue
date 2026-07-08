@@ -47,12 +47,15 @@ async function claim() {
   claiming.value = true;
   try {
     const { data } = await client.post(`/customer/coupons/${coupon.value._id}/claim`);
-    if (data.activeNow !== false) {
-      toast.success('Saved to your wallet — show it at the counter to redeem.', { title: 'Coupon claimed! 🎉' });
+    const pid = data?.purchased?._id;
+    if (data.activeNow === false) {
+      toast.info('Claimed! Redeemable during happy hour — weekdays 2–5 PM.', { title: 'Saved to wallet 🎉', ttl: 6000 });
     } else {
-      toast.warning('Claimed, but only redeemable during happy hour.', { title: 'Outside active hours', ttl: 7000 });
+      toast.success('Claimed! Show this QR at the counter to redeem.', { title: 'Ready to redeem 🎉' });
     }
-    router.push('/wallet');
+    // Simpler UX: go straight to the QR screen so the member can redeem on the spot.
+    if (pid) router.push(`/wallet/${pid}/redeem`);
+    else router.push('/wallet');
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
   } finally {
@@ -137,12 +140,16 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
         </div>
         <div class="text-right">
           <div class="text-xs text-ink-300">From</div>
-          <div class="text-lg font-bold text-teal-700">$4.99/mo</div>
+          <div class="text-lg font-bold text-teal-700">$12.99/mo</div>
         </div>
+      </div>
+      <div v-if="isSubscribed()" class="flex items-start gap-2 mb-2 text-[11px] leading-snug text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+        <i class="fa-regular fa-clock mt-0.5 flex-shrink-0"></i>
+        <span>Redeemable <strong>weekdays 2–5 PM only</strong> · excludes public holidays · limit <strong>1 claim per day</strong>.</span>
       </div>
       <button @click="claim" class="ios-button-primary w-full text-base" :disabled="claiming">
         <span v-if="claiming">Claiming…</span>
-        <span v-else-if="isSubscribed()">Claim coupon</span>
+        <span v-else-if="isSubscribed()">Claim &amp; show QR</span>
         <span v-else>Become a member</span>
       </button>
     </div>

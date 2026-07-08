@@ -189,12 +189,17 @@ async function upsertCoupons(vendorsBySlug, merchantsBySlug) {
 async function upsertCustomers() {
   const passwordHash = await bcrypt.hash('Customer@123', 12);
   const customers = [
-    { email: 'customer1@happyhour.demo', fullName: 'Sarah Johnson', phone: '(415) 555-1001' },
+    // customer1 (Sarah) is the internal QA account → testMode bypasses all limits.
+    { email: 'customer1@happyhour.demo', fullName: 'Sarah Johnson', phone: '(415) 555-1001', testMode: true },
     { email: 'customer2@happyhour.demo', fullName: 'Michael Chen', phone: '(415) 555-1002' },
     { email: 'customer3@happyhour.demo', fullName: 'Aisha Patel', phone: '(650) 555-1003' },
   ];
   for (const c of customers) {
-    await User.findOneAndUpdate({ email: c.email }, { ...c, passwordHash, role: 'customer', status: 'active' }, { upsert: true, new: true });
+    await User.findOneAndUpdate(
+      { email: c.email },
+      { ...c, testMode: !!c.testMode, passwordHash, role: 'customer', status: 'active' },
+      { upsert: true, new: true },
+    );
   }
 }
 

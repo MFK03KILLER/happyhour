@@ -8,7 +8,9 @@ const Subscription = require('../models/Subscription');
 const Merchant = require('../models/Merchant');
 const { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors');
 
-const DEFAULT_DAILY_LIMIT = 3;
+// Every member may claim ONE coupon per day (resets at local midnight).
+// Test-mode accounts are exempt (see ensureDailyLimit / getDailyStatus).
+const DAILY_CLAIM_LIMIT = 1;
 
 function haversineKm(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null;
@@ -116,10 +118,11 @@ async function holidayInfoForCoupon(coupon) {
 }
 
 async function ensureDailyLimit(customerId) {
-  const sub = await Subscription.findOne({ customerId, status: 'active' });
-  const limit = (sub && sub.dailyClaimLimit) || DEFAULT_DAILY_LIMIT;
   const user = await User.findById(customerId);
   if (!user) throw new NotFoundError('User not found');
+  // Test-mode accounts have no daily cap.
+  if (user.testMode) return { user, limit: Infinity, remaining: Infinity };
+  const limit = DAILY_CLAIM_LIMIT;
   const now = new Date();
   const resetAt = user.dailyClaimsResetAt ? new Date(user.dailyClaimsResetAt) : null;
   const sameDay = resetAt && resetAt.toDateString() === now.toDateString();
@@ -129,7 +132,7 @@ async function ensureDailyLimit(customerId) {
     await user.save();
   }
   if (user.dailyClaimsCount >= limit) {
-    throw new ForbiddenError(`Daily limit reached. You can claim ${limit} coupons per day. Resets at midnight.`);
+    throw new ForbiddenError(`Daily limit reached. You can claim ${limit} coupon per day. Resets at midnight.`);
   }
   return { user, limit, remaining: limit - user.dailyClaimsCount };
 }
@@ -140,11 +143,16 @@ async function claim({ customerId, couponId }) {
   if (coupon.offerKind === 'surprise_bag') throw new BadRequestError('Surprise bags must be purchased, not claimed');
   if (coupon.status !== 'active') throw new BadRequestError('Coupon not available');
   if (coupon.validUntil < new Date()) throw new BadRequestError('Coupon expired');
-  const holidayInfo = await holidayInfoForCoupon(coupon);
-  if (holidayInfo.isHoliday) {
-    throw new BadRequestError(`This coupon is unavailable today (${holidayInfo.name}). Try again tomorrow.`);
+  const claimingUser = await User.findById(customerId);
+  if (!claimingUser) throw new NotFoundError('User not found');
+  // Test-mode accounts skip the holiday blackout + active-subscription gates.
+  if (!claimingUser.testMode) {
+    const holidayInfo = await holidayInfoForCoupon(coupon);
+    if (holidayInfo.isHoliday) {
+      throw new BadRequestError(`This coupon is unavailable today (${holidayInfo.name}). Try again tomorrow.`);
+    }
+    await subscriptionService.ensureActive(customerId);
   }
-  await subscriptionService.ensureActive(customerId);
   const { user } = await ensureDailyLimit(customerId);
   const purchased = await purchasedRepo.create({
     customerId,
@@ -152,9 +160,11 @@ async function claim({ customerId, couponId }) {
     usesRemaining: coupon.maxUsesPerCustomer,
     expiresAt: coupon.validUntil,
   });
-  user.dailyClaimsCount += 1;
-  await user.save();
-  const activeNow = couponIsActiveNow(coupon);
+  if (!claimingUser.testMode) {
+    user.dailyClaimsCount += 1;
+    await user.save();
+  }
+  const activeNow = claimingUser.testMode ? true : couponIsActiveNow(coupon);
   return { purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null };
 }
 
@@ -257,10 +267,10 @@ async function couponsByMerchant({ merchantId, customerLat, customerLng, limit =
 }
 
 async function getDailyStatus(customerId) {
-  const sub = await Subscription.findOne({ customerId, status: 'active' });
-  const limit = (sub && sub.dailyClaimLimit) || DEFAULT_DAILY_LIMIT;
   const user = await User.findById(customerId);
-  if (!user) return { limit, used: 0, remaining: limit };
+  if (!user) return { limit: DAILY_CLAIM_LIMIT, used: 0, remaining: DAILY_CLAIM_LIMIT };
+  if (user.testMode) return { limit: null, used: 0, remaining: null, unlimited: true };
+  const limit = DAILY_CLAIM_LIMIT;
   const now = new Date();
   const resetAt = user.dailyClaimsResetAt ? new Date(user.dailyClaimsResetAt) : null;
   const sameDay = resetAt && resetAt.toDateString() === now.toDateString();

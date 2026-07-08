@@ -11,7 +11,6 @@ const MOCK_CARDS = {
 };
 
 async function processMockPayment({ customerId, amountUSD, method, context }) {
-  if (!env.MOCK_PAYMENTS) throw new BadRequestError('Real payments not enabled in demo');
   if (!MOCK_CARDS[method]) throw new BadRequestError('Unsupported payment method');
   const card = MOCK_CARDS[method];
   const payment = await paymentRepo.create({
@@ -21,10 +20,29 @@ async function processMockPayment({ customerId, amountUSD, method, context }) {
     brand: card.brand,
     last4: card.last4,
     status: 'succeeded',
+    provider: 'mock',
     mockTransactionId: `mock_${nanoid(12)}`,
     context: context || { kind: 'other' },
   });
   return payment;
 }
 
-module.exports = { processMockPayment };
+// Persist a successful Stripe payment (called from the webhook after Stripe
+// confirms a Checkout Session). Idempotent on providerRef.
+async function recordStripePayment({ customerId, amountUSD, context, providerRef, brand, last4 }) {
+  const existing = providerRef ? await paymentRepo.findOne({ providerRef }) : null;
+  if (existing) return existing;
+  return paymentRepo.create({
+    customerId,
+    amountUSD,
+    method: 'card',
+    brand: brand || 'Card',
+    last4: last4 || '',
+    status: 'succeeded',
+    provider: 'stripe',
+    providerRef,
+    context: context || { kind: 'other' },
+  });
+}
+
+module.exports = { processMockPayment, recordStripePayment };

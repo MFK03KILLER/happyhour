@@ -4,7 +4,7 @@ const flagCtrl = require('../controllers/featureFlagController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { writeLimiter } = require('../middlewares/rateLimit');
-const { vendorSchema, merchantSchema, couponSchema, createUserSchema } = require('../validators/adminValidators');
+const { vendorSchema, merchantSchema, couponSchema, createUserSchema, promoCodeSchema } = require('../validators/adminValidators');
 
 router.use(authenticate(), authorize('admin'));
 
@@ -144,6 +144,23 @@ router.post('/users', writeLimiter, validate(createUserSchema), ctrl.createUser)
 router.put('/users/:id', writeLimiter, ctrl.updateUser);
 router.delete('/users/:id', writeLimiter, ctrl.deleteUser);
 router.get('/roles', ctrl.listRoles);
+
+/**
+ * @openapi
+ * /admin/promo-codes:
+ *   get:
+ *     tags: [Admin]
+ *     summary: List all promo codes
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Admin]
+ *     summary: Create a promo code (percent or fixed discount for subscriptions)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/promo-codes', ctrl.listPromoCodes);
+router.post('/promo-codes', writeLimiter, validate(promoCodeSchema), ctrl.createPromoCode);
+router.put('/promo-codes/:id', writeLimiter, ctrl.updatePromoCode);
+router.delete('/promo-codes/:id', writeLimiter, ctrl.deletePromoCode);
 
 /**
  * @openapi

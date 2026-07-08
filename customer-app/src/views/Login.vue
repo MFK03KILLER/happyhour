@@ -16,12 +16,9 @@ const showTerms = ref(false);
 const termsVersion = ref(null);
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-const APPLE_SERVICE_ID = import.meta.env.VITE_APPLE_SERVICE_ID || '';
-const APPLE_REDIRECT_URI = import.meta.env.VITE_APPLE_REDIRECT_URI || (typeof window !== 'undefined' ? window.location.origin + '/login' : '');
 
 onMounted(async () => {
   initGoogle();
-  initApple();
   try {
     const { data } = await client.get('/public/terms');
     termsVersion.value = data.version;
@@ -54,20 +51,6 @@ function initGoogle() {
   tryInit();
 }
 
-function initApple() {
-  if (!APPLE_SERVICE_ID) return;
-  const tryInit = () => {
-    if (!window.AppleID?.auth) return setTimeout(tryInit, 300);
-    window.AppleID.auth.init({
-      clientId: APPLE_SERVICE_ID,
-      scope: 'name email',
-      redirectURI: APPLE_REDIRECT_URI,
-      usePopup: true,
-    });
-  };
-  tryInit();
-}
-
 async function handleGoogleCredential(response) {
   loading.value = true;
   error.value = '';
@@ -81,33 +64,6 @@ async function handleGoogleCredential(response) {
     router.push('/');
   } catch (e) {
     error.value = e.response?.data?.error?.message || 'Google sign-in failed';
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function signInWithApple() {
-  if (!window.AppleID?.auth) {
-    error.value = 'Apple sign-in is not available yet — try again in a moment.';
-    return;
-  }
-  loading.value = true;
-  error.value = '';
-  try {
-    const data = await window.AppleID.auth.signIn();
-    const idToken = data?.authorization?.id_token;
-    const fullName = data?.user?.name ? `${data.user.name.firstName || ''} ${data.user.name.lastName || ''}`.trim() : undefined;
-    if (!idToken) throw new Error('Apple did not return an ID token');
-    const user = await auth.loginWithApple({ idToken, fullName, acceptedTermsVersion: termsVersion.value });
-    if (user.role !== 'customer') {
-      error.value = 'This app is for customers.';
-      await auth.logout();
-      return;
-    }
-    router.push('/');
-  } catch (e) {
-    if (e?.error === 'popup_closed_by_user') return;
-    error.value = e.response?.data?.error?.message || e.message || 'Apple sign-in failed';
   } finally {
     loading.value = false;
   }
@@ -146,19 +102,6 @@ async function submit() {
       <div v-if="GOOGLE_CLIENT_ID" id="google-signin-btn" class="w-full flex justify-center"></div>
       <button v-else type="button" disabled class="w-full flex items-center justify-center gap-2 py-3 rounded-full border-2 border-ink-300/20 text-ink-300 font-semibold">
         <i class="fa-brands fa-google"></i> Google (not configured)
-      </button>
-
-      <button
-        v-if="APPLE_SERVICE_ID"
-        type="button"
-        @click="signInWithApple"
-        :disabled="loading"
-        class="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-black text-white font-semibold active:scale-[0.99]"
-      >
-        <i class="fa-brands fa-apple text-lg"></i> Continue with Apple
-      </button>
-      <button v-else type="button" disabled class="w-full flex items-center justify-center gap-2 py-3 rounded-full border-2 border-ink-300/20 text-ink-300 font-semibold">
-        <i class="fa-brands fa-apple"></i> Apple (not configured)
       </button>
     </div>
 

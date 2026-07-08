@@ -43,6 +43,26 @@ router.post('/subscription/resume', writeLimiter, subCtrl.resume);
 
 /**
  * @openapi
+ * /customer/subscription/checkout:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Start a Stripe Checkout session for a plan (returns a redirect URL)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/subscription/checkout', writeLimiter, subCtrl.checkout);
+
+/**
+ * @openapi
+ * /customer/subscription/validate-promo:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Preview a promo code against a plan (returns discount + final price)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/subscription/validate-promo', writeLimiter, subCtrl.validatePromo);
+
+/**
+ * @openapi
  * /customer/coupons/browse:
  *   get:
  *     tags: [Customer]

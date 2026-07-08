@@ -39,13 +39,3 @@ exports.googleSignIn = asyncHandler(async (req, res) => {
   });
   res.json(result);
 });
-
-exports.appleSignIn = asyncHandler(async (req, res) => {
-  const result = await oauthService.signInWithApple({
-    idToken: req.body.idToken,
-    fullName: req.body.fullName,
-    acceptedTermsVersion: req.body.acceptedTermsVersion,
-    userAgent: req.headers['user-agent'],
-  });
-  res.json(result);
-});

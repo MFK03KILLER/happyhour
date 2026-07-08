@@ -27,17 +27,10 @@ const googleSignInSchema = z.object({
   acceptedTermsVersion: z.number().int().positive().optional(),
 });
 
-const appleSignInSchema = z.object({
-  idToken: z.string().min(20),
-  fullName: z.string().max(100).optional(),
-  acceptedTermsVersion: z.number().int().positive().optional(),
-});
-
 module.exports = {
   registerSchema,
   loginSchema,
   refreshSchema,
   changePasswordSchema,
   googleSignInSchema,
-  appleSignInSchema,
 };

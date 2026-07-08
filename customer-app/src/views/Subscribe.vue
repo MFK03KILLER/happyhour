@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import ApplePaySheet from '../components/ApplePaySheet.vue';
@@ -16,6 +16,14 @@ const showPay = ref(false);
 const selectedTier = ref('gold');
 const billing = ref('monthly');
 const loading = ref(true);
+const paymentsProvider = ref('mock');
+
+// Promo code state
+const promoInput = ref('');
+const promo = ref(null);        // { code, discountUSD, finalUSD }
+const promoError = ref('');
+const applyingPromo = ref(false);
+const checkingOut = ref(false);
 
 onMounted(async () => {
   try {
@@ -23,15 +31,80 @@ onMounted(async () => {
     sub.value = data.subscription;
     currentPlan.value = data.plan;
     availablePlans.value = data.available || [];
+    paymentsProvider.value = data.paymentsProvider || 'mock';
   } finally { loading.value = false; }
 });
 
+const selected = computed(() => availablePlans.value.find((p) => p.tier === selectedTier.value));
+const listPrice = computed(() => selected.value?.price?.[billing.value] || 0);
+const finalPrice = computed(() => (promo.value && promo.value.finalUSD != null ? promo.value.finalUSD : listPrice.value));
+const selectedPriceLabel = computed(() => finalPrice.value.toFixed(2));
+const currentTier = computed(() => sub.value?.tier || currentPlan.value?.tier || 'basic');
+const isCurrentlyPaid = computed(() => sub.value && sub.value.tier !== 'basic' && new Date(sub.value.currentPeriodEnd) > new Date());
+
+// A change of plan invalidates any applied promo discount.
+watch([selectedTier, billing], () => { clearPromo(); });
+
+function clearPromo() { promo.value = null; promoError.value = ''; }
+
+async function applyPromo() {
+  promoError.value = '';
+  if (!promoInput.value.trim()) return;
+  applyingPromo.value = true;
+  try {
+    const { data } = await client.post('/customer/subscription/validate-promo', {
+      code: promoInput.value.trim(),
+      tier: selectedTier.value,
+      plan: billing.value,
+      audience: 'customer',
+    });
+    if (data.valid) {
+      promo.value = { code: data.code, discountUSD: data.discountUSD, finalUSD: data.finalUSD };
+      toast.success(`Code ${data.code} applied — you save $${data.discountUSD.toFixed(2)}`, { title: 'Promo applied 🎟️' });
+    } else {
+      promoError.value = 'Invalid promo code';
+    }
+  } catch (e) {
+    promoError.value = e.response?.data?.error?.message || 'Invalid promo code';
+  } finally {
+    applyingPromo.value = false;
+  }
+}
+
+// Entry point when the user taps the buy button.
+async function startPurchase() {
+  if (paymentsProvider.value === 'stripe') {
+    await startStripeCheckout();
+  } else {
+    showPay.value = true;
+  }
+}
+
+async function startStripeCheckout() {
+  checkingOut.value = true;
+  try {
+    const { data } = await client.post('/customer/subscription/checkout', {
+      tier: selectedTier.value,
+      plan: billing.value,
+      promoCode: promo.value?.code,
+      audience: 'customer',
+    });
+    if (data.url) window.location.href = data.url;
+  } catch (e) {
+    toast.error(e.response?.data?.error?.message || 'Could not start checkout', { title: 'Checkout failed' });
+  } finally {
+    checkingOut.value = false;
+  }
+}
+
+// Mock payment sheet confirm.
 async function onConfirm(paymentMethod) {
   try {
     const { data } = await client.post('/customer/subscription/subscribe', {
       tier: selectedTier.value,
       plan: billing.value,
       paymentMethod,
+      promoCode: promo.value?.code,
       audience: 'customer',
     });
     sub.value = data.subscription;
@@ -55,11 +128,6 @@ async function resumeSub() {
   sub.value = data;
 }
 
-const selected = computed(() => availablePlans.value.find((p) => p.tier === selectedTier.value));
-const selectedPrice = computed(() => (selected.value?.price?.[billing.value] || 0).toFixed(2));
-const currentTier = computed(() => sub.value?.tier || currentPlan.value?.tier || 'basic');
-const isCurrentlyPaid = computed(() => sub.value && sub.value.tier !== 'basic' && new Date(sub.value.currentPeriodEnd) > new Date());
-
 function tierBg(tier) {
   if (tier === 'gold') return 'from-coral-500 to-coral-600';
   if (tier === 'premium') return 'from-purple-600 to-fuchsia-700';
@@ -69,11 +137,6 @@ function tierBg(tier) {
 function pickTier(t) {
   if (t === 'basic') return;
   selectedTier.value = t;
-}
-
-function checkFeature(value) {
-  if (value === false || value === 'none' || value === 'limited' || value === 'basic_email' || value === 'basic' || value === 'partner' || value == null) return false;
-  return true;
 }
 </script>
 
@@ -165,12 +228,41 @@ function checkFeature(value) {
           </div>
         </div>
 
+        <!-- Promo code -->
+        <div v-if="selectedTier !== 'basic' && selectedTier !== currentTier" class="mt-5">
+          <div v-if="!promo" class="flex gap-2">
+            <input
+              v-model="promoInput"
+              class="input flex-1 uppercase"
+              placeholder="Promo code"
+              @keyup.enter="applyPromo"
+            />
+            <button @click="applyPromo" :disabled="applyingPromo || !promoInput.trim()" class="ios-card px-4 font-semibold text-teal-700 active:scale-95 disabled:opacity-50">
+              {{ applyingPromo ? '…' : 'Apply' }}
+            </button>
+          </div>
+          <div v-else class="ios-card p-3 flex items-center justify-between bg-green-50 border border-green-200">
+            <div class="text-sm">
+              <span class="font-bold font-mono text-green-700">{{ promo.code }}</span>
+              <span class="text-green-800"> — you save ${{ promo.discountUSD.toFixed(2) }}</span>
+            </div>
+            <button @click="clearPromo" class="text-xs text-ink-500 font-semibold">Remove</button>
+          </div>
+          <div v-if="promoError" class="text-coral-600 text-xs pl-2 mt-1">{{ promoError }}</div>
+        </div>
+
         <button
           v-if="selectedTier !== 'basic' && selectedTier !== currentTier"
-          @click="showPay = true"
+          @click="startPurchase"
+          :disabled="checkingOut"
           class="ios-button-primary w-full mt-5"
         >
-          Get {{ selected?.label }} for ${{ selectedPrice }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
+          <span v-if="checkingOut">Redirecting…</span>
+          <span v-else>
+            Get {{ selected?.label }} for
+            <span v-if="promo" class="line-through opacity-70 mr-1">${{ listPrice.toFixed(2) }}</span>
+            ${{ selectedPriceLabel }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
+          </span>
         </button>
         <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">7-day money-back guarantee · Cancel anytime</div>
       </div>
@@ -178,7 +270,7 @@ function checkFeature(value) {
 
     <ApplePaySheet
       v-if="showPay && selected"
-      :amount="parseFloat(selectedPrice)"
+      :amount="finalPrice"
       merchant-name="Happy Hour"
       :item-name="`${selected.label} ${billing} membership`"
       @confirm="onConfirm"

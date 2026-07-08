@@ -88,7 +88,7 @@ function statusLabel(s) {
       </div>
       <div class="ios-card p-3 text-center">
         <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">Today</div>
-        <div class="text-xl font-bold text-teal-700">{{ daily.remaining }}<span class="text-sm text-ink-500">/{{ daily.limit }}</span></div>
+        <div class="text-xl font-bold text-teal-700">{{ daily.remainingLabel }}<span class="text-sm text-ink-500">/{{ daily.limitLabel }}</span></div>
       </div>
     </header>
 
