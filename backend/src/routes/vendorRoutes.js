@@ -1,10 +1,15 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/vendorController');
 const subCtrl = require('../controllers/subscriptionController');
+const deliveryCtrl = require('../controllers/deliveryController');
 const { authenticate, authorize, requirePermission } = require('../middlewares/auth');
+const requireFeature = require('../middlewares/featureFlag');
 const { writeLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate(), authorize('vendor'));
+
+// Delivery orders across all this vendor's locations (feature-flagged).
+router.get('/deliveries', requireFeature('delivery'), deliveryCtrl.vendorList);
 
 /**
  * @openapi

@@ -1,13 +1,58 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/customerController');
 const subCtrl = require('../controllers/subscriptionController');
+const deliveryCtrl = require('../controllers/deliveryController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const requireFeature = require('../middlewares/featureFlag');
-const { purchaseSchema, browseQuerySchema, rateSchema } = require('../validators/customerValidators');
+const {
+  purchaseSchema, browseQuerySchema, rateSchema,
+  addressSchema, deliveryQuoteSchema,
+} = require('../validators/customerValidators');
 const { writeLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate(), authorize('customer'));
+
+// ---------------- Address book (used for delivery) ----------------
+/**
+ * @openapi
+ * /customer/addresses:
+ *   get:
+ *     tags: [Customer]
+ *     summary: List my saved delivery addresses
+ *     security: [{ bearerAuth: [] }]
+ *   post:
+ *     tags: [Customer]
+ *     summary: Add a delivery address
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/addresses', deliveryCtrl.listAddresses);
+router.post('/addresses', writeLimiter, validate(addressSchema), deliveryCtrl.createAddress);
+router.put('/addresses/:addressId', writeLimiter, deliveryCtrl.updateAddress);
+router.delete('/addresses/:addressId', writeLimiter, deliveryCtrl.deleteAddress);
+
+// ---------------- Delivery (feature-flagged: "coming soon" until enabled) ----------------
+/**
+ * @openapi
+ * /customer/delivery/quote:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Quote the delivery fee + ETA from a merchant to one of my addresses
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/delivery/quote', requireFeature('delivery'), validate(deliveryQuoteSchema), deliveryCtrl.quote);
+
+/**
+ * @openapi
+ * /customer/deliveries:
+ *   get:
+ *     tags: [Customer]
+ *     summary: List my delivery orders
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/deliveries', requireFeature('delivery'), deliveryCtrl.myDeliveries);
+router.get('/deliveries/:id', requireFeature('delivery'), deliveryCtrl.myDeliveryDetail);
+router.post('/deliveries/:id/cancel', requireFeature('delivery'), writeLimiter, deliveryCtrl.cancelMyDelivery);
 
 /**
  * @openapi

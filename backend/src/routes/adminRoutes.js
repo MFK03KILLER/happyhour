@@ -1,10 +1,12 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/adminController');
 const flagCtrl = require('../controllers/featureFlagController');
+const deliveryCtrl = require('../controllers/deliveryController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { writeLimiter } = require('../middlewares/rateLimit');
 const { vendorSchema, merchantSchema, couponSchema, createUserSchema, promoCodeSchema } = require('../validators/adminValidators');
+const { deliveryStatusSchema } = require('../validators/customerValidators');
 
 router.use(authenticate(), authorize('admin'));
 
@@ -161,6 +163,29 @@ router.get('/promo-codes', ctrl.listPromoCodes);
 router.post('/promo-codes', writeLimiter, validate(promoCodeSchema), ctrl.createPromoCode);
 router.put('/promo-codes/:id', writeLimiter, ctrl.updatePromoCode);
 router.delete('/promo-codes/:id', writeLimiter, ctrl.deletePromoCode);
+
+/**
+ * @openapi
+ * /admin/deliveries:
+ *   get:
+ *     tags: [Admin]
+ *     summary: List all delivery orders (filter by ?status=, paginated) + stats
+ *     security: [{ bearerAuth: [] }]
+ * /admin/delivery-settings:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get delivery fee/radius/ETA settings
+ *     security: [{ bearerAuth: [] }]
+ *   put:
+ *     tags: [Admin]
+ *     summary: Update delivery settings (fees, radius, ETA pacing)
+ *     security: [{ bearerAuth: [] }]
+ */
+// NOT feature-flagged: the admin can inspect + configure delivery before turning it on.
+router.get('/deliveries', deliveryCtrl.adminList);
+router.post('/deliveries/:id/status', writeLimiter, validate(deliveryStatusSchema), deliveryCtrl.adminUpdateStatus);
+router.get('/delivery-settings', deliveryCtrl.adminGetSettings);
+router.put('/delivery-settings', writeLimiter, deliveryCtrl.adminUpdateSettings);
 
 /**
  * @openapi

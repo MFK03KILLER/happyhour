@@ -168,7 +168,7 @@ async function claim({ customerId, couponId }) {
   return { purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null };
 }
 
-async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfillment = 'pickup' }) {
+async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfillment = 'pickup', addressId, deliveryNotes }) {
   const coupon = await couponRepo.findById(couponId);
   if (!coupon) throw new NotFoundError('Coupon not found');
   if (coupon.offerKind !== 'surprise_bag') throw new BadRequestError('Not a surprise bag');
@@ -179,14 +179,32 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
     throw new BadRequestError('Sold out');
   }
   if (coupon.pickupWindowEnd && coupon.pickupWindowEnd < new Date()) throw new BadRequestError('Pickup window has ended');
-  if (fulfillment === 'delivery' && !coupon.deliveryAvailable) throw new BadRequestError('Delivery not available');
-  const fee = fulfillment === 'delivery' ? (coupon.deliveryFeeUSD || 0) : 0;
+
+  // ---- Delivery fulfillment (gated behind the `delivery` feature flag) ----
+  let deliveryCtx = null; // { merchant, address, quote, customer }
+  if (fulfillment === 'delivery') {
+    const isOn = await require('../repositories/featureFlagRepository').isEnabled('delivery');
+    if (!isOn) throw new BadRequestError('Delivery is coming soon — pickup only for now');
+    if (!coupon.deliveryAvailable) throw new BadRequestError('This merchant does not offer delivery');
+    if (!addressId) throw new BadRequestError('Choose a delivery address first');
+    const deliveryService = require('./deliveryService');
+    const firstMerchant = (coupon.merchantIds || [])[0];
+    const merchantId = firstMerchant && firstMerchant._id ? firstMerchant._id : firstMerchant;
+    if (!merchantId) throw new BadRequestError('This bag has no pickup location configured');
+    const merchant = await Merchant.findById(merchantId);
+    if (!merchant) throw new NotFoundError('Merchant not found');
+    const { user: customer, address } = await deliveryService.resolveAddress(customerId, addressId);
+    const quoteResult = await deliveryService.quote({ merchant, address, subtotalUSD: coupon.priceUSD || 0 });
+    deliveryCtx = { merchant, address, quoteResult, customer };
+  }
+
+  const fee = deliveryCtx ? deliveryCtx.quoteResult.feeUSD : 0;
   const total = (coupon.priceUSD || 0) + fee;
   const payment = await paymentService.processMockPayment({
     customerId,
     amountUSD: total,
     method: paymentMethod,
-    context: { kind: 'coupon_purchase', label: `${coupon.title} (Surprise Bag)`, refType: 'Coupon', refId: coupon._id },
+    context: { kind: 'coupon_purchase', label: `${coupon.title} (Surprise Bag${deliveryCtx ? ' · Delivery' : ''})`, refType: 'Coupon', refId: coupon._id },
   });
   if (coupon.inventoryRemaining !== null) {
     coupon.inventoryRemaining = Math.max(0, coupon.inventoryRemaining - 1);
@@ -200,7 +218,23 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
     paymentId: payment._id,
     expiresAt: coupon.pickupWindowEnd || coupon.validUntil,
   });
-  return { purchased, payment, coupon, fulfillment };
+
+  let deliveryOrder = null;
+  if (deliveryCtx) {
+    const deliveryService = require('./deliveryService');
+    deliveryOrder = await deliveryService.createOrder({
+      customer: deliveryCtx.customer,
+      merchant: deliveryCtx.merchant,
+      coupon,
+      purchased,
+      payment,
+      address: deliveryCtx.address,
+      quoteResult: deliveryCtx.quoteResult,
+      notes: deliveryNotes,
+    });
+  }
+
+  return { purchased, payment, coupon, fulfillment, deliveryOrder };
 }
 
 async function purchase({ customerId, couponId, paymentMethod }) {

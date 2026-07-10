@@ -99,6 +99,8 @@ exports.purchaseSurpriseBag = asyncHandler(async (req, res) => {
     couponId: req.params.id,
     paymentMethod: req.body.paymentMethod,
     fulfillment: req.body.fulfillment || 'pickup',
+    addressId: req.body.addressId,
+    deliveryNotes: req.body.deliveryNotes,
   });
   res.status(201).json(result);
 });

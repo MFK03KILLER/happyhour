@@ -6,7 +6,7 @@ const REGISTRY = [
   { key: 'subscription_tiers', label: 'Subscription Tiers', description: 'Multiple plan tiers (Lite/Plus/Pro) instead of single $4.99 plan.', group: 'offers', sortOrder: 2 },
   { key: 'maps', label: 'Maps view', description: 'In-app map of nearby merchants and "Open in Maps" deep links.', group: 'discovery', sortOrder: 3 },
   { key: 'push_notifications', label: 'PWA Push Notifications', description: 'Web Push notifications for new offers nearby.', group: 'engagement', sortOrder: 4 },
-  { key: 'delivery', label: 'Delivery option', description: 'Allow merchants to deliver surprise bags. Requires surprise_bag.', group: 'offers', sortOrder: 5 },
+  { key: 'delivery', label: 'Delivery', description: 'Full delivery system: address book, fee quotes, order tracking, courier flow. OFF = customers see "Coming soon". Requires surprise_bag.', group: 'offers', sortOrder: 5 },
   { key: 'redemption_code', label: '6-digit redemption code', description: 'Manual code entry alongside QR scanning at merchant.', group: 'redemption', sortOrder: 6 },
   { key: 'referral_program', label: 'Referral program', description: 'Give $5 / get $5 invite friends program.', group: 'engagement', sortOrder: 7 },
 ];
