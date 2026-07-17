@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import TicketCoupon from '../components/TicketCoupon.vue';
 import MapPreview from '../components/MapPreview.vue';
+import RedeemSheet from '../components/RedeemSheet.vue';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 import { useDailyStore } from '../stores/daily';
 import { useToastStore } from '../stores/toast';
@@ -20,6 +21,8 @@ const coupons = ref([]);
 const loading = ref(true);
 const subscription = ref(null);
 const claiming = ref(null);
+// When set, the instant-redeem QR sheet pops up over this page.
+const redeemCtx = ref(null);
 
 function isActiveNow(coupon) {
   const w = coupon.activeWindow;
@@ -91,20 +94,14 @@ async function onClaim(coupon) {
   try {
     const { data } = await client.post(`/customer/coupons/${coupon._id}/claim`);
     daily.optimisticIncrement();
-    const activeNow = data.activeNow !== false;
-    if (activeNow) {
-      toast.success('Saved to your wallet. Show it at the counter to redeem.', {
-        title: 'Coupon claimed! 🎉',
-        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
-      });
-    } else {
-      const w = windowLabel(coupon);
-      toast.warning(`Claimed, but you can only redeem during happy hour${w ? ` (${w})` : ''}. Come back during these hours.`, {
-        title: 'Outside happy hour',
-        ttl: 9000,
-        action: { label: 'Open wallet', handler: () => router.push('/wallet') },
-      });
-    }
+    // Pop the redeem QR immediately — no trip through the Wallet.
+    redeemCtx.value = {
+      purchasedId: data.purchased._id,
+      couponTitle: coupon.title,
+      vendorName: coupon.vendorId?.name || merchant.value?.name || '',
+      activeWindow: data.activeWindow || coupon.activeWindow || null,
+      activeNow: data.activeNow !== false,
+    };
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not claim coupon', { title: 'Claim failed' });
   } finally { claiming.value = null; }
@@ -265,7 +262,7 @@ function offPeakLabel() {
           <div class="font-bold">Subscribe to unlock all</div>
         </div>
         <div class="text-right">
-          <div class="text-lg font-bold text-teal-700">$4.99 / mo</div>
+          <div class="text-lg font-bold text-teal-700">$12.99 / mo</div>
         </div>
       </div>
       <button @click="router.push('/subscribe')" class="ios-button-primary w-full">
@@ -275,10 +272,21 @@ function offPeakLabel() {
 
     <div v-else class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
       <div class="text-center text-sm">
-        <span class="font-bold text-teal-700">{{ daily.remaining }}</span>
-        <span class="text-ink-500"> of {{ daily.limit }} daily coupons left</span>
+        <span class="font-bold text-teal-700">{{ daily.remainingLabel }}</span>
+        <span class="text-ink-500"> of {{ daily.limitLabel }} daily coupons left</span>
       </div>
     </div>
+
+    <RedeemSheet
+      v-if="redeemCtx"
+      :purchased-id="redeemCtx.purchasedId"
+      :coupon-title="redeemCtx.couponTitle"
+      :vendor-name="redeemCtx.vendorName"
+      :active-window="redeemCtx.activeWindow"
+      :active-now="redeemCtx.activeNow"
+      @close="redeemCtx = null"
+      @completed="redeemCtx = null"
+    />
 
   </div>
 </template>

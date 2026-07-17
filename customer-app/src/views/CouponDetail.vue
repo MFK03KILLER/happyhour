@@ -5,6 +5,7 @@ import client from '../api/client';
 import { useFlagsStore } from '../stores/flags';
 import { directionsUrl } from '../composables/useMapLink';
 import { useToastStore } from '../stores/toast';
+import RedeemSheet from '../components/RedeemSheet.vue';
 
 const flags = useFlagsStore();
 const toast = useToastStore();
@@ -20,6 +21,8 @@ const coupon = ref(null);
 const loading = ref(true);
 const claiming = ref(false);
 const subscription = ref(null);
+// When set, the instant-redeem QR sheet pops up over this page.
+const redeemCtx = ref(null);
 
 onMounted(async () => {
   try {
@@ -47,15 +50,14 @@ async function claim() {
   claiming.value = true;
   try {
     const { data } = await client.post(`/customer/coupons/${coupon.value._id}/claim`);
-    const pid = data?.purchased?._id;
-    if (data.activeNow === false) {
-      toast.info('Claimed! Redeemable during happy hour — weekdays 2–5 PM.', { title: 'Saved to wallet 🎉', ttl: 6000 });
-    } else {
-      toast.success('Claimed! Show this QR at the counter to redeem.', { title: 'Ready to redeem 🎉' });
-    }
-    // Simpler UX: go straight to the QR screen so the member can redeem on the spot.
-    if (pid) router.push(`/wallet/${pid}/redeem`);
-    else router.push('/wallet');
+    // Pop the redeem QR right here — no navigation, no wallet detour.
+    redeemCtx.value = {
+      purchasedId: data.purchased._id,
+      couponTitle: coupon.value.title,
+      vendorName: coupon.value.vendorId?.name || '',
+      activeWindow: data.activeWindow || coupon.value.activeWindow || null,
+      activeNow: data.activeNow !== false,
+    };
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
   } finally {
@@ -153,5 +155,16 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
         <span v-else>Become a member</span>
       </button>
     </div>
+
+    <RedeemSheet
+      v-if="redeemCtx"
+      :purchased-id="redeemCtx.purchasedId"
+      :coupon-title="redeemCtx.couponTitle"
+      :vendor-name="redeemCtx.vendorName"
+      :active-window="redeemCtx.activeWindow"
+      :active-now="redeemCtx.activeNow"
+      @close="redeemCtx = null"
+      @completed="redeemCtx = null"
+    />
   </div>
 </template>
