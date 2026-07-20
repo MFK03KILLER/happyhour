@@ -72,3 +72,8 @@ body {
   50% { transform: translateY(50%); opacity: 1; }
 }
 .animate-laser { animation: laser 2s ease-in-out infinite; }
+
+/* Leaflet's internal panes/controls use z-index up to ~700, which would bleed
+   over fixed overlays (redeem sheet, modals, sheets). Trap them in a single
+   z-index:0 stacking context so any positive-z overlay always covers the map. */
+.leaflet-container { position: relative; z-index: 0 !important; }
