@@ -1,71 +1,105 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import client from '../api/client';
 
 const router = useRouter();
-const methods = ref([
-  { id: '1', type: 'apple_pay', label: 'Apple Pay', sub: 'Amex •••• 0005', primary: true },
-  { id: '2', type: 'card', label: 'Visa •••• 4242', sub: 'Expires 09/28', primary: false },
-]);
-const showAdd = ref(false);
+const loading = ref(true);
+const paymentsProvider = ref('mock');
+const payments = ref([]);
+
+const isLive = computed(() => paymentsProvider.value === 'stripe');
+
+onMounted(async () => {
+  try {
+    const [sub, hist] = await Promise.all([
+      client.get('/customer/subscription'),
+      client.get('/customer/payments').catch(() => ({ data: { items: [] } })),
+    ]);
+    paymentsProvider.value = sub.data.paymentsProvider || 'mock';
+    payments.value = hist.data.items || [];
+  } finally { loading.value = false; }
+});
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 </script>
 
 <template>
-  <div class="min-h-screen pb-12 safe-top">
-    <header class="px-5 pt-4 flex items-center">
+  <div class="min-h-screen pb-12 safe-top bg-cream-100">
+    <header class="px-5 pt-4 flex items-center bg-white border-b border-cream-200 pb-3">
       <button @click="router.back()" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="flex-1 text-center font-semibold -ml-8">Payment methods</div>
     </header>
 
-    <section class="px-5 mt-6 space-y-3">
-      <div v-for="m in methods" :key="m.id" class="ios-card p-4 flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl bg-cream-200 flex items-center justify-center">
-          <svg v-if="m.type==='apple_pay'" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.46c-.02-2.42 1.98-3.58 2.07-3.64-1.13-1.65-2.88-1.88-3.5-1.9-1.49-.15-2.91.87-3.67.87-.77 0-1.93-.86-3.18-.83-1.63.02-3.14.95-3.98 2.41-1.7 2.95-.43 7.3 1.22 9.69.8 1.17 1.76 2.48 3.01 2.43 1.21-.05 1.67-.78 3.13-.78 1.46 0 1.87.78 3.16.75 1.31-.02 2.13-1.19 2.93-2.36.92-1.35 1.3-2.66 1.32-2.73-.03-.01-2.51-.96-2.53-3.81z"/></svg>
-          <svg v-else class="w-7 h-7 text-ink-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+    <!-- How payment works -->
+    <section class="px-5 mt-5">
+      <div v-if="isLive" class="ios-card p-5">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-lock text-lg"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold">Secured by Stripe</div>
+            <p class="text-sm text-ink-700 mt-1 leading-relaxed">
+              You enter your card on Stripe's secure checkout page each time you subscribe or buy.
+              Happy Hour never sees or stores your card details.
+            </p>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <div class="font-semibold">{{ m.label }}</div>
-          <div class="text-sm text-ink-500">{{ m.sub }}</div>
-        </div>
-        <span v-if="m.primary" class="chip bg-teal-50 text-teal-700">Default</span>
       </div>
 
-      <button @click="showAdd = true" class="ios-card w-full p-4 flex items-center gap-3 active:bg-cream-100">
-        <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
-        </div>
-        <div class="font-semibold">Add payment method</div>
-      </button>
-    </section>
-
-    <section class="mt-8 px-5">
-      <div class="ios-card p-5">
+      <div v-else class="ios-card p-5">
         <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider">Demo mode</div>
         <p class="text-sm text-ink-700 mt-2 leading-relaxed">
-          All payments are mocked in this build. No real card data is collected or stored. Adding methods here is just for UI preview.
+          Payments are simulated in this build — no real card data is collected, stored, or charged.
         </p>
       </div>
     </section>
 
-    <div v-if="showAdd" class="fixed inset-0 z-50 bg-black/40 flex items-end justify-center">
-      <div class="bg-white rounded-t-3xl w-full max-w-md shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)] animate-slide-up">
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-xl font-bold">Add method</div>
-          <button @click="showAdd = false" class="text-ink-500">Cancel</button>
-        </div>
-        <div class="space-y-2">
-          <button class="w-full bg-black text-white rounded-2xl py-4 flex items-center justify-center gap-2 font-semibold active:scale-[.98]">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.46c-.02-2.42 1.98-3.58 2.07-3.64-1.13-1.65-2.88-1.88-3.5-1.9-1.49-.15-2.91.87-3.67.87-.77 0-1.93-.86-3.18-.83-1.63.02-3.14.95-3.98 2.41-1.7 2.95-.43 7.3 1.22 9.69.8 1.17 1.76 2.48 3.01 2.43 1.21-.05 1.67-.78 3.13-.78 1.46 0 1.87.78 3.16.75 1.31-.02 2.13-1.19 2.93-2.36.92-1.35 1.3-2.66 1.32-2.73-.03-.01-2.51-.96-2.53-3.81z"/></svg>
-            Add Apple Pay
-          </button>
-          <button class="w-full bg-cream-200 text-ink-900 rounded-2xl py-4 flex items-center justify-center gap-2 font-semibold active:scale-[.98]">
-            Add credit/debit card
-          </button>
-        </div>
-        <div class="text-center text-[11px] text-ink-300 mt-3">Demo only — no real processing</div>
+    <!-- Payment history -->
+    <section class="px-5 mt-5">
+      <h2 class="text-sm font-bold text-ink-500 uppercase tracking-wider mb-2">Payment history</h2>
+
+      <div v-if="loading" class="space-y-2">
+        <div v-for="i in 2" :key="i" class="ios-card h-16 animate-pulse"></div>
       </div>
-    </div>
+
+      <div v-else-if="payments.length === 0" class="ios-card p-6 text-center">
+        <i class="fa-regular fa-credit-card text-3xl text-ink-300"></i>
+        <div class="mt-2 text-sm text-ink-500">No payments yet</div>
+      </div>
+
+      <div v-else class="ios-card divide-y divide-cream-200">
+        <div v-for="p in payments" :key="p._id" class="p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cream-200 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-receipt text-ink-500"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm truncate">{{ p.context?.label || 'Payment' }}</div>
+            <div class="text-xs text-ink-500">
+              {{ fmtDate(p.createdAt) }}
+              <span v-if="p.brand"> · {{ p.brand }}<span v-if="p.last4"> ••••{{ p.last4 }}</span></span>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="font-bold">${{ (p.amountUSD || 0).toFixed(2) }}</div>
+            <div v-if="p.context?.discountUSD > 0" class="text-[10px] text-green-700 font-semibold">
+              −${{ p.context.discountUSD.toFixed(2) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-5 mt-5">
+      <router-link to="/subscribe" class="ios-card w-full p-4 flex items-center justify-between active:bg-cream-100">
+        <span class="font-medium">Manage membership</span>
+        <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
+      </router-link>
+    </section>
   </div>
 </template>

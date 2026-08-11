@@ -21,6 +21,9 @@ import TonightsDealsView from '../views/TonightsDeals.vue';
 import SurpriseBagDetailView from '../views/SurpriseBagDetail.vue';
 import MapView from '../views/MapView.vue';
 import MerchantDetailView from '../views/MerchantDetail.vue';
+import AddressesView from '../views/Addresses.vue';
+import DeliveriesView from '../views/Deliveries.vue';
+import DeliveryDetailView from '../views/DeliveryDetail.vue';
 
 const routes = [
   { path: '/welcome', component: LandingView, meta: { public: true } },
@@ -38,7 +41,10 @@ const routes = [
   { path: '/wallet/:purchasedId/redeem', component: RedeemView },
   { path: '/orders', component: OrdersView },
   { path: '/orders/:redemptionId', component: OrderConfirmationView },
+  { path: '/deliveries', component: DeliveriesView },
+  { path: '/deliveries/:id', component: DeliveryDetailView },
   { path: '/profile', component: ProfileView },
+  { path: '/profile/addresses', component: AddressesView },
   { path: '/profile/payment-methods', component: PaymentMethodsView },
   { path: '/profile/notifications', component: NotificationsView },
   { path: '/profile/help', component: HelpView },

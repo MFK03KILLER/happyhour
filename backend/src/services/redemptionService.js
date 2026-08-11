@@ -83,8 +83,11 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
     const allowed = coupon.merchantIds.some((m) => m._id.toString() === merchantId.toString());
     if (!allowed) throw new ForbiddenError('Coupon not valid at this merchant');
   }
+  const customer = await userRepo.findById(redemption.customerId._id);
   const couponService = require('./couponService');
-  if (!couponService.couponIsActiveNow(coupon)) {
+  // Test-mode accounts (internal QA) may redeem at any time, ignoring the
+  // happy-hour active-time window and holiday blackout dates.
+  if (!(customer && customer.testMode) && !couponService.couponIsActiveNow(coupon)) {
     const w = coupon.activeWindow;
     const fmtT = (t) => {
       const [h, m] = t.split(':').map(Number);
@@ -102,7 +105,6 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
     err.activeWindow = w || null;
     throw err;
   }
-  const customer = await userRepo.findById(redemption.customerId._id);
   const merchant = await merchantRepo.findById(merchantId);
   redemption.status = 'completed';
   redemption.scannedAt = new Date();

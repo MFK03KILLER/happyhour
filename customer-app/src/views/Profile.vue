@@ -2,9 +2,11 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useFlagsStore } from '../stores/flags';
 import client from '../api/client';
 
 const auth = useAuthStore();
+const flags = useFlagsStore();
 const router = useRouter();
 const subscription = ref(null);
 
@@ -65,6 +67,19 @@ async function doLogout() {
 
     <section class="mt-5 px-5 space-y-2">
       <div class="ios-card divide-y divide-cream-200">
+        <router-link to="/deliveries" class="w-full flex items-center justify-between p-4 active:bg-cream-100">
+          <span class="font-medium">Deliveries</span>
+          <span class="flex items-center gap-2">
+            <span v-if="!flags.isOn('delivery')" class="chip bg-coral-500/10 text-coral-600 text-[10px] font-bold">
+              <i class="fa-solid fa-truck-fast text-[9px]"></i> Coming soon
+            </span>
+            <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
+          </span>
+        </router-link>
+        <router-link to="/profile/addresses" class="w-full flex items-center justify-between p-4 active:bg-cream-100">
+          <span class="font-medium">Saved addresses</span>
+          <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
+        </router-link>
         <router-link to="/profile/notifications" class="w-full flex items-center justify-between p-4 active:bg-cream-100">
           <span class="font-medium">Notifications</span>
           <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>

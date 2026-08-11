@@ -1,29 +1,122 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import ApplePaySheet from '../components/ApplePaySheet.vue';
 import { useToastStore } from '../stores/toast';
+import { useFlagsStore } from '../stores/flags';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToastStore();
+const flags = useFlagsStore();
 const bag = ref(null);
 const loading = ref(true);
 const showPay = ref(false);
 const fulfillment = ref('pickup');
+const paymentsProvider = ref('mock');
+const checkingOut = ref(false);
+
+// Delivery state (only used when the `delivery` feature flag is ON)
+const addresses = ref([]);
+const selectedAddressId = ref('');
+const deliveryQuote = ref(null);   // { feeUSD, distanceKm, etaMinutes, freeDelivery }
+const quoteError = ref('');
+const quoting = ref(false);
+const deliveryNotes = ref('');
+
+const deliveryOn = computed(() => flags.isOn('delivery'));
 
 onMounted(async () => {
+  flags.load();
   try {
     const { data } = await client.get(`/customer/coupons/${route.params.id}`);
     bag.value = data;
   } finally { loading.value = false; }
+  // Learn whether real card checkout is live (mock sheet vs Stripe redirect).
+  try {
+    const { data } = await client.get('/customer/subscription');
+    paymentsProvider.value = data.paymentsProvider || 'mock';
+  } catch {}
+  handleCheckoutReturn();
 });
+
+// Stripe returns the customer here; the bag lands in the wallet via webhook.
+function handleCheckoutReturn() {
+  const status = route.query.checkout;
+  if (!status) return;
+  router.replace({ path: `/surprise-bag/${route.params.id}` });
+  if (status === 'cancel') {
+    toast.info('Checkout cancelled — you have not been charged.', { title: 'Cancelled' });
+  } else if (status === 'success') {
+    toast.success('Payment received! Your bag is in your wallet.', { title: 'Reserved 🛍️' });
+    setTimeout(() => router.push('/wallet'), 1200);
+  }
+}
+
+// Entry point for the buy button: Stripe redirect in production, mock sheet otherwise.
+async function startPurchase() {
+  if (paymentsProvider.value !== 'stripe') { showPay.value = true; return; }
+  checkingOut.value = true;
+  try {
+    const payload = { fulfillment: fulfillment.value };
+    if (fulfillment.value === 'delivery') {
+      payload.addressId = selectedAddressId.value;
+      if (deliveryNotes.value) payload.deliveryNotes = deliveryNotes.value;
+    }
+    const { data } = await client.post(`/customer/surprise-bags/${bag.value._id}/checkout`, payload);
+    if (data.url) window.location.href = data.url;
+  } catch (e) {
+    toast.error(e.response?.data?.error?.message || 'Could not start checkout', { title: 'Checkout failed' });
+  } finally { checkingOut.value = false; }
+}
+
+async function loadAddresses() {
+  try {
+    const { data } = await client.get('/customer/addresses');
+    addresses.value = data.items || [];
+    const def = addresses.value.find((a) => a.isDefault) || addresses.value[0];
+    if (def && !selectedAddressId.value) selectedAddressId.value = def._id;
+  } catch { addresses.value = []; }
+}
+
+function merchant() { return (bag.value?.merchantIds || [])[0]; }
+
+async function fetchQuote() {
+  deliveryQuote.value = null;
+  quoteError.value = '';
+  const m = merchant();
+  if (!selectedAddressId.value || !m) return;
+  quoting.value = true;
+  try {
+    const { data } = await client.post('/customer/delivery/quote', {
+      merchantId: m._id,
+      addressId: selectedAddressId.value,
+      subtotalUSD: bag.value?.priceUSD || 0,
+    });
+    deliveryQuote.value = data;
+  } catch (e) {
+    quoteError.value = e.response?.data?.error?.message || 'Delivery not available for this address';
+  } finally { quoting.value = false; }
+}
+
+watch(fulfillment, async (v) => {
+  if (v === 'delivery' && deliveryOn.value) {
+    if (!addresses.value.length) await loadAddresses();
+    await fetchQuote();
+  }
+});
+watch(selectedAddressId, () => { if (fulfillment.value === 'delivery') fetchQuote(); });
 
 const total = computed(() => {
   if (!bag.value) return 0;
-  const fee = fulfillment.value === 'delivery' ? (bag.value.deliveryFeeUSD || 0) : 0;
+  const fee = fulfillment.value === 'delivery' && deliveryQuote.value ? deliveryQuote.value.feeUSD : 0;
   return (bag.value.priceUSD || 0) + fee;
+});
+
+const canBuy = computed(() => {
+  if (fulfillment.value !== 'delivery') return true;
+  return !!(deliveryOn.value && selectedAddressId.value && deliveryQuote.value && !quoteError.value);
 });
 
 function pickupWindow() {
@@ -36,17 +129,26 @@ function pickupWindow() {
 
 async function onConfirm(paymentMethod) {
   try {
-    await client.post(`/customer/surprise-bags/${bag.value._id}/buy`, { paymentMethod, fulfillment: fulfillment.value });
+    const payload = { paymentMethod, fulfillment: fulfillment.value };
+    if (fulfillment.value === 'delivery') {
+      payload.addressId = selectedAddressId.value;
+      if (deliveryNotes.value) payload.deliveryNotes = deliveryNotes.value;
+    }
+    const { data } = await client.post(`/customer/surprise-bags/${bag.value._id}/buy`, payload);
     showPay.value = false;
-    toast.success('Reserved! Pick up during the window shown on the bag.', { title: 'Bag reserved 🛍️' });
-    router.push('/wallet');
+    if (data.deliveryOrder) {
+      toast.success('Order placed! Track your delivery live.', { title: 'On its way soon 🚚' });
+      router.push(`/deliveries/${data.deliveryOrder._id}`);
+    } else {
+      toast.success('Reserved! Pick up during the window shown on the bag.', { title: 'Bag reserved 🛍️' });
+      router.push('/wallet');
+    }
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Purchase failed', { title: 'Payment failed' });
   }
 }
 
 function vendor() { return bag.value?.vendorId?.name || ''; }
-function merchant() { return (bag.value?.merchantIds || [])[0]; }
 function savings() {
   if (!bag.value?.originalValueUSD || !bag.value?.priceUSD) return null;
   return Math.round(100 - (bag.value.priceUSD / bag.value.originalValueUSD) * 100);
@@ -82,7 +184,8 @@ function savings() {
         <div class="text-sm text-ink-500 mt-1">Arrive within this window to collect your bag.</div>
       </div>
 
-      <div v-if="bag.deliveryAvailable" class="ios-card p-5">
+      <!-- Fulfillment picker -->
+      <div class="ios-card p-5">
         <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-3">Get it</div>
         <div class="grid grid-cols-2 gap-3">
           <button
@@ -93,14 +196,73 @@ function savings() {
             <div class="font-bold">Pickup</div>
             <div class="text-xs text-ink-500 mt-1">Free</div>
           </button>
+
+          <!-- Delivery: coming soon when the flag is off -->
           <button
+            v-if="!deliveryOn"
+            disabled
+            class="rounded-2xl p-4 border-2 border-ink-300/20 bg-cream-100 text-left relative overflow-hidden opacity-80"
+          >
+            <div class="font-bold text-ink-500">Delivery</div>
+            <div class="text-xs text-ink-300 mt-1">Not available yet</div>
+            <span class="absolute top-2 right-2 chip bg-coral-500 text-white text-[9px] font-bold">
+              <i class="fa-solid fa-truck-fast text-[8px]"></i> Coming soon
+            </span>
+          </button>
+          <button
+            v-else-if="!bag.deliveryAvailable"
+            disabled
+            class="rounded-2xl p-4 border-2 border-ink-300/20 bg-cream-100 text-left opacity-70"
+          >
+            <div class="font-bold text-ink-500">Delivery</div>
+            <div class="text-xs text-ink-300 mt-1">Not offered by this store</div>
+          </button>
+          <button
+            v-else
             @click="fulfillment = 'delivery'"
             class="rounded-2xl p-4 border-2 transition active:scale-95 text-left"
             :class="fulfillment === 'delivery' ? 'border-teal-600 bg-teal-50' : 'border-ink-300/20 bg-white'"
           >
             <div class="font-bold">Delivery</div>
-            <div class="text-xs text-ink-500 mt-1">+${{ (bag.deliveryFeeUSD || 0).toFixed(2) }}</div>
+            <div class="text-xs text-ink-500 mt-1">
+              <span v-if="deliveryQuote && fulfillment === 'delivery'">
+                <span v-if="deliveryQuote.freeDelivery" class="text-green-700 font-semibold">Free</span>
+                <span v-else>+${{ deliveryQuote.feeUSD.toFixed(2) }}</span>
+              </span>
+              <span v-else>To your door</span>
+            </div>
           </button>
+        </div>
+
+        <!-- Delivery details (flag on + selected) -->
+        <div v-if="deliveryOn && fulfillment === 'delivery'" class="mt-4 space-y-3">
+          <div v-if="addresses.length === 0" class="rounded-2xl bg-amber-50 border border-amber-200 p-3.5 text-sm text-amber-900">
+            <div class="font-bold"><i class="fa-solid fa-location-dot mr-1"></i> No saved address</div>
+            <p class="text-xs mt-1">Add a delivery address to continue.</p>
+            <router-link to="/profile/addresses" class="inline-block mt-2 text-xs font-bold text-teal-700 underline">Add address →</router-link>
+          </div>
+          <template v-else>
+            <select v-model="selectedAddressId" class="input">
+              <option v-for="a in addresses" :key="a._id" :value="a._id">
+                {{ a.label }} — {{ a.street }}{{ a.city ? `, ${a.city}` : '' }}
+              </option>
+            </select>
+            <input v-model="deliveryNotes" class="input" placeholder="Notes for the courier (optional)" maxlength="300" />
+
+            <div v-if="quoting" class="text-sm text-ink-500"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Checking delivery…</div>
+            <div v-else-if="quoteError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">{{ quoteError }}</div>
+            <div v-else-if="deliveryQuote" class="rounded-2xl bg-teal-50 border border-teal-600/20 p-3.5 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-ink-700"><i class="fa-solid fa-truck-fast text-teal-700 mr-1.5"></i>Delivery fee</span>
+                <span v-if="deliveryQuote.freeDelivery" class="font-bold text-green-700">Free 🎉</span>
+                <span v-else class="font-bold text-teal-800">${{ deliveryQuote.feeUSD.toFixed(2) }}</span>
+              </div>
+              <div class="flex items-center justify-between mt-1 text-xs text-ink-500">
+                <span>Estimated time</span>
+                <span>~{{ deliveryQuote.etaMinutes }} min<span v-if="deliveryQuote.distanceKm != null"> · {{ deliveryQuote.distanceKm.toFixed(1) }} km</span></span>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -121,7 +283,10 @@ function savings() {
           <div class="text-sm text-ink-300 line-through">${{ bag.originalValueUSD.toFixed(2) }}</div>
         </div>
       </div>
-      <button @click="showPay = true" class="ios-button-primary w-full text-base">Reserve for ${{ total.toFixed(2) }}</button>
+      <button @click="startPurchase" :disabled="!canBuy || checkingOut" class="ios-button-primary w-full text-base disabled:opacity-50">
+        <span v-if="checkingOut">Redirecting to checkout…</span>
+        <span v-else>{{ fulfillment === 'delivery' ? 'Order delivery' : 'Reserve' }} for ${{ total.toFixed(2) }}</span>
+      </button>
     </div>
 
     <ApplePaySheet

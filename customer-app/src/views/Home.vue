@@ -1,14 +1,16 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import { useDailyStore } from '../stores/daily';
+import { useFlagsStore } from '../stores/flags';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 
 const router = useRouter();
 const auth = useAuthStore();
 const daily = useDailyStore();
+const flags = useFlagsStore();
 const { coords } = useGeolocation();
 
 const categories = ref([]);
@@ -53,6 +55,20 @@ function goCoupon(c) {
 
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0]);
+
+// Time-of-day greeting instead of the member's name. `now` ticks every minute so
+// the greeting rolls over correctly if the app is left open past noon / 6 PM.
+const now = ref(new Date());
+let clockTick = null;
+onMounted(() => { clockTick = setInterval(() => { now.value = new Date(); }, 60000); });
+onUnmounted(() => { if (clockTick) clearInterval(clockTick); });
+
+const greeting = computed(() => {
+  const h = now.value.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+});
 </script>
 
 <template>
@@ -60,7 +76,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
         <div class="text-xs text-ink-500 font-medium">{{ today }}</div>
-        <div class="text-2xl font-bold mt-0.5">Hi {{ firstName }} 👋</div>
+        <div class="text-2xl font-bold mt-0.5">{{ greeting }} 👋</div>
       </div>
       <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
@@ -83,13 +99,39 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
         <div class="absolute right-12 bottom-2 w-32 h-32 rounded-full bg-white/10"></div>
         <div class="relative p-6">
           <div class="text-xs uppercase tracking-wider opacity-80 font-semibold">Happy Hour Members</div>
-          <div class="text-3xl font-bold mt-1">3 deals every day</div>
+          <div class="text-3xl font-bold mt-1">A new deal every day</div>
           <div class="mt-1 text-white/90 text-sm">Eat, drink, play for less at 100+ Bay Area spots.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            $4.99/mo · Get started →
+            $12.99/mo · Get started →
           </button>
         </div>
       </div>
+    </section>
+
+    <!-- Delivery: coming-soon teaser (flag off) / shortcut (flag on) -->
+    <section class="mx-5 mt-4">
+      <button v-if="!flags.isOn('delivery')" disabled class="w-full ios-card p-4 flex items-center gap-3 text-left">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-truck-fast text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-bold">Delivery</span>
+            <span class="chip bg-coral-500 text-white text-[9px] font-bold">Coming soon</span>
+          </div>
+          <div class="text-xs text-ink-500 mt-0.5">Surprise bags, straight to your door. Stay tuned! 🚚</div>
+        </div>
+      </button>
+      <button v-else @click="router.push('/deliveries')" class="w-full ios-card p-4 flex items-center gap-3 text-left active:bg-cream-100">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-truck-fast text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold">Delivery <span class="chip bg-green-100 text-green-700 text-[9px] font-bold ml-1">New</span></div>
+          <div class="text-xs text-ink-500 mt-0.5">Get surprise bags delivered · track live</div>
+        </div>
+        <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
+      </button>
     </section>
 
     <section class="mt-7">

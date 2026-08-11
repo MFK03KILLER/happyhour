@@ -9,6 +9,7 @@ import StatsView from '../views/Stats.vue';
 import MerchantSettings from '../views/MerchantSettings.vue';
 import MyCoupons from '../views/MyCoupons.vue';
 import MerchantHolidays from '../views/MerchantHolidays.vue';
+import DeliveriesView from '../views/Deliveries.vue';
 
 import VendorLayout from '../views/vendor/VendorLayout.vue';
 import VendorDashboard from '../views/vendor/VendorDashboard.vue';
@@ -31,6 +32,8 @@ import AdminRevenue from '../views/admin/AdminRevenue.vue';
 import AdminFeatures from '../views/admin/AdminFeatures.vue';
 import AdminTerms from '../views/admin/AdminTerms.vue';
 import AdminSiteContent from '../views/admin/AdminSiteContent.vue';
+import AdminPromoCodes from '../views/admin/AdminPromoCodes.vue';
+import AdminDeliveries from '../views/admin/AdminDeliveries.vue';
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
@@ -40,6 +43,7 @@ const routes = [
   { path: '/settings', component: MerchantSettings, meta: { roles: ['merchant_staff'] } },
   { path: '/my-coupons', component: MyCoupons, meta: { roles: ['merchant_staff'] } },
   { path: '/holidays', component: MerchantHolidays, meta: { roles: ['merchant_staff'] } },
+  { path: '/deliveries', component: DeliveriesView, meta: { roles: ['merchant_staff'] } },
   {
     path: '/vendor',
     component: VendorLayout,
@@ -65,6 +69,8 @@ const routes = [
       { path: 'vendors', component: AdminVendors },
       { path: 'merchants', component: AdminMerchants },
       { path: 'coupons', component: AdminCoupons },
+      { path: 'promo-codes', component: AdminPromoCodes },
+      { path: 'deliveries', component: AdminDeliveries },
       { path: 'users', component: AdminUsers },
       { path: 'features', component: AdminFeatures },
       { path: 'terms', component: AdminTerms },

@@ -2,6 +2,7 @@ const Payment = require('../models/Payment');
 
 module.exports = {
   findById: (id) => Payment.findById(id),
+  findOne: (filter) => Payment.findOne(filter),
   create: (data) => Payment.create(data),
   listByCustomer: (customerId) => Payment.find({ customerId }).sort({ createdAt: -1 }),
   listAll: (filter = {}, opts = {}) => Payment.find(filter, null, opts).populate('customerId', 'fullName email').sort({ createdAt: -1 }),

@@ -5,6 +5,7 @@ import client from '../api/client';
 import { useFlagsStore } from '../stores/flags';
 import { directionsUrl } from '../composables/useMapLink';
 import { useToastStore } from '../stores/toast';
+import RedeemSheet from '../components/RedeemSheet.vue';
 
 const flags = useFlagsStore();
 const toast = useToastStore();
@@ -20,6 +21,8 @@ const coupon = ref(null);
 const loading = ref(true);
 const claiming = ref(false);
 const subscription = ref(null);
+// When set, the instant-redeem QR sheet pops up over this page.
+const redeemCtx = ref(null);
 
 onMounted(async () => {
   try {
@@ -47,12 +50,14 @@ async function claim() {
   claiming.value = true;
   try {
     const { data } = await client.post(`/customer/coupons/${coupon.value._id}/claim`);
-    if (data.activeNow !== false) {
-      toast.success('Saved to your wallet — show it at the counter to redeem.', { title: 'Coupon claimed! 🎉' });
-    } else {
-      toast.warning('Claimed, but only redeemable during happy hour.', { title: 'Outside active hours', ttl: 7000 });
-    }
-    router.push('/wallet');
+    // Pop the redeem QR right here — no navigation, no wallet detour.
+    redeemCtx.value = {
+      purchasedId: data.purchased._id,
+      couponTitle: coupon.value.title,
+      vendorName: coupon.value.vendorId?.name || '',
+      activeWindow: data.activeWindow || coupon.value.activeWindow || null,
+      activeNow: data.activeNow !== false,
+    };
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
   } finally {
@@ -137,14 +142,29 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
         </div>
         <div class="text-right">
           <div class="text-xs text-ink-300">From</div>
-          <div class="text-lg font-bold text-teal-700">$4.99/mo</div>
+          <div class="text-lg font-bold text-teal-700">$12.99/mo</div>
         </div>
+      </div>
+      <div v-if="isSubscribed()" class="flex items-start gap-2 mb-2 text-[11px] leading-snug text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+        <i class="fa-regular fa-clock mt-0.5 flex-shrink-0"></i>
+        <span>Redeemable <strong>weekdays 2–5 PM only</strong> · excludes public holidays · limit <strong>1 claim per day</strong>.</span>
       </div>
       <button @click="claim" class="ios-button-primary w-full text-base" :disabled="claiming">
         <span v-if="claiming">Claiming…</span>
-        <span v-else-if="isSubscribed()">Claim coupon</span>
+        <span v-else-if="isSubscribed()">Claim &amp; show QR</span>
         <span v-else>Become a member</span>
       </button>
     </div>
+
+    <RedeemSheet
+      v-if="redeemCtx"
+      :purchased-id="redeemCtx.purchasedId"
+      :coupon-title="redeemCtx.couponTitle"
+      :vendor-name="redeemCtx.vendorName"
+      :active-window="redeemCtx.activeWindow"
+      :active-now="redeemCtx.activeNow"
+      @close="redeemCtx = null"
+      @completed="redeemCtx = null"
+    />
   </div>
 </template>

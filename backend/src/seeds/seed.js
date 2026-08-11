@@ -189,12 +189,17 @@ async function upsertCoupons(vendorsBySlug, merchantsBySlug) {
 async function upsertCustomers() {
   const passwordHash = await bcrypt.hash('Customer@123', 12);
   const customers = [
-    { email: 'customer1@happyhour.demo', fullName: 'Sarah Johnson', phone: '(415) 555-1001' },
+    // customer1 (Sarah) is the internal QA account → testMode bypasses all limits.
+    { email: 'customer1@happyhour.demo', fullName: 'Sarah Johnson', phone: '(415) 555-1001', testMode: true },
     { email: 'customer2@happyhour.demo', fullName: 'Michael Chen', phone: '(415) 555-1002' },
     { email: 'customer3@happyhour.demo', fullName: 'Aisha Patel', phone: '(650) 555-1003' },
   ];
   for (const c of customers) {
-    await User.findOneAndUpdate({ email: c.email }, { ...c, passwordHash, role: 'customer', status: 'active' }, { upsert: true, new: true });
+    await User.findOneAndUpdate(
+      { email: c.email },
+      { ...c, testMode: !!c.testMode, passwordHash, role: 'customer', status: 'active' },
+      { upsert: true, new: true },
+    );
   }
 }
 
@@ -243,6 +248,26 @@ async function upsertRolesSync() {
   await roleService.syncSystemRoles();
 }
 
+// Rewrite stored Unsplash image URLs to the same-origin /uimg/ proxy so images load
+// from regions where images.unsplash.com is blocked/slow (Nginx proxies them server-side).
+async function rewriteImageHosts() {
+  const TO = '/uimg/';
+  const re = /https?:\/\/images\.unsplash\.com\//g;
+  const jobs = [[Coupon, ['heroImageUrl']], [Merchant, ['logoUrl', 'coverImageUrl']], [Vendor, ['logoUrl']], [Category, ['imageUrl']]];
+  let n = 0;
+  for (const [Model, fields] of jobs) {
+    const docs = await Model.find({ $or: fields.map((f) => ({ [f]: { $regex: 'images\\.unsplash\\.com' } })) });
+    for (const d of docs) {
+      let changed = false;
+      for (const f of fields) {
+        if (typeof d[f] === 'string' && d[f].includes('images.unsplash.com')) { d[f] = d[f].replace(re, TO); changed = true; }
+      }
+      if (changed) { await d.save(); n += 1; }
+    }
+  }
+  return n;
+}
+
 async function run() {
   await connectDB();
   logger.info('Seeding database...');
@@ -253,17 +278,21 @@ async function run() {
   const vendorsBySlug = await upsertVendors();
   const merchantsBySlug = await upsertMerchants(vendorsBySlug);
   await upsertCoupons(vendorsBySlug, merchantsBySlug);
+  const sfFoodCount = await require('./sfFood').seedSfFood();
   await upsertCustomers();
   await upsertVendorOwners(vendorsBySlug);
   await upsertMerchantStaff(merchantsBySlug);
   await require('../services/siteSettingService').ensureSeed();
   await require('../services/holidayService').seedUSFederalHolidays();
+  const rewritten = await rewriteImageHosts();
+  logger.info(`Image URLs routed via /uimg/ proxy: ${rewritten}`);
   logger.info('===== SEED COMPLETE =====');
   logger.info(`Admin:         ${env.ADMIN_EMAIL} / ${env.ADMIN_PASSWORD}`);
   logger.info('Vendor owner:  pizza.owner@happyhour.demo / Vendor@123');
   logger.info('Merchant:      pizza.staff@happyhour.demo / Merchant@123');
   logger.info('Customers:     customer1@happyhour.demo / Customer@123 (also customer2, customer3)');
   logger.info(`Vendors: ${VENDORS.length} · Merchants: ${MERCHANTS.length} · Coupons: ${COUPON_TEMPLATES.length}`);
+  logger.info(`SF bakeries + steakhouses added: ${sfFoodCount} (categories: bakery, steakhouse)`);
   logger.info('=========================');
   await disconnectDB();
 }

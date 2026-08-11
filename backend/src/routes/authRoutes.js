@@ -9,7 +9,6 @@ const {
   refreshSchema,
   changePasswordSchema,
   googleSignInSchema,
-  appleSignInSchema,
 } = require('../validators/authValidators');
 
 /**
@@ -112,24 +111,5 @@ router.post('/change-password', authenticate(), validate(changePasswordSchema), 
  *               idToken: { type: string }
  */
 router.post('/google', authLimiter, validate(googleSignInSchema), ctrl.googleSignIn);
-
-/**
- * @openapi
- * /auth/apple:
- *   post:
- *     tags: [Auth]
- *     summary: Sign in using an Apple ID token (from Sign in with Apple JS)
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [idToken]
- *             properties:
- *               idToken: { type: string }
- *               fullName: { type: string }
- */
-router.post('/apple', authLimiter, validate(appleSignInSchema), ctrl.appleSignIn);
 
 module.exports = router;

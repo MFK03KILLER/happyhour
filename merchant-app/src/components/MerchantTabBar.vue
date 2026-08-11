@@ -2,15 +2,20 @@
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { useFlagsStore } from '../stores/flags';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const flags = useFlagsStore();
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
 
 const tabs = computed(() => {
   const t = [{ to: '/', label: 'Scan', icon: 'fa-qrcode' }];
+  if (flags.isOn('delivery')) {
+    t.push({ to: '/deliveries', label: 'Delivery', icon: 'fa-truck-fast' });
+  }
   if (can('view_stats')) {
     t.push({ to: '/history', label: 'History', icon: 'fa-list' });
     t.push({ to: '/stats', label: 'Stats', icon: 'fa-chart-line' });

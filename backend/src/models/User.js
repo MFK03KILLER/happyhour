@@ -6,6 +6,20 @@ const refreshTokenSchema = new mongoose.Schema({
   userAgent: String,
 }, { _id: false });
 
+// Saved delivery addresses (customer address book).
+const savedAddressSchema = new mongoose.Schema({
+  label: { type: String, default: 'Home' },       // Home / Work / ...
+  street: { type: String, required: true },
+  city: String,
+  state: String,
+  zip: String,
+  lat: Number,
+  lng: Number,
+  notes: String,                                   // courier instructions
+  phone: String,
+  isDefault: { type: Boolean, default: false },
+});
+
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
   passwordHash: String,
@@ -29,6 +43,7 @@ const userSchema = new mongoose.Schema({
   dailyClaimsCount: { type: Number, default: 0 },
   dailyClaimsResetAt: Date,
   favoriteMerchantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Merchant' }],
+  addresses: { type: [savedAddressSchema], default: [] },
   // Consumer terms acceptance (customer signup)
   acceptedTerms: {
     version: { type: Number, default: null },
@@ -46,6 +61,10 @@ const userSchema = new mongoose.Schema({
     default: 'basic',
     index: true,
   },
+  // Test / QA accounts. When true this user bypasses ALL claim & redemption
+  // restrictions: the daily claim limit, the happy-hour active-time window,
+  // and holiday blackout dates. Intended only for internal testing accounts.
+  testMode: { type: Boolean, default: false },
 }, { timestamps: true });
 
 userSchema.methods.toJSON = function () {

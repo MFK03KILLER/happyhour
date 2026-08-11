@@ -89,6 +89,11 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
             </span>
           </div>
 
+          <div v-if="windowText" class="mt-1 text-[10px] font-bold leading-tight opacity-90 flex items-start gap-1">
+            <i class="fa-solid fa-circle-info text-[9px] mt-[2px] flex-shrink-0"></i>
+            <span>Excluding weekends and national holidays</span>
+          </div>
+
           <div class="mt-2.5 flex justify-end">
             <button
               v-if="!locked && !coupon.unavailableToday"

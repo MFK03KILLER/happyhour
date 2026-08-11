@@ -93,12 +93,32 @@ exports.surpriseBags = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// The member's own payment history (receipts shown in Payment methods).
+exports.myPayments = asyncHandler(async (req, res) => {
+  const items = await require('../repositories/paymentRepository').listByCustomer(req.user._id);
+  res.json({ items });
+});
+
+// Stripe path for surprise bags — returns a Checkout Session URL.
+exports.checkoutSurpriseBag = asyncHandler(async (req, res) => {
+  const result = await couponService.createSurpriseBagCheckout({
+    customerId: req.user._id,
+    couponId: req.params.id,
+    fulfillment: req.body.fulfillment || 'pickup',
+    addressId: req.body.addressId,
+    deliveryNotes: req.body.deliveryNotes,
+  });
+  res.status(201).json(result);
+});
+
 exports.purchaseSurpriseBag = asyncHandler(async (req, res) => {
   const result = await couponService.purchaseSurpriseBag({
     customerId: req.user._id,
     couponId: req.params.id,
     paymentMethod: req.body.paymentMethod,
     fulfillment: req.body.fulfillment || 'pickup',
+    addressId: req.body.addressId,
+    deliveryNotes: req.body.deliveryNotes,
   });
   res.status(201).json(result);
 });
