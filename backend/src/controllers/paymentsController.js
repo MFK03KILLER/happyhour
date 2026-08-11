@@ -14,7 +14,15 @@ exports.webhook = async (req, res) => {
   }
   try {
     if (event.type === 'checkout.session.completed') {
-      await subscriptionService.finalizeStripeCheckout(event.data.object);
+      const session = event.data.object;
+      const kind = session.metadata && session.metadata.kind;
+      // Route to the right fulfiller. Both handlers are idempotent, so Stripe
+      // retrying a delivery can never grant the goods twice.
+      if (kind === 'surprise_bag') {
+        await require('../services/couponService').finalizeSurpriseBagCheckout(session);
+      } else {
+        await subscriptionService.finalizeStripeCheckout(session);
+      }
     }
     return res.json({ received: true });
   } catch (err) {

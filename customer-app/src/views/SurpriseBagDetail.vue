@@ -14,6 +14,8 @@ const bag = ref(null);
 const loading = ref(true);
 const showPay = ref(false);
 const fulfillment = ref('pickup');
+const paymentsProvider = ref('mock');
+const checkingOut = ref(false);
 
 // Delivery state (only used when the `delivery` feature flag is ON)
 const addresses = ref([]);
@@ -31,7 +33,43 @@ onMounted(async () => {
     const { data } = await client.get(`/customer/coupons/${route.params.id}`);
     bag.value = data;
   } finally { loading.value = false; }
+  // Learn whether real card checkout is live (mock sheet vs Stripe redirect).
+  try {
+    const { data } = await client.get('/customer/subscription');
+    paymentsProvider.value = data.paymentsProvider || 'mock';
+  } catch {}
+  handleCheckoutReturn();
 });
+
+// Stripe returns the customer here; the bag lands in the wallet via webhook.
+function handleCheckoutReturn() {
+  const status = route.query.checkout;
+  if (!status) return;
+  router.replace({ path: `/surprise-bag/${route.params.id}` });
+  if (status === 'cancel') {
+    toast.info('Checkout cancelled — you have not been charged.', { title: 'Cancelled' });
+  } else if (status === 'success') {
+    toast.success('Payment received! Your bag is in your wallet.', { title: 'Reserved 🛍️' });
+    setTimeout(() => router.push('/wallet'), 1200);
+  }
+}
+
+// Entry point for the buy button: Stripe redirect in production, mock sheet otherwise.
+async function startPurchase() {
+  if (paymentsProvider.value !== 'stripe') { showPay.value = true; return; }
+  checkingOut.value = true;
+  try {
+    const payload = { fulfillment: fulfillment.value };
+    if (fulfillment.value === 'delivery') {
+      payload.addressId = selectedAddressId.value;
+      if (deliveryNotes.value) payload.deliveryNotes = deliveryNotes.value;
+    }
+    const { data } = await client.post(`/customer/surprise-bags/${bag.value._id}/checkout`, payload);
+    if (data.url) window.location.href = data.url;
+  } catch (e) {
+    toast.error(e.response?.data?.error?.message || 'Could not start checkout', { title: 'Checkout failed' });
+  } finally { checkingOut.value = false; }
+}
 
 async function loadAddresses() {
   try {
@@ -245,8 +283,9 @@ function savings() {
           <div class="text-sm text-ink-300 line-through">${{ bag.originalValueUSD.toFixed(2) }}</div>
         </div>
       </div>
-      <button @click="showPay = true" :disabled="!canBuy" class="ios-button-primary w-full text-base disabled:opacity-50">
-        {{ fulfillment === 'delivery' ? 'Order delivery' : 'Reserve' }} for ${{ total.toFixed(2) }}
+      <button @click="startPurchase" :disabled="!canBuy || checkingOut" class="ios-button-primary w-full text-base disabled:opacity-50">
+        <span v-if="checkingOut">Redirecting to checkout…</span>
+        <span v-else>{{ fulfillment === 'delivery' ? 'Order delivery' : 'Reserve' }} for ${{ total.toFixed(2) }}</span>
       </button>
     </div>
 

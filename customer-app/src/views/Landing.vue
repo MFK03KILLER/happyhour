@@ -101,7 +101,7 @@ const testimonials = [
               </div>
               <div class="h-full pt-8 px-4 pb-4 overflow-hidden">
                 <div class="text-xs text-ink-500 font-medium pl-1">Friday, May 21</div>
-                <div class="text-xl font-bold mt-0.5 pl-1">Hi, Sarah 👋</div>
+                <div class="text-xl font-bold mt-0.5 pl-1">Good evening 👋</div>
 
                 <div class="mt-4 rounded-3xl bg-gradient-to-br from-teal-600 to-teal-800 text-white p-5 shadow-lift relative overflow-hidden">
                   <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10"></div>

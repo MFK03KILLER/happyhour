@@ -11,6 +11,12 @@ const MOCK_CARDS = {
 };
 
 async function processMockPayment({ customerId, amountUSD, method, context }) {
+  // Hard safety net: once real card processing is configured, no code path may
+  // ever record a fake payment (that would hand out paid goods for free).
+  const stripeService = require('./stripeService');
+  if (stripeService.isEnabled()) {
+    throw new BadRequestError('Card payments are live — this purchase must go through Stripe checkout');
+  }
   if (!MOCK_CARDS[method]) throw new BadRequestError('Unsupported payment method');
   const card = MOCK_CARDS[method];
   const payment = await paymentRepo.create({

@@ -85,8 +85,19 @@ We charge the plan price **once per period** (Stripe Checkout in `mode: payment`
 own `Subscription` document tracks the billing period (30 / 365 days). Recurring
 auto-renew via Stripe Billing can be layered on later if desired.
 
-> **Surprise-bag purchases** still use the mock path for now; only the subscription flow is
-> wired to Stripe. Ask to extend it when needed.
+**Surprise bags (and delivery) are wired to Stripe too.** Same shape: the app calls
+`POST /api/v1/customer/surprise-bags/:id/checkout`, the customer pays on Stripe, and the
+webhook (`kind: surprise_bag` in the session metadata) records the payment, decrements
+inventory, drops the bag in the wallet, and creates the delivery order when applicable.
+Both webhook handlers are **idempotent** — a retried Stripe delivery can't grant the item twice.
+
+> **Safety net:** once `STRIPE_SECRET_KEY` is set, `processMockPayment()` throws. No code path
+> can hand out a paid item on a fake payment in production.
+
+### Inventory note
+For Stripe purchases the bag is decremented **when the webhook confirms payment**, not when
+checkout starts. With very low stock two people could both reach checkout; the second one is
+refunded manually from the Stripe dashboard. Add a reservation step if this becomes common.
 
 ---
 

@@ -108,6 +108,16 @@ router.post('/subscription/validate-promo', writeLimiter, subCtrl.validatePromo)
 
 /**
  * @openapi
+ * /customer/payments:
+ *   get:
+ *     tags: [Customer]
+ *     summary: My payment history (receipts)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/payments', ctrl.myPayments);
+
+/**
+ * @openapi
  * /customer/coupons/browse:
  *   get:
  *     tags: [Customer]
@@ -181,6 +191,16 @@ router.get('/surprise-bags', requireFeature('surprise_bag'), validate(browseQuer
  *     security: [{ bearerAuth: [] }]
  */
 router.post('/surprise-bags/:id/buy', requireFeature('surprise_bag'), writeLimiter, validate(purchaseSchema), ctrl.purchaseSurpriseBag);
+
+/**
+ * @openapi
+ * /customer/surprise-bags/{id}/checkout:
+ *   post:
+ *     tags: [Customer]
+ *     summary: Start a Stripe Checkout session for a surprise bag (returns a redirect URL)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/surprise-bags/:id/checkout', requireFeature('surprise_bag'), writeLimiter, ctrl.checkoutSurpriseBag);
 
 /**
  * @openapi

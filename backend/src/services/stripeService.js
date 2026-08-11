@@ -14,7 +14,12 @@ function getStripe() {
   if (!_stripe) {
     // Required lazily so a missing `stripe` package never crashes boot in mock mode.
     const Stripe = require('stripe');
-    _stripe = Stripe(env.STRIPE_SECRET_KEY);
+    // Pin the API version so a future Stripe release can't change behaviour under us.
+    _stripe = Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+      maxNetworkRetries: 2,
+      appInfo: { name: 'Happy Hour', url: 'https://happyhourz.org' },
+    });
   }
   return _stripe;
 }

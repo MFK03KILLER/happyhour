@@ -1,14 +1,16 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import client from '../api/client';
 import ApplePaySheet from '../components/ApplePaySheet.vue';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const toast = useToastStore();
 const auth = useAuthStore();
+const confirming = ref(false);
 const sub = ref(null);
 const currentPlan = ref(null);
 const availablePlans = ref([]);
@@ -25,14 +27,48 @@ const promoError = ref('');
 const applyingPromo = ref(false);
 const checkingOut = ref(false);
 
+async function loadSub() {
+  const { data } = await client.get('/customer/subscription');
+  sub.value = data.subscription;
+  currentPlan.value = data.plan;
+  availablePlans.value = data.available || [];
+  paymentsProvider.value = data.paymentsProvider || 'mock';
+  return data;
+}
+
+// Stripe sends the customer back here after checkout. The subscription is
+// activated by the webhook, which can land a moment after the redirect — so
+// poll briefly until it shows up instead of showing a stale "not subscribed".
+async function handleCheckoutReturn() {
+  const status = route.query.checkout;
+  if (!status) return;
+  router.replace({ path: '/subscribe' });   // strip the query param
+  if (status === 'cancel') {
+    toast.info('Checkout cancelled — you have not been charged.', { title: 'Cancelled' });
+    return;
+  }
+  if (status !== 'success') return;
+  confirming.value = true;
+  try {
+    for (let i = 0; i < 10; i++) {
+      const data = await loadSub();
+      const s = data.subscription;
+      if (s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date()) {
+        await auth.fetchMe();
+        toast.success(`You're on ${data.plan?.label || 'your new plan'}!`, { title: 'Payment received 🎉' });
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    toast.info('Payment received — your membership will activate in a moment.', { title: 'Almost there', ttl: 8000 });
+  } finally { confirming.value = false; }
+}
+
 onMounted(async () => {
   try {
-    const { data } = await client.get('/customer/subscription');
-    sub.value = data.subscription;
-    currentPlan.value = data.plan;
-    availablePlans.value = data.available || [];
-    paymentsProvider.value = data.paymentsProvider || 'mock';
+    await loadSub();
   } finally { loading.value = false; }
+  await handleCheckoutReturn();
 });
 
 const selected = computed(() => availablePlans.value.find((p) => p.tier === selectedTier.value));
@@ -148,6 +184,14 @@ function pickTier(t) {
       </button>
       <div class="flex-1 text-center font-semibold -ml-8">Membership</div>
     </header>
+
+    <div v-if="confirming" class="mx-5 mt-4 ios-card p-4 flex items-center gap-3 bg-teal-50 border border-teal-600/20">
+      <div class="w-8 h-8 rounded-full border-[3px] border-teal-600/25 border-t-teal-700 animate-spin flex-shrink-0"></div>
+      <div class="text-sm">
+        <div class="font-bold text-teal-800">Confirming your payment…</div>
+        <div class="text-xs text-ink-500 mt-0.5">This only takes a moment. Don't close the app.</div>
+      </div>
+    </div>
 
     <div v-if="loading" class="px-5 mt-6"><div class="h-64 bg-cream-200 rounded-3xl animate-pulse"></div></div>
 

@@ -168,7 +168,9 @@ async function claim({ customerId, couponId }) {
   return { purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null };
 }
 
-async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfillment = 'pickup', addressId, deliveryNotes }) {
+// Shared validation + pricing for a surprise-bag purchase. Used by BOTH the mock
+// path and the Stripe checkout path so the two can never drift apart.
+async function prepareSurpriseBagPurchase({ customerId, couponId, fulfillment = 'pickup', addressId }) {
   const coupon = await couponRepo.findById(couponId);
   if (!coupon) throw new NotFoundError('Coupon not found');
   if (coupon.offerKind !== 'surprise_bag') throw new BadRequestError('Not a surprise bag');
@@ -181,7 +183,7 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
   if (coupon.pickupWindowEnd && coupon.pickupWindowEnd < new Date()) throw new BadRequestError('Pickup window has ended');
 
   // ---- Delivery fulfillment (gated behind the `delivery` feature flag) ----
-  let deliveryCtx = null; // { merchant, address, quote, customer }
+  let deliveryCtx = null; // { merchant, address, quoteResult, customer }
   if (fulfillment === 'delivery') {
     const isOn = await require('../repositories/featureFlagRepository').isEnabled('delivery');
     if (!isOn) throw new BadRequestError('Delivery is coming soon — pickup only for now');
@@ -199,13 +201,13 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
   }
 
   const fee = deliveryCtx ? deliveryCtx.quoteResult.feeUSD : 0;
-  const total = (coupon.priceUSD || 0) + fee;
-  const payment = await paymentService.processMockPayment({
-    customerId,
-    amountUSD: total,
-    method: paymentMethod,
-    context: { kind: 'coupon_purchase', label: `${coupon.title} (Surprise Bag${deliveryCtx ? ' · Delivery' : ''})`, refType: 'Coupon', refId: coupon._id },
-  });
+  const total = Math.round(((coupon.priceUSD || 0) + fee) * 100) / 100;
+  return { coupon, deliveryCtx, fee, total };
+}
+
+// Everything that happens once money has actually been taken: inventory,
+// wallet entry, delivery order. Shared by the mock and Stripe paths.
+async function fulfillSurpriseBag({ customerId, coupon, deliveryCtx, payment, deliveryNotes }) {
   if (coupon.inventoryRemaining !== null) {
     coupon.inventoryRemaining = Math.max(0, coupon.inventoryRemaining - 1);
     if (coupon.inventoryRemaining === 0) coupon.status = 'sold_out';
@@ -215,10 +217,9 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
     customerId,
     couponId: coupon._id,
     usesRemaining: 1,
-    paymentId: payment._id,
+    paymentId: payment ? payment._id : undefined,
     expiresAt: coupon.pickupWindowEnd || coupon.validUntil,
   });
-
   let deliveryOrder = null;
   if (deliveryCtx) {
     const deliveryService = require('./deliveryService');
@@ -233,7 +234,81 @@ async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfil
       notes: deliveryNotes,
     });
   }
+  return { purchased, deliveryOrder };
+}
 
+// Stripe path — returns a Checkout Session URL. Nothing is reserved or granted
+// until the webhook confirms payment (see finalizeSurpriseBagCheckout).
+async function createSurpriseBagCheckout({ customerId, couponId, fulfillment = 'pickup', addressId, deliveryNotes }) {
+  const stripeService = require('./stripeService');
+  const { coupon, total } = await prepareSurpriseBagPurchase({ customerId, couponId, fulfillment, addressId });
+  const customer = await User.findById(customerId);
+  const session = await stripeService.createCheckoutSession({
+    amountUSD: total,
+    label: `${coupon.title} (Surprise Bag${fulfillment === 'delivery' ? ' · Delivery' : ''})`,
+    customerEmail: customer ? customer.email : undefined,
+    successPath: `/surprise-bag/${coupon._id}?checkout=success`,
+    cancelPath: `/surprise-bag/${coupon._id}?checkout=cancel`,
+    metadata: {
+      kind: 'surprise_bag',
+      userId: String(customerId),
+      couponId: String(coupon._id),
+      fulfillment,
+      addressId: addressId ? String(addressId) : '',
+      deliveryNotes: (deliveryNotes || '').slice(0, 400),
+      amountUSD: String(total),
+    },
+  });
+  return { url: session.url, sessionId: session.id, amountUSD: total };
+}
+
+// Called from the Stripe webhook on checkout.session.completed. Idempotent:
+// a repeated webhook delivery must not grant a second bag.
+async function finalizeSurpriseBagCheckout(session) {
+  const md = session.metadata || {};
+  if (md.kind !== 'surprise_bag') return null;
+  const providerRef = session.payment_intent || session.id;
+  const existingPayment = await require('../repositories/paymentRepository').findOne({ providerRef });
+  if (existingPayment) {
+    const already = await purchasedRepo.findOne({ paymentId: existingPayment._id });
+    if (already) return { purchased: already, payment: existingPayment, alreadyProcessed: true };
+  }
+  const customerId = md.userId;
+  const { coupon, deliveryCtx } = await prepareSurpriseBagPurchase({
+    customerId,
+    couponId: md.couponId,
+    fulfillment: md.fulfillment || 'pickup',
+    addressId: md.addressId || undefined,
+  });
+  const amountUSD = Number(md.amountUSD || (session.amount_total || 0) / 100);
+  const payment = await paymentService.recordStripePayment({
+    customerId,
+    amountUSD,
+    providerRef,
+    context: {
+      kind: 'coupon_purchase',
+      label: `${coupon.title} (Surprise Bag${deliveryCtx ? ' · Delivery' : ''})`,
+      refType: 'Coupon',
+      refId: coupon._id,
+    },
+  });
+  const { purchased, deliveryOrder } = await fulfillSurpriseBag({
+    customerId, coupon, deliveryCtx, payment, deliveryNotes: md.deliveryNotes,
+  });
+  return { purchased, payment, coupon, deliveryOrder };
+}
+
+async function purchaseSurpriseBag({ customerId, couponId, paymentMethod, fulfillment = 'pickup', addressId, deliveryNotes }) {
+  const { coupon, deliveryCtx, total } = await prepareSurpriseBagPurchase({ customerId, couponId, fulfillment, addressId });
+  const payment = await paymentService.processMockPayment({
+    customerId,
+    amountUSD: total,
+    method: paymentMethod,
+    context: { kind: 'coupon_purchase', label: `${coupon.title} (Surprise Bag${deliveryCtx ? ' · Delivery' : ''})`, refType: 'Coupon', refId: coupon._id },
+  });
+  const { purchased, deliveryOrder } = await fulfillSurpriseBag({
+    customerId, coupon, deliveryCtx, payment, deliveryNotes,
+  });
   return { purchased, payment, coupon, fulfillment, deliveryOrder };
 }
 
@@ -335,6 +410,7 @@ async function bulkUpdate({ vendorId, ids, action }) {
 
 module.exports = {
   browse, getById, claim, purchase, purchaseSurpriseBag,
+  createSurpriseBagCheckout, finalizeSurpriseBagCheckout,
   createCoupon, updateCoupon, deleteCoupon, listCoupons,
   couponsByMerchant, getDailyStatus, haversineKm, couponIsActiveNow,
   holidayInfoForCoupon, bulkUpdate,

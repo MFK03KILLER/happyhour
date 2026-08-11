@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
@@ -55,6 +55,20 @@ function goCoupon(c) {
 
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0]);
+
+// Time-of-day greeting instead of the member's name. `now` ticks every minute so
+// the greeting rolls over correctly if the app is left open past noon / 6 PM.
+const now = ref(new Date());
+let clockTick = null;
+onMounted(() => { clockTick = setInterval(() => { now.value = new Date(); }, 60000); });
+onUnmounted(() => { if (clockTick) clearInterval(clockTick); });
+
+const greeting = computed(() => {
+  const h = now.value.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+});
 </script>
 
 <template>
@@ -62,7 +76,7 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
         <div class="text-xs text-ink-500 font-medium">{{ today }}</div>
-        <div class="text-2xl font-bold mt-0.5">Hi {{ firstName }} 👋</div>
+        <div class="text-2xl font-bold mt-0.5">{{ greeting }} 👋</div>
       </div>
       <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
