@@ -6,6 +6,17 @@ Branch: **`android-release`** · Apps: **customer** (`app.happyhour.customer`) +
 
 ## 0) Kholase: chi amade ast, chi bayad khodet anjam bedi
 
+### ✅ VERIFIED — build-e vaghei test shod
+Har do app **build shodand va emza shodand** (rooye VPS, chon Maven-e Google az Iran block-e):
+
+| App | AAB | Size |
+|---|---|---|
+| customer | `app-release.aab` | ~5.1 MB |
+| merchant | `app-release.aab` | ~4.0 MB |
+
+- `jar verified` ✅ · signer SHA-256 = `1D:0D:23:A1:46:28:23:62:...:5C:89` (hamoon upload keystore-e ma)
+- AGP 8.13.0 · certificate ta sale **2054** etebar dare
+
 ### ✅ Chizayi ke amade ast (man anjam dadam)
 - Capacitor **Android platform** baraye har do app (`customer-app/android`, `merchant-app/android`)
 - `compileSdk` / `targetSdk` = **36**, `minSdk` = **24** → motabegh ba elzam-e Play baraye 2026
@@ -75,7 +86,12 @@ backup: VPS → /root/keystores/
 ```
 `android/keystore.properties` toye har do app be hamin file eshare mikone va **git-ignore** shode.
 
-### 3.2 — Build-e local (Windows)
+### 3.2 — ⛔ Build-e local (Windows) — **az Iran kar NEMIKONE**
+> **Test shod:** `dl.google.com` (Maven-e Google) az internet-e Iran **block**-e. Hameye artifact-ha 404 midan (`Could not find com.android.tools.build:gradle:8.13.0`) — dar hali ke hamoon URL az VPS-e America **200** mide. Yani version-ha dorost-and, faghat shabake mahdood-e.
+>
+> Pas: ya **GitHub Actions** (§3.3 — sade-tarin), ya rooye **VPS**, ya ba **proxy/VPN** rooye Windows. Agar VPN dari, in dastoor-ha kar mikonan:
+
+
 ```bash
 cd customer-app
 npm install
