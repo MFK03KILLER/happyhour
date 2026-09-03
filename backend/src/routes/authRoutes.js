@@ -9,6 +9,7 @@ const {
   refreshSchema,
   changePasswordSchema,
   googleSignInSchema,
+  deleteAccountSchema,
 } = require('../validators/authValidators');
 
 /**
