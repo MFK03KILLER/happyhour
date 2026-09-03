@@ -39,3 +39,13 @@ exports.googleSignIn = asyncHandler(async (req, res) => {
   });
   res.json(result);
 });
+
+// Self-service account deletion (Google Play "account deletion" requirement).
+exports.deleteAccount = asyncHandler(async (req, res) => {
+  await authService.deleteAccount(req.user._id, { password: req.body.password });
+  await require('../services/auditService').log({
+    actorUserId: req.user._id, action: 'account.self_delete',
+    targetType: 'User', targetId: req.user._id.toString(), req,
+  });
+  res.status(204).end();
+});

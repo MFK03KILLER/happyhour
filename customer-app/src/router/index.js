@@ -21,6 +21,8 @@ import TonightsDealsView from '../views/TonightsDeals.vue';
 import SurpriseBagDetailView from '../views/SurpriseBagDetail.vue';
 import MapView from '../views/MapView.vue';
 import MerchantDetailView from '../views/MerchantDetail.vue';
+import LegalPageView from '../views/LegalPage.vue';
+import DeleteAccountInfoView from '../views/DeleteAccountInfo.vue';
 import AddressesView from '../views/Addresses.vue';
 import DeliveriesView from '../views/Deliveries.vue';
 import DeliveryDetailView from '../views/DeliveryDetail.vue';
@@ -29,6 +31,11 @@ const routes = [
   { path: '/welcome', component: LandingView, meta: { public: true } },
   { path: '/login', component: LoginView, meta: { public: true } },
   { path: '/register', component: RegisterView, meta: { public: true } },
+  // Public legal pages — linked from the Google Play / App Store listings, must work logged-out.
+  { path: '/privacy', component: LegalPageView, props: { page: 'privacy' }, meta: { public: true } },
+  { path: '/terms', component: LegalPageView, props: { page: 'terms' }, meta: { public: true } },
+  { path: '/eula', component: LegalPageView, props: { page: 'eula' }, meta: { public: true } },
+  { path: '/delete-account', component: DeleteAccountInfoView, meta: { public: true } },
   { path: '/', component: HomeView },
   { path: '/subscribe', component: SubscribeView },
   { path: '/browse', component: BrowseView },

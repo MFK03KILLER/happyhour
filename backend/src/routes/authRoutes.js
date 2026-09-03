@@ -112,4 +112,14 @@ router.post('/change-password', authenticate(), validate(changePasswordSchema), 
  */
 router.post('/google', authLimiter, validate(googleSignInSchema), ctrl.googleSignIn);
 
+/**
+ * @openapi
+ * /auth/account:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: Permanently delete my own account (self-service; required by Google Play / App Store)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.delete('/account', authenticate(), authLimiter, validate(deleteAccountSchema), ctrl.deleteAccount);
+
 module.exports = router;

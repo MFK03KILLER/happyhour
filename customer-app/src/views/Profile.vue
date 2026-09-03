@@ -26,6 +26,26 @@ async function doLogout() {
   await auth.logout();
   router.push('/welcome');
 }
+
+// Self-service account deletion (required by Google Play / App Store).
+const showDelete = ref(false);
+const delPassword = ref('');
+const deleting = ref(false);
+const delError = ref('');
+const isPasswordAccount = () => (auth.user?.authProvider || 'password') === 'password';
+
+async function deleteAccount() {
+  delError.value = '';
+  if (isPasswordAccount() && !delPassword.value) { delError.value = 'Enter your password to confirm.'; return; }
+  deleting.value = true;
+  try {
+    await client.delete('/auth/account', { data: { password: delPassword.value || undefined } });
+    auth.clearSession();
+    router.replace('/welcome');
+  } catch (e) {
+    delError.value = e.response?.data?.error?.message || 'Could not delete your account';
+  } finally { deleting.value = false; }
+}
 </script>
 
 <template>
@@ -97,7 +117,30 @@ async function doLogout() {
       <button @click="doLogout" class="ios-card w-full p-4 text-coral-600 font-semibold active:bg-cream-100">
         Sign out
       </button>
+
+      <button @click="showDelete = true" class="w-full p-3 text-xs text-ink-300 font-semibold active:text-coral-600">
+        Delete my account
+      </button>
     </section>
+
+    <!-- Delete account confirmation -->
+    <div v-if="showDelete" class="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center" @click.self="showDelete = false">
+      <div class="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-md shadow-lift p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+        <div class="text-xl font-bold text-coral-600">Delete account?</div>
+        <p class="text-sm text-ink-700 mt-2 leading-relaxed">
+          This permanently removes your profile, saved addresses, wallet coupons and membership.
+          Payment receipts are kept for accounting but are no longer linked to you. This cannot be undone.
+        </p>
+        <input v-if="isPasswordAccount()" v-model="delPassword" type="password" class="input mt-4" placeholder="Confirm your password" />
+        <div v-if="delError" class="text-coral-600 text-sm mt-2">{{ delError }}</div>
+        <div class="mt-4 flex gap-2">
+          <button @click="showDelete = false" class="ios-card flex-1 p-3 font-semibold text-center">Keep account</button>
+          <button @click="deleteAccount" :disabled="deleting" class="flex-1 p-3 rounded-2xl bg-coral-600 text-white font-semibold active:scale-[0.99] disabled:opacity-60">
+            {{ deleting ? 'Deleting…' : 'Delete forever' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="mt-8 text-center text-[11px] text-ink-300">Happy Hour Demo · v1.0</div>
   </div>
