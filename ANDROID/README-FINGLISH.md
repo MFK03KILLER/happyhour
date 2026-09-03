@@ -215,6 +215,26 @@ cd android && ./gradlew bundleRelease
 
 ---
 
+## 6.5) ⚠️ Do ta mahdoodiat-e vaghei-ye WebView (ghabl az inke Google/Stripe ro roshan koni bekhoon)
+
+### A) Google Sign-In **dakhel-e app kar nemikone**
+Google az sale 2021 login-e OAuth ro dar **embedded WebView** block karde (`403 disallowed_useragent`).
+Yani dokme-ye "Continue with Google" toye app-e Android kar **nakhahad** kard — hatta bad az inke `GOOGLE_CLIENT_ID` ro set koni.
+
+**Vaziat-e feli:** `GOOGLE_CLIENT_ID` khali-ye → dokme "not configured" neshoon mide → **hich chizi nemishkane**.
+
+**Vaghti khasti roshanesh koni, do rah dari:**
+1. **Sade:** toye app-e native dokme-ye Google ro makhfi kon (faghat email/password). Web hamchenan Google dare.
+2. **Doroste:** plugin-e native bezar — `@codetrix-studio/capacitor-google-auth` ya `@capacitor/browser` (Chrome Custom Tabs). In Google ro razi mikone chon WebView-e embedded nist.
+
+### B) Stripe Checkout — hal shod ✅
+Stripe Checkout rooye `checkout.stripe.com` ast (origin-e digar). Bedoone tanzim, WebView oon ro mifresad be browser-e system va user bad az pardakht be app barnemigarde.
+Man `allowNavigation` ro ezafe kardam (`checkout.stripe.com`, `*.stripe.com`) → checkout **dakhel-e app** baz mishe va bad az pardakht khodesh barmigarde be `happyhourz.org/subscribe?checkout=success`.
+
+> Bad az roshan kardan-e Stripe, **حتماً** yekbar rooye gooshi-ye vaghei test kon: kharid → bargasht be app → didan-e "Confirming your payment".
+
+---
+
 ## 7) Command-haye khoolase
 
 ```bash

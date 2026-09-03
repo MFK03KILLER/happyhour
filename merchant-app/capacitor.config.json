@@ -11,7 +11,11 @@
   },
   "server": {
     "androidScheme": "https",
-    "iosScheme": "capacitor"
+    "iosScheme": "capacitor",
+    "allowNavigation": [
+      "happyhourz.org",
+      "*.happyhourz.org"
+    ]
   },
   "plugins": {
     "SplashScreen": {

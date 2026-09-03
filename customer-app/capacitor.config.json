@@ -11,7 +11,13 @@
   },
   "server": {
     "androidScheme": "https",
-    "iosScheme": "capacitor"
+    "iosScheme": "capacitor",
+    "allowNavigation": [
+      "happyhourz.org",
+      "*.happyhourz.org",
+      "checkout.stripe.com",
+      "*.stripe.com"
+    ]
   },
   "plugins": {
     "SplashScreen": {
