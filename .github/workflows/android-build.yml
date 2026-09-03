@@ -1,0 +1,87 @@
+# Cloud Android build — no local JDK/SDK needed. Produces the release .aab as a downloadable artifact.
+#
+# Signs automatically when these repository secrets exist (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64    base64 of keystores/happyhour-upload.jks
+#                              PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\...\happyhour-upload.jks"))
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS (happyhour), ANDROID_KEY_PASSWORD
+# Without them it builds an UNSIGNED bundle just to prove the project compiles (Play rejects unsigned uploads).
+#
+# Run from the Actions tab (workflow_dispatch) or by pushing to android-release.
+
+name: Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Which app to build"
+        required: true
+        default: customer-app
+        type: choice
+        options: [customer-app, merchant-app]
+      mode:
+        description: "bundled = web assets packaged in the app · remote = shell loads the live site (web deploys update the app, no store release)"
+        required: true
+        default: bundled
+        type: choice
+        options: [bundled, remote]
+  push:
+    branches: [android-release]
+    paths: ["customer-app/**", "merchant-app/**", ".github/workflows/android-build.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Manual run → only the selected app. Push → both apps.
+        app: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.app) || '["customer-app","merchant-app"]') }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Configure Capacitor mode
+        run: node scripts/cap-config.mjs ${{ inputs.mode || 'bundled' }}
+
+      - name: Build web + sync Android
+        run: npm run build:native && npx cap sync android
+
+      - name: Write signing config (only when secrets exist)
+        if: ${{ env.KS != '' }}
+        run: |
+          echo "$KS" | base64 -d > android/upload.jks
+          printf 'storeFile=upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" "${{ secrets.ANDROID_KEY_ALIAS }}" "${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            > android/keystore.properties
+
+      - name: Gradle bundleRelease
+        working-directory: ${{ matrix.app }}/android
+        run: chmod +x gradlew && ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-release-aab
+          path: ${{ matrix.app }}/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
