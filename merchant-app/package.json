@@ -9,9 +9,14 @@
     "build:native": "vite build --config vite.config.native.js --mode native",
     "preview": "vite preview --port 5174",
     "ios:sync": "npm run build:native && cap sync ios",
-    "ios:open": "cap open ios"
+    "ios:open": "cap open ios",
+    "android:sync": "node scripts/cap-config.mjs bundled && npm run build:native && cap sync android",
+    "android:sync:remote": "node scripts/cap-config.mjs remote && npm run build:native && cap sync android",
+    "android:open": "cap open android",
+    "android:assets": "capacitor-assets generate --android --iconBackgroundColor \"#0E5C5C\" --iconBackgroundColorDark \"#063838\" --splashBackgroundColor \"#0E5C5C\" --splashBackgroundColorDark \"#063838\""
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
     "@capacitor/app": "^8.1.0",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/core": "^8.4.0",

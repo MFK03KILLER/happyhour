@@ -5,17 +5,27 @@
   "ios": {
     "contentInset": "always"
   },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0E5C5C"
+  },
   "server": {
+    "androidScheme": "https",
     "iosScheme": "capacitor"
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1200,
       "backgroundColor": "#0E5C5C",
-      "showSpinner": false
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
     },
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   }
 }

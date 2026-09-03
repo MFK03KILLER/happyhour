@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Happy Hour Merchant</string>
+    <string name="title_activity_main">Happy Hour Merchant</string>
+    <string name="package_name">app.happyhour.merchant</string>
+    <string name="custom_url_scheme">app.happyhour.merchant</string>
+</resources>
