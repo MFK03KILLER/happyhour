@@ -27,7 +27,13 @@ const googleSignInSchema = z.object({
   acceptedTermsVersion: z.number().int().positive().optional(),
 });
 
+const deleteAccountSchema = z.object({
+  password: z.string().max(128).optional(),
+  reason: z.string().max(300).optional(),
+});
+
 module.exports = {
+  deleteAccountSchema,
   registerSchema,
   loginSchema,
   refreshSchema,

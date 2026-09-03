@@ -108,4 +108,43 @@ async function changePassword(userId, currentPassword, newPassword) {
   await user.save();
 }
 
-module.exports = { register, login, refresh, logout, changePassword, issueTokens };
+// Self-service account deletion (Google Play / App Store requirement).
+// Removes personal data and anonymises the user record. Payment records are
+// kept for accounting/legal reasons but no longer point at identifiable data.
+async function deleteAccount(userId, { password } = {}) {
+  const { NotFoundError, ForbiddenError, BadRequestError } = require('../utils/errors');
+  const user = await userRepo.findById(userId);
+  if (!user) throw new NotFoundError('User not found');
+  if (user.role !== 'customer') throw new ForbiddenError('Staff and merchant accounts are removed by an administrator');
+  if (user.passwordHash) {
+    if (!password) throw new BadRequestError('Enter your password to confirm');
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) throw new UnauthorizedError('Incorrect password');
+  }
+  const PurchasedCoupon = require('../models/PurchasedCoupon');
+  const Subscription = require('../models/Subscription');
+  const Redemption = require('../models/Redemption');
+  const DeliveryOrder = require('../models/DeliveryOrder');
+  await Promise.all([
+    PurchasedCoupon.deleteMany({ customerId: user._id }),
+    Subscription.deleteMany({ audience: 'customer', customerId: user._id }),
+    DeliveryOrder.updateMany({ customerId: user._id }, { $set: { address: { street: '[deleted]' }, customerNotes: '' } }),
+    Redemption.updateMany({ customerId: user._id }, { $set: { customerSnapshot: { name: 'Deleted user', email: '', phone: '' } } }),
+  ]);
+  user.email = 'deleted-' + user._id + '@deleted.invalid';
+  user.fullName = 'Deleted user';
+  user.phone = '';
+  user.avatarUrl = '';
+  user.passwordHash = undefined;
+  user.googleId = undefined;
+  user.appleId = undefined;
+  user.addresses = [];
+  user.favoriteMerchantIds = [];
+  user.refreshTokens = [];
+  user.status = 'deleted';
+  user.deletedAt = new Date();
+  await user.save();
+  return { deleted: true };
+}
+
+module.exports = { register, login, refresh, logout, changePassword, issueTokens, deleteAccount };
