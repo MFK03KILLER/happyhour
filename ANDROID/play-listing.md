@@ -113,19 +113,24 @@ First release of Happy Hour.
 
 # 4) App access — matn baraye reviewer (ejbari)
 
-Toye **Policy → App content → App access** → *All or some functionality is restricted*:
+Toye **Policy → App content → App access** → javab: **Yes** (restricted)
+-> "Add new instructions" -> matn-e zir ro paste kon.
 
 **Customer app**
 ```
+Name: Demo member account
+
 Instructions:
 1. Open the app and tap "Sign in".
-2. Use the test account below.
-3. The account already has an active membership.
-4. Tap any venue, then "Claim & show QR" to see a coupon and its QR code.
+2. Sign in with the credentials below.
+3. This account has an active Gold membership, so every feature is unlocked.
+4. Tap any venue, then "Claim" - the coupon and its QR code appear immediately.
+5. The QR code is what venue staff scan to apply the discount.
 
-Note: coupons are only redeemable during each venue's happy-hour window
-(weekdays 2-5 PM). Outside those hours the coupon is still issued and visible,
-it simply shows an "outside happy hour" notice.
+This demo account has no time or daily restrictions, so all functionality can be
+reviewed at any hour, from any country. (Regular member accounts can claim one
+coupon per day and redeem it during each venue's happy-hour window, typically
+weekdays 2-5 PM, excluding public holidays.)
 
 Username: test@happyhour.demo
 Password: HourTest#2026
@@ -133,10 +138,13 @@ Password: HourTest#2026
 
 **Merchant app**
 ```
+Name: Demo venue staff account
+
 Instructions:
 1. Open the app and sign in with the staff account below.
-2. The Scan tab opens the QR scanner (camera permission required).
-3. History and Stats show past redemptions for the venue.
+2. The Scan tab opens the QR scanner (camera permission required). To test it,
+   claim a coupon in the Happy Hour customer app and scan the QR code shown.
+3. History and Stats show past redemptions for this venue.
 
 Username: pizza.staff@happyhour.demo
 Password: Merchant@123
