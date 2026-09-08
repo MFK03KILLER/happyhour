@@ -59,27 +59,57 @@ are exempt from Google Play Billing.
 
 # 3) "Financial features in your app" form
 
-**Tick exactly one box, for both apps:**
+**For BOTH apps, select:**
 
-> **Purchase agreements → Rewards, points, frequent flier miles, and other incentives**
+> **My app doesn't provide any financial features**
 
-That is what a paid discount/deals membership is.
+**Leave every other box on the page unticked.**
 
-**Leave every other box unticked**, and do **not** choose "My app doesn't provide any
-financial features":
+## This was wrong before, and it caused a rejection
 
-| Not applicable | Why |
+An earlier version of this file said to tick *Purchase agreements → Rewards, points,
+frequent flier miles, and other incentives*. That is what got `app.happyhour.customer`
+rejected:
+
+> Some types of apps can only be distributed by organizations. You have selected an app
+> category or declared your app offers certain features that require you to submit your
+> app using an organization account.
+
+Since 31 August 2024, a **new personal** developer account cannot publish an app that
+declares it provides **financial products or services**. Ticking anything in the
+Financial features form puts the app in that bucket. The four categories that force an
+organization account are:
+
+- Financial products and services (banking, loans, stock trading, investment funds,
+  crypto wallets and exchanges)
+- Health apps
+- Apps using `VpnService`
+- Government apps
+
+## Why "no financial features" is the accurate answer
+
+Happy Hour is none of those. It sells a **discount membership for meals eaten in
+person**. There is no stored value, no points balance, no account holding money, no
+lending, no transfer between users. Charging for your own non-financial service through
+Stripe does not make the app a financial service — otherwise every shop with a
+subscription would be one.
+
+| Box | Why not |
 |---|---|
-| Banking, loans, payday loans, line of credit, earned wage advances, microfinance | we lend nothing |
-| **Mobile payments and digital wallets** | this is for apps whose *product* is a wallet or payment service. Charging for our own membership does not make us one. |
-| Money transfer and wire services | we move no money between users |
-| Buy now, pay later | one up-front charge only |
-| Crypto wallet / exchange / NFT / stock trading / crowdfunding / prediction markets | none present |
+| Rewards, points, frequent flier miles and other incentives | for programmes with an accumulating balance that carries value. Happy Hour has no points and no balance — you pay, you get a discount at the counter. |
+| Mobile payments and digital wallets | for apps whose *product* is a wallet or payment service |
+| Money transfer and wire services | no money moves between users |
+| Buy now, pay later | one up-front charge |
+| Banking, loans, credit line, payday, microfinance | nothing is lent |
+| Crypto, NFT, stock trading, crowdfunding, prediction markets | none present |
 | Credit monitoring, financial advice, insurance | none present |
-| Other | already covered by the Rewards box |
 
-### Merchant app
+## How to fix a rejection caused by this
 
-The merchant app sells nothing — staff only scan codes and view stats. Tick the same
-**Rewards, points... and other incentives** box, since it operates the same incentives
-programme from the venue side.
+1. `Policy → App content → Financial features → Manage`
+2. Untick everything, select **My app doesn't provide any financial features**, save
+3. Check the merchant app has the same answer
+4. `Publishing overview → Send changes for review`
+
+Do not file an appeal — an appeal takes up to 7 days and the declaration really was
+wrong. Correcting it and resubmitting is faster.
