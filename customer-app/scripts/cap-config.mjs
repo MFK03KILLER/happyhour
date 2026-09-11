@@ -8,7 +8,7 @@ const cfg = {
   appId: 'app.happyhour.customer',
   appName: 'Happy Hour',
   webDir: 'dist',
-  ios: { contentInset: 'always' },
+  ios: { contentInset: 'never' },
   android: { allowMixedContent: false, backgroundColor: '#0E5C5C' },
   // Stripe Checkout lives on checkout.stripe.com. Without allowNavigation the
   // WebView would punt it to the system browser and the customer would never

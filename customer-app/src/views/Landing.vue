@@ -31,7 +31,7 @@ const testimonials = [
 <template>
   <div class="min-h-screen bg-cream-100 text-ink-900 overflow-x-hidden">
     <!-- Sticky nav -->
-    <nav class="sticky top-0 z-50 glass border-b border-white/40">
+    <nav class="sticky top-0 z-50 glass border-b border-white/40 pt-[env(safe-area-inset-top)]">
       <div class="max-w-6xl mx-auto px-5 lg:px-8 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-soft">

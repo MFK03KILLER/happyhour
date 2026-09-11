@@ -8,7 +8,7 @@ const cfg = {
   appId: 'app.happyhour.merchant',
   appName: 'Happy Hour Merchant',
   webDir: 'dist',
-  ios: { contentInset: 'always' },
+  ios: { contentInset: 'never' },
   android: { allowMixedContent: false, backgroundColor: '#0E5C5C' },
   server: mode === 'remote'
     ? { url: REMOTE_URL, cleartext: false, androidScheme: 'https', iosScheme: 'capacitor', allowNavigation: ALLOW_NAV }
