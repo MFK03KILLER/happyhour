@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { Capacitor } from '@capacitor/core';
 import client from '../api/client';
 import TermsModal from '../components/TermsModal.vue';
 
@@ -16,6 +17,9 @@ const showTerms = ref(false);
 const termsVersion = ref(null);
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+// Apple requires Sign in with Apple only inside the native iOS app, and its
+// button must not appear on the web where there is no native bridge.
+const appleAvailable = ref(Capacitor.getPlatform() === 'ios');
 
 onMounted(async () => {
   initGoogle();
@@ -69,6 +73,38 @@ async function handleGoogleCredential(response) {
   }
 }
 
+async function signInApple() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+    const res = await SignInWithApple.authorize({
+      clientId: 'app.happyhour.customer',
+      redirectURI: 'https://happyhourz.org/login',
+      scopes: 'email name',
+    });
+    const r = res.response || {};
+    const fullName = [r.givenName, r.familyName].filter(Boolean).join(' ');
+    const user = await auth.loginWithApple(r.identityToken, fullName, termsVersion.value);
+    if (user.role !== 'customer') {
+      error.value = 'This app is for customers.';
+      await auth.logout();
+      return;
+    }
+    router.push('/');
+  } catch (e) {
+    // 1000/1001 are the user-cancelled codes; stay silent on those.
+    const code = String(e && e.code || '');
+    if (code === '1000' || code === '1001' || /cancel/i.test(e && e.message || '')) {
+      // cancelled — no error shown
+    } else {
+      error.value = e.response?.data?.error?.message || 'Apple sign-in failed';
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
 async function submit() {
   loading.value = true;
   error.value = '';
@@ -100,8 +136,11 @@ async function submit() {
 
     <div class="mt-8 space-y-2.5 max-w-sm mx-auto w-full">
       <div v-if="GOOGLE_CLIENT_ID" id="google-signin-btn" class="w-full flex justify-center"></div>
-      <button v-else type="button" disabled class="w-full flex items-center justify-center gap-2 py-3 rounded-full border-2 border-ink-300/20 text-ink-300 font-semibold">
+      <button v-else-if="!appleAvailable" type="button" disabled class="w-full flex items-center justify-center gap-2 py-3 rounded-full border-2 border-ink-300/20 text-ink-300 font-semibold">
         <i class="fa-brands fa-google"></i> Google (not configured)
+      </button>
+      <button v-if="appleAvailable" type="button" @click="signInApple" :disabled="loading" class="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-black text-white font-semibold active:scale-[.99] transition">
+        <i class="fa-brands fa-apple text-lg"></i> Continue with Apple
       </button>
     </div>
 

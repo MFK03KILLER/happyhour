@@ -29,6 +29,11 @@ export const useAuthStore = defineStore('auth', {
       this.setSession(data);
       return data.user;
     },
+    async loginWithApple(identityToken, fullName, acceptedTermsVersion) {
+      const { data } = await client.post('/auth/apple', { identityToken, fullName, acceptedTermsVersion });
+      this.setSession(data);
+      return data.user;
+    },
     async fetchMe() {
       if (!this.accessToken) return null;
       const { data } = await client.get('/auth/me');

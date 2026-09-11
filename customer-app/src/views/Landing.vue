@@ -70,11 +70,11 @@ const testimonials = [
             at your favorite spots.
           </h1>
           <p class="mt-5 text-lg text-ink-500 leading-relaxed max-w-md">
-            Happy Hour is America's friendliest coupon club. One $4.99 subscription unlocks BOGO meals, free coffee, and half-price entertainment at hundreds of local merchants.
+            Happy Hour is America's friendliest coupon club. One $12.99 subscription unlocks BOGO meals, free coffee, and half-price entertainment at hundreds of local merchants.
           </p>
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
             <button @click="router.push('/register')" class="rounded-full font-semibold text-white bg-coral-500 px-7 py-4 active:scale-[.97] transition shadow-lift">
-              Start saving — $4.99/mo
+              Start saving — $12.99/mo
             </button>
             <button @click="router.push('/login')" class="rounded-full font-semibold text-ink-900 bg-white border border-ink-300/40 px-7 py-4 active:scale-[.97] transition">
               I already have an account
@@ -239,7 +239,7 @@ const testimonials = [
             <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">All access</span>
           </div>
           <div class="mt-4 flex items-baseline gap-1">
-            <span class="text-5xl font-bold tracking-tight">${{ billing==='monthly' ? '4.99' : '41.99' }}</span>
+            <span class="text-5xl font-bold tracking-tight">${{ billing==='monthly' ? '12.99' : '129.99' }}</span>
             <span class="text-ink-500">/ {{ billing==='monthly' ? 'month' : 'year' }}</span>
           </div>
           <div v-if="billing==='yearly'" class="text-sm text-coral-600 font-semibold mt-1">~$3.50/mo · save $18</div>
@@ -293,7 +293,7 @@ const testimonials = [
       <div class="mt-10 space-y-3">
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">How does it work? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>
-          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pay $4.99/mo, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
+          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pay $12.99/mo, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
         </details>
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">Can I cancel anytime? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>
@@ -317,7 +317,7 @@ const testimonials = [
         <h2 class="text-4xl lg:text-5xl font-bold tracking-tight">Ready to save?</h2>
         <p class="mt-4 text-cream-50/80 text-lg">Join 12,400+ members and start saving this weekend.</p>
         <button @click="router.push('/register')" class="mt-8 rounded-full font-semibold text-ink-900 bg-coral-500 hover:bg-coral-400 px-8 py-4 active:scale-[.97] transition shadow-lift">
-          Start saving — $4.99/mo
+          Start saving — $12.99/mo
         </button>
         <div class="mt-3 text-xs text-white/60">7-day money-back guarantee · Cancel anytime</div>
       </div>
