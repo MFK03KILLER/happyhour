@@ -20,9 +20,13 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 // Apple requires Sign in with Apple only inside the native iOS app, and its
 // button must not appear on the web where there is no native bridge.
 const appleAvailable = ref(Capacitor.getPlatform() === 'ios');
+const isWeb = Capacitor.getPlatform() === 'web';
+const appleWebReady = ref(false);
+const APPLE_WEB_CLIENT_ID = 'com.merchanthappyhourz.web';
 
 onMounted(async () => {
   initGoogle();
+  if (isWeb) initAppleWeb();
   try {
     const { data } = await client.get('/public/terms');
     termsVersion.value = data.version;
@@ -68,6 +72,56 @@ async function handleGoogleCredential(response) {
     router.push('/');
   } catch (e) {
     error.value = e.response?.data?.error?.message || 'Google sign-in failed';
+  } finally {
+    loading.value = false;
+  }
+}
+
+function initAppleWeb() {
+  const boot = () => {
+    if (!window.AppleID?.auth) return setTimeout(boot, 300);
+    try {
+      window.AppleID.auth.init({
+        clientId: APPLE_WEB_CLIENT_ID,
+        scope: 'name email',
+        redirectURI: 'https://happyhourz.org/login',
+        usePopup: true,
+      });
+      appleWebReady.value = true;
+    } catch (e) { /* leave the button hidden if Apple JS fails to init */ }
+  };
+  if (window.AppleID?.auth) return boot();
+  const sc = document.createElement('script');
+  sc.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+  sc.async = true;
+  sc.onload = boot;
+  document.head.appendChild(sc);
+}
+
+async function signInAppleWeb() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const data = await window.AppleID.auth.signIn();
+    const idToken = data?.authorization?.id_token;
+    if (!idToken) throw new Error('No Apple token');
+    const nm = data?.user?.name || {};
+    const fullName = [nm.firstName, nm.lastName].filter(Boolean).join(' ');
+    const user = await auth.loginWithApple(idToken, fullName, termsVersion.value);
+    if (user.role !== 'customer') {
+      error.value = 'This app is for customers.';
+      await auth.logout();
+      return;
+    }
+    router.push('/');
+  } catch (e) {
+    // popup_closed_by_user / user cancels — stay silent
+    const msg = (e && (e.error || e.message)) || '';
+    if (/popup_closed|cancel|user_cancel|1001|1000/i.test(String(msg))) {
+      // cancelled
+    } else {
+      error.value = e.response?.data?.error?.message || 'Apple sign-in failed';
+    }
   } finally {
     loading.value = false;
   }
@@ -140,6 +194,9 @@ async function submit() {
         <i class="fa-brands fa-google"></i> Google (not configured)
       </button>
       <button v-if="appleAvailable" type="button" @click="signInApple" :disabled="loading" class="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-black text-white font-semibold active:scale-[.99] transition">
+        <i class="fa-brands fa-apple text-lg"></i> Continue with Apple
+      </button>
+      <button v-else-if="appleWebReady" type="button" @click="signInAppleWeb" :disabled="loading" class="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-black text-white font-semibold active:scale-[.99] transition">
         <i class="fa-brands fa-apple text-lg"></i> Continue with Apple
       </button>
     </div>
