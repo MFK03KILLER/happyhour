@@ -9,8 +9,8 @@ import TermsModal from '../components/TermsModal.vue';
 const router = useRouter();
 const auth = useAuthStore();
 
-const email = ref('customer1@happyhour.demo');
-const password = ref('Customer@123');
+const email = ref('');
+const password = ref('');
 const loading = ref(false);
 const error = ref('');
 const showTerms = ref(false);
