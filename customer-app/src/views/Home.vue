@@ -11,7 +11,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const daily = useDailyStore();
 const flags = useFlagsStore();
-const { coords } = useGeolocation();
+const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
 
 const categories = ref([]);
 const nearbyMerchants = ref([]);
@@ -60,7 +60,11 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
 // the greeting rolls over correctly if the app is left open past noon / 6 PM.
 const now = ref(new Date());
 let clockTick = null;
-onMounted(() => { clockTick = setInterval(() => { now.value = new Date(); }, 60000); });
+onMounted(() => {
+  clockTick = setInterval(() => { now.value = new Date(); }, 60000);
+  // Ask once on the first screen the member sees; Nearby is useless without it.
+  if (!coords.value && geoStatus.value === 'idle') requestGeo();
+});
 onUnmounted(() => { if (clockTick) clearInterval(clockTick); });
 
 const greeting = computed(() => {
@@ -69,6 +73,14 @@ const greeting = computed(() => {
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
 });
+
+// Font Awesome 6 Free only - no Pro-only glyphs, which render as empty boxes.
+const greetingIcon = computed(() => {
+  const h = now.value.getHours();
+  if (h < 12) return 'fa-sun';
+  if (h < 18) return 'fa-cloud-sun';
+  return 'fa-moon';
+});
 </script>
 
 <template>
@@ -76,7 +88,10 @@ const greeting = computed(() => {
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
         <div class="text-xs text-ink-500 font-medium">{{ today }}</div>
-        <div class="text-2xl font-bold mt-0.5">{{ greeting }} 👋</div>
+        <div class="text-2xl font-bold mt-0.5 flex items-center gap-2">
+          <span>{{ greeting }}</span>
+          <i :class="['fa-solid', greetingIcon]" class="text-teal-700 text-xl" aria-hidden="true"></i>
+        </div>
       </div>
       <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
@@ -152,7 +167,9 @@ const greeting = computed(() => {
       <div class="flex items-center justify-between px-5 mb-3">
         <div>
           <h2 class="text-lg font-bold">Nearby</h2>
-          <div v-if="!coords" class="text-xs text-ink-500">Enable location for accurate results</div>
+          <button v-if="!coords" @click="requestGeo" class="text-xs text-teal-700 font-semibold underline active:opacity-70 text-left">
+            <i class="fa-solid fa-location-crosshairs mr-1"></i>Enable location for accurate results
+          </button>
         </div>
         <button @click="router.push('/browse')" class="text-sm font-semibold text-teal-700">See all</button>
       </div>

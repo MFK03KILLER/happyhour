@@ -107,6 +107,17 @@ async function onClaim(coupon) {
   } finally { claiming.value = null; }
 }
 
+const showAbout = ref(false);
+
+// tel: as a bare <a href> is swallowed by the native WebView, and the stored
+// numbers carry spaces and brackets. Strip to digits and hand it to the shell.
+function callMerchant() {
+  const raw = merchant.value?.phone || '';
+  const num = raw.replace(/[^\d+]/g, '');
+  if (!num) return;
+  window.location.href = `tel:${num}`;
+}
+
 function openDirections() {
   if (!merchant.value?.address) return;
   const url = directionsUrl({ lat: merchant.value.address.lat, lng: merchant.value.address.lng, label: merchant.value.name });
@@ -175,11 +186,11 @@ function offPeakLabel() {
           <i class="fa-solid fa-diamond-turn-right text-teal-700"></i>
           <span class="font-semibold text-sm">Directions</span>
         </button>
-        <a v-if="merchant.phone" :href="`tel:${merchant.phone}`" class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
+        <button v-if="merchant.phone" @click="callMerchant" class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
           <i class="fa-solid fa-phone text-teal-700"></i>
           <span class="font-semibold text-sm">Call</span>
-        </a>
-        <button class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
+        </button>
+        <button @click="showAbout = true" class="flex-1 ios-card p-3 flex items-center justify-center gap-2 active:scale-95 transition">
           <i class="fa-solid fa-circle-info text-teal-700"></i>
           <span class="font-semibold text-sm">About</span>
         </button>
@@ -289,4 +300,55 @@ function offPeakLabel() {
     />
 
   </div>
+
+    <!-- About this venue -->
+    <div v-if="showAbout" data-about-sheet class="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center" @click.self="showAbout = false">
+      <div class="bg-cream-50 w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-5 pb-[max(env(safe-area-inset-bottom),20px)] max-h-[80vh] overflow-y-auto">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xl font-bold">{{ merchant?.name }}</div>
+            <div class="text-xs text-ink-500 mt-0.5 capitalize">{{ merchant?.subCategory || merchant?.category }}</div>
+          </div>
+          <button @click="showAbout = false" class="w-9 h-9 rounded-full bg-cream-200 flex items-center justify-center active:scale-95 flex-shrink-0">
+            <i class="fa-solid fa-xmark text-ink-700"></i>
+          </button>
+        </div>
+
+        <p v-if="merchant?.description" class="text-sm text-ink-700 leading-relaxed mt-3">{{ merchant.description }}</p>
+
+        <div class="mt-4 space-y-2.5">
+          <div v-if="merchant?.rating" class="flex items-center gap-3">
+            <i class="fa-solid fa-star text-amber-500 w-5 text-center"></i>
+            <span class="text-sm"><b>{{ merchant.rating }}</b> <span class="text-ink-500">({{ merchant.ratingCount || 0 }} ratings)</span></span>
+          </div>
+          <div v-if="priceLabel" class="flex items-center gap-3">
+            <i class="fa-solid fa-dollar-sign text-teal-700 w-5 text-center"></i>
+            <span class="text-sm">{{ priceLabel }}</span>
+          </div>
+          <div v-if="merchant?.address?.street" class="flex items-start gap-3">
+            <i class="fa-solid fa-location-dot text-teal-700 w-5 text-center mt-0.5"></i>
+            <span class="text-sm">{{ merchant.address.street }}<span v-if="merchant.address.city">, {{ merchant.address.city }} {{ merchant.address.state }} {{ merchant.address.zip }}</span></span>
+          </div>
+          <div v-if="merchant?.phone" class="flex items-center gap-3">
+            <i class="fa-solid fa-phone text-teal-700 w-5 text-center"></i>
+            <button @click="callMerchant" class="text-sm text-teal-700 font-semibold underline">{{ merchant.phone }}</button>
+          </div>
+          <div v-if="merchant?.cuisineTags?.length" class="flex items-start gap-3">
+            <i class="fa-solid fa-utensils text-teal-700 w-5 text-center mt-0.5"></i>
+            <div class="flex flex-wrap gap-1.5">
+              <span v-for="t in merchant.cuisineTags" :key="t" class="chip bg-cream-200 text-ink-700 text-[10px] capitalize">{{ t }}</span>
+            </div>
+          </div>
+          <div v-if="merchant?.acceptsNFC" class="flex items-center gap-3">
+            <i class="fa-solid fa-mobile-screen text-teal-700 w-5 text-center"></i>
+            <span class="text-sm">Contactless payments accepted</span>
+          </div>
+        </div>
+
+        <div class="mt-5 flex gap-2">
+          <button @click="openDirections" class="flex-1 ios-button-primary py-3">Directions</button>
+          <button @click="showAbout = false" class="flex-1 ios-card py-3 font-semibold text-center">Close</button>
+        </div>
+      </div>
+    </div>
 </template>

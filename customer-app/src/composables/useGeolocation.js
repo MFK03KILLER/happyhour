@@ -1,4 +1,6 @@
 import { ref } from 'vue';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 const coords = ref(null);
 const status = ref('idle');
@@ -31,12 +33,38 @@ export function useGeolocation() {
       status.value = 'granted';
       return coords.value;
     }
+    status.value = 'requesting';
+
+    // Native: ask the OS through the plugin so the permission dialog actually appears.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        let perm = await Geolocation.checkPermissions();
+        if (perm.location !== 'granted') perm = await Geolocation.requestPermissions();
+        if (perm.location !== 'granted') {
+          status.value = 'denied';
+          error.value = 'Location permission denied.';
+          return null;
+        }
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 });
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        coords.value = c;
+        cachedAt.value = Date.now();
+        status.value = 'granted';
+        error.value = null;
+        saveCache({ ...c, cachedAt: cachedAt.value });
+        return c;
+      } catch (e) {
+        status.value = 'error';
+        error.value = e?.message || 'Could not get your location.';
+        return null;
+      }
+    }
+
     if (!('geolocation' in navigator)) {
       status.value = 'unsupported';
       error.value = 'Geolocation not supported on this device.';
       return null;
     }
-    status.value = 'requesting';
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
