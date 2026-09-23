@@ -15,6 +15,8 @@ const env = {
   QR_SIGNING_SECRET: process.env.QR_SIGNING_SECRET || 'dev_qr_secret',
   QR_TTL_SECONDS: parseInt(process.env.QR_TTL_SECONDS || '60', 10),
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID || 'app.happyhour.customer',
+  APPLE_WEB_CLIENT_ID: process.env.APPLE_WEB_CLIENT_ID || 'com.merchanthappyhourz.web',
 
   // ---- Payments ----
   // Public URL of the customer app, used to build Stripe success/cancel redirect URLs.

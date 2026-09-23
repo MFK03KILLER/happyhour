@@ -218,4 +218,18 @@ router.put('/site-settings/terms', writeLimiter, ctrl.updateTerms);
 router.get('/site-content', ctrl.listSiteContent);
 router.put('/site-content/:key', writeLimiter, ctrl.updateSiteContent);
 
+
+// ---------------- Partner applications inbox ----------------
+const partnerCtrl = require('../controllers/partnerApplicationController');
+const { updateApplicationSchema } = require('../validators/partnerApplicationValidators');
+router.get('/partner-applications', partnerCtrl.list);
+router.patch('/partner-applications/:id', writeLimiter, validate(updateApplicationSchema), partnerCtrl.update);
+
+// ---------------- Subscription pricing ----------------
+const pricingCtrl = require('../controllers/adminPricingController');
+const { priceSchema } = require('../validators/pricingValidators');
+router.get('/pricing', pricingCtrl.list);
+router.put('/pricing/:audience/:tier', writeLimiter, validate(priceSchema), pricingCtrl.update);
+router.delete('/pricing/:audience/:tier', writeLimiter, pricingCtrl.reset);
+
 module.exports = router;

@@ -10,11 +10,21 @@ let controls = null;
 onMounted(async () => {
   try {
     reader = new BrowserMultiFormatReader();
-    const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-    const back = devices.find((d) => /back|rear|environment/i.test(d.label)) || devices[0];
-    controls = await reader.decodeFromVideoDevice(back?.deviceId, videoEl.value, (result) => {
-      if (result) emit('detected', result.getText());
-    });
+    // Ask the platform for the REAR camera by constraint rather than by matching
+    // device.label: inside an Android WebView the labels are empty until camera
+    // permission is granted, so label-matching silently fell back to the front
+    // camera. facingMode works on both the web and the native shell.
+    const onResult = (result) => { if (result) emit('detected', result.getText()); };
+    try {
+      controls = await reader.decodeFromConstraints(
+        { video: { facingMode: { ideal: 'environment' } }, audio: false },
+        videoEl.value,
+        onResult,
+      );
+    } catch {
+      // Older browsers / desktops with a single webcam: fall back to the default device.
+      controls = await reader.decodeFromVideoDevice(undefined, videoEl.value, onResult);
+    }
   } catch (err) {
     emit('error', err.message || 'Cannot access camera');
   }

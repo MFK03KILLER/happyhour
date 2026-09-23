@@ -3,6 +3,7 @@ const categoryRepo = require('../repositories/categoryRepository');
 const merchantService = require('../services/merchantService');
 const siteSettingService = require('../services/siteSettingService');
 const plans = require('../config/plans');
+const { renderPriceTokens } = require('../utils/priceTokens');
 
 exports.categories = asyncHandler(async (req, res) => {
   const items = await categoryRepo.list();
@@ -17,7 +18,7 @@ exports.merchantBySlug = asyncHandler(async (req, res) => {
 exports.terms = asyncHandler(async (req, res) => {
   const audience = req.query.audience === 'merchant' ? 'merchant' : 'consumer';
   const terms = await siteSettingService.getTerms(audience);
-  res.json(terms);
+  res.json(terms && typeof terms.content === 'string' ? { ...terms, content: renderPriceTokens(terms.content) } : terms);
 });
 
 // List all 11 footer content blocks (title + section + version, no full content
@@ -34,7 +35,7 @@ exports.contentOne = asyncHandler(async (req, res) => {
   if (!item) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Unknown content key' } });
   }
-  res.json(item);
+  res.json({ ...item, content: renderPriceTokens(item.content) });
 });
 
 exports.plans = asyncHandler(async (req, res) => {

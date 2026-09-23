@@ -1,4 +1,5 @@
 <script setup>
+import { TILE_URL, TILE_MAX_ZOOM, TILE_ATTRIBUTION } from '../utils/mapTiles';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { directionsUrl } from '../composables/useMapLink';
@@ -38,8 +39,9 @@ async function initMap() {
   const L = await loadLeaflet();
   if (!mapEl.value) return;
   if (map) { map.remove(); map = null; }
-  map = L.map(mapEl.value, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([props.lat, props.lng], 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  map = L.map(mapEl.value, { zoomControl: false, attributionControl: true, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([props.lat, props.lng], 14);
+  map.attributionControl.setPrefix(false);
+  L.tileLayer(TILE_URL, { maxZoom: TILE_MAX_ZOOM, attribution: TILE_ATTRIBUTION }).addTo(map);
   const icon = L.divIcon({
     className: '',
     html: `<div style="background:#FF6B5B;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,.3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-location-dot" style="color:white;font-size:11px"></i></div>`,
@@ -69,3 +71,8 @@ function openFullMap() {
     </div>
   </div>
 </template>
+
+<style>
+/* hh-preview-attrib: OSM credit, kept small on the venue preview */
+.leaflet-control-attribution { font-size: 9px !important; opacity: 0.7; }
+</style>

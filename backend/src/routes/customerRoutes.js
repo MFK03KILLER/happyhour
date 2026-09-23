@@ -9,7 +9,17 @@ const {
   purchaseSchema, browseQuerySchema, rateSchema,
   addressSchema, deliveryQuoteSchema,
 } = require('../validators/customerValidators');
-const { writeLimiter } = require('../middlewares/rateLimit');
+const { writeLimiter, publicLimiter } = require('../middlewares/rateLimit');
+
+// ---------------- Public browsing (App Review 5.1.1(v)) ----------------
+// Reading venues and deals needs no account. These run before the auth wall;
+// authenticate(false) still attaches req.user when a token is present.
+const browsing = [authenticate(false), publicLimiter];
+router.get('/coupons/browse', ...browsing, ctrl.browse);
+router.get('/discover', ...browsing, ctrl.discoverMerchants);
+router.get('/merchants/:id', ...browsing, ctrl.merchantDetail);
+router.get('/surprise-bags', ...browsing, requireFeature('surprise_bag'), validate(browseQuerySchema, 'query'), ctrl.surpriseBags);
+router.get('/coupons/:id', ...browsing, ctrl.detail);
 
 router.use(authenticate(), authorize('customer'));
 
@@ -140,7 +150,6 @@ router.get('/payments', ctrl.myPayments);
  *         name: limit
  *         schema: { type: integer }
  */
-router.get('/coupons/browse', ctrl.browse);
 
 /**
  * @openapi
@@ -150,7 +159,6 @@ router.get('/coupons/browse', ctrl.browse);
  *     summary: Discover merchants near a location with sort/filter
  *     security: [{ bearerAuth: [] }]
  */
-router.get('/discover', ctrl.discoverMerchants);
 
 /**
  * @openapi
@@ -160,7 +168,6 @@ router.get('/discover', ctrl.discoverMerchants);
  *     summary: Merchant detail with their active coupons
  *     security: [{ bearerAuth: [] }]
  */
-router.get('/merchants/:id', ctrl.merchantDetail);
 
 /**
  * @openapi
@@ -180,7 +187,6 @@ router.get('/daily-status', ctrl.dailyStatus);
  *     summary: Browse Surprise Bags (today's leftovers/last-minute deals)
  *     security: [{ bearerAuth: [] }]
  */
-router.get('/surprise-bags', requireFeature('surprise_bag'), validate(browseQuerySchema, 'query'), ctrl.surpriseBags);
 
 /**
  * @openapi
@@ -209,7 +215,6 @@ router.post('/surprise-bags/:id/checkout', requireFeature('surprise_bag'), write
  *     tags: [Customer]
  *     security: [{ bearerAuth: [] }]
  */
-router.get('/coupons/:id', ctrl.detail);
 
 /**
  * @openapi

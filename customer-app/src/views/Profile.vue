@@ -142,6 +142,6 @@ async function deleteAccount() {
       </div>
     </div>
 
-    <div class="mt-8 text-center text-[11px] text-ink-300">Happy Hour Demo · v1.0</div>
+    <div class="mt-8 text-center text-[11px] text-ink-300">Happy Hour · v1.0</div>
   </div>
 </template>

@@ -9,3 +9,6 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+dist_old/
+dist_new/
+.env.bak*

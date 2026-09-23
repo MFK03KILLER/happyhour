@@ -139,6 +139,12 @@ exports.updateUser = asyncHandler(async (req, res) => {
   if (data.roleSlug && data.roleSlug !== before.roleSlug) {
     const perms = await roleService.permissionsForRole(data.roleSlug);
     if (perms.length) data.permissions = perms;
+  } else if (Array.isArray(data.permissions) && before.roleSlug) {
+    // Hand-picked permissions detach the user from their role. Otherwise the role
+    // sync that runs at every server start (server.js) silently reverts them.
+    const rolePerms = await roleService.permissionsForRole(before.roleSlug);
+    const same = rolePerms.length === data.permissions.length && rolePerms.every((x) => data.permissions.includes(x));
+    if (!same) data.roleSlug = null;
   }
   if (!data.vendorId) delete data.vendorId;
   if (!data.merchantId) delete data.merchantId;

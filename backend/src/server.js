@@ -14,6 +14,9 @@ async function start() {
     if (refreshed > 0) logger.info(`Refreshed permissions on ${refreshed} user(s) from current role definitions`);
     const siteSettingService = require('./services/siteSettingService');
     await siteSettingService.ensureSeed();
+    const pricingService = require('./services/pricingService');
+    await pricingService.load();
+    pricingService.startAutoReload();
     const holidayService = require('./services/holidayService');
     await holidayService.seedUSFederalHolidays();
     const app = buildApp();

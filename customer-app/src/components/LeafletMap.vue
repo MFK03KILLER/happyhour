@@ -1,4 +1,5 @@
 <script setup>
+import { TILE_URL, TILE_MAX_ZOOM, TILE_ATTRIBUTION } from '../utils/mapTiles';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -83,10 +84,12 @@ onMounted(() => {
   mapInstance = L.map(mapEl.value, { zoomControl: false, attributionControl: true })
     .setView([c.lat, c.lng], props.zoom);
   L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
-  const tileUrl = props.dark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  L.tileLayer(tileUrl, { maxZoom: 20, attribution: '© OpenStreetMap, © CARTO' }).addTo(mapInstance);
+  // OSM has no dark style; dark mode inverts the light tiles (see .hh-tiles-dark).
+  L.tileLayer(TILE_URL, {
+    maxZoom: TILE_MAX_ZOOM,
+    className: props.dark ? 'hh-tiles-dark' : '',
+    attribution: TILE_ATTRIBUTION,
+  }).addTo(mapInstance);
   renderPins();
   renderUser();
   emit('map-ready');
@@ -104,7 +107,8 @@ watch(() => props.userLocation, renderUser, { deep: true });
 
 <style>
 .leaflet-container { background: #e8eaed; }
-.leaflet-control-attribution { font-size: 9px !important; opacity: 0.55; }
+.leaflet-control-attribution { font-size: 9px !important; opacity: 0.7; }
+.hh-tiles-dark { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9); }
 .leaflet-control-zoom a { border-radius: 10px !important; }
 .hh-userdot {
   width: 22px; height: 22px; border-radius: 9999px;

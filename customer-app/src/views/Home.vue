@@ -5,13 +5,16 @@ import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import { useDailyStore } from '../stores/daily';
 import { useFlagsStore } from '../stores/flags';
+import { usePricingStore, formatUSD } from '../stores/pricing';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 
 const router = useRouter();
 const auth = useAuthStore();
 const daily = useDailyStore();
 const flags = useFlagsStore();
-const { coords } = useGeolocation();
+const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
+const pricing = usePricingStore();
+pricing.load();
 
 const categories = ref([]);
 const nearbyMerchants = ref([]);
@@ -60,7 +63,11 @@ const firstName = computed(() => (auth.user?.fullName || 'there').split(' ')[0])
 // the greeting rolls over correctly if the app is left open past noon / 6 PM.
 const now = ref(new Date());
 let clockTick = null;
-onMounted(() => { clockTick = setInterval(() => { now.value = new Date(); }, 60000); });
+onMounted(() => {
+  clockTick = setInterval(() => { now.value = new Date(); }, 60000);
+  // Ask once on the first screen the member sees; Nearby is useless without it.
+  if (!coords.value && geoStatus.value === 'idle') requestGeo();
+});
 onUnmounted(() => { if (clockTick) clearInterval(clockTick); });
 
 const greeting = computed(() => {
@@ -69,6 +76,14 @@ const greeting = computed(() => {
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
 });
+
+// Font Awesome 6 Free only - no Pro-only glyphs, which render as empty boxes.
+const greetingIcon = computed(() => {
+  const h = now.value.getHours();
+  if (h < 12) return 'fa-sun';
+  if (h < 18) return 'fa-cloud-sun';
+  return 'fa-moon';
+});
 </script>
 
 <template>
@@ -76,10 +91,16 @@ const greeting = computed(() => {
     <header class="px-5 pt-6 flex items-center justify-between">
       <div>
         <div class="text-xs text-ink-500 font-medium">{{ today }}</div>
-        <div class="text-2xl font-bold mt-0.5">{{ greeting }} 👋</div>
+        <div class="text-2xl font-bold mt-0.5 flex items-center gap-2">
+          <span>{{ greeting }}</span>
+          <i :class="['fa-solid', greetingIcon]" class="text-teal-700 text-xl" aria-hidden="true"></i>
+        </div>
       </div>
-      <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
+      <button v-if="auth.isAuthenticated" @click="router.push('/profile')" aria-label="Profile" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
+      </button>
+      <button v-else @click="router.push('/login')" class="h-10 px-4 rounded-full bg-teal-700 text-white text-sm font-semibold shadow-soft active:scale-95">
+        Sign in
       </button>
     </header>
 
@@ -102,7 +123,7 @@ const greeting = computed(() => {
           <div class="text-3xl font-bold mt-1">A new deal every day</div>
           <div class="mt-1 text-white/90 text-sm">Eat, drink, play for less at 100+ Bay Area spots.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            $12.99/mo · Get started →
+            <template v-if="pricing.gold">{{ formatUSD(pricing.gold.price.monthly) }}/mo · </template>Get started →
           </button>
         </div>
       </div>
@@ -152,7 +173,9 @@ const greeting = computed(() => {
       <div class="flex items-center justify-between px-5 mb-3">
         <div>
           <h2 class="text-lg font-bold">Nearby</h2>
-          <div v-if="!coords" class="text-xs text-ink-500">Enable location for accurate results</div>
+          <button v-if="!coords" @click="requestGeo" class="text-xs text-teal-700 font-semibold underline active:opacity-70 text-left">
+            <i class="fa-solid fa-location-crosshairs mr-1"></i>Enable location for accurate results
+          </button>
         </div>
         <button @click="router.push('/browse')" class="text-sm font-semibold text-teal-700">See all</button>
       </div>

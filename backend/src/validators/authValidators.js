@@ -27,6 +27,12 @@ const googleSignInSchema = z.object({
   acceptedTermsVersion: z.number().int().positive().optional(),
 });
 
+const appleSignInSchema = z.object({
+  identityToken: z.string().min(20),
+  fullName: z.string().max(100).optional(),
+  acceptedTermsVersion: z.number().int().positive().optional(),
+});
+
 const deleteAccountSchema = z.object({
   password: z.string().max(128).optional(),
   reason: z.string().max(300).optional(),
@@ -39,4 +45,5 @@ module.exports = {
   refreshSchema,
   changePasswordSchema,
   googleSignInSchema,
+  appleSignInSchema,
 };

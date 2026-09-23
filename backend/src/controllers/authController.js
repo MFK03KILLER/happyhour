@@ -40,6 +40,16 @@ exports.googleSignIn = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+exports.appleSignIn = asyncHandler(async (req, res) => {
+  const result = await oauthService.signInWithApple({
+    identityToken: req.body.identityToken,
+    fullName: req.body.fullName,
+    acceptedTermsVersion: req.body.acceptedTermsVersion,
+    userAgent: req.headers['user-agent'],
+  });
+  res.json(result);
+});
+
 // Self-service account deletion (Google Play "account deletion" requirement).
 exports.deleteAccount = asyncHandler(async (req, res) => {
   await authService.deleteAccount(req.user._id, { password: req.body.password });

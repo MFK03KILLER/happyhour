@@ -212,5 +212,4 @@ module.exports = {
   cancel,
   resume,
   ensureActive,
-  PLANS: { monthly: { amountUSD: 12.99, days: 30 }, yearly: { amountUSD: 129.99, days: 365 } },
 };

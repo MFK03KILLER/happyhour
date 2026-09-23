@@ -8,6 +8,7 @@ import ToastContainer from './components/ToastContainer.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
 import Footer from './components/Footer.vue';
 import { useFlagsStore } from './stores/flags';
+import { usePricingStore } from './stores/pricing';
 import { useGeolocation } from './composables/useGeolocation';
 import { useAuthStore } from './stores/auth';
 
@@ -20,6 +21,7 @@ const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
 
 onMounted(() => {
   flagsStore.load();
+  usePricingStore().load();
   if (!coords.value && geoStatus.value !== 'denied') {
     setTimeout(() => requestGeo(), showSplash.value ? 1300 : 200);
   }

@@ -61,4 +61,20 @@ router.get('/plans', ctrl.plans);
 router.get('/site-content', ctrl.contentList);
 router.get('/site-content/:key', ctrl.contentOne);
 
+
+// ---------------- Partner applications (merchant app, no account needed) ----------------
+const rateLimit = require('express-rate-limit');
+const validate = require('../middlewares/validate');
+const partnerCtrl = require('../controllers/partnerApplicationController');
+const { applySchema } = require('../validators/partnerApplicationValidators');
+// A real venue applies once. Anything past a handful an hour is spam.
+const applyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Too many applications from this network. Please try again later.' } },
+});
+router.post('/partner-applications', applyLimiter, validate(applySchema), partnerCtrl.submit);
+
 module.exports = router;

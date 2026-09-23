@@ -9,6 +9,7 @@ const {
   refreshSchema,
   changePasswordSchema,
   googleSignInSchema,
+  appleSignInSchema,
   deleteAccountSchema,
 } = require('../validators/authValidators');
 
@@ -112,6 +113,7 @@ router.post('/change-password', authenticate(), validate(changePasswordSchema), 
  *               idToken: { type: string }
  */
 router.post('/google', authLimiter, validate(googleSignInSchema), ctrl.googleSignIn);
+router.post('/apple', authLimiter, validate(appleSignInSchema), ctrl.appleSignIn);
 
 /**
  * @openapi

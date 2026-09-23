@@ -11,6 +11,8 @@ export const useDailyStore = defineStore('daily', {
   },
   actions: {
     async refresh() {
+      // Guests have no daily quota; the endpoint is account-only.
+      if (!localStorage.getItem('hh_access_token')) return;
       this.loading = true;
       try {
         const { data } = await client.get('/customer/daily-status');

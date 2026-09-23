@@ -242,14 +242,24 @@ const MERCHANT_PLANS = {
   },
 };
 
+// Prices above are defaults. An admin can override any paid tier's price from the
+// admin panel (services/pricingService.js); every read below applies it, so
+// checkout, promo codes, /public/plans and the apps all see one price.
+const pricing = require('../services/pricingService');
+
+function withPrice(plan) {
+  const override = pricing.overrideFor(plan.audience, plan.tier);
+  return override ? { ...plan, price: override, defaultPrice: plan.price } : plan;
+}
+
 function getPlan(tier, audience = 'customer') {
   const set = audience === 'merchant' ? MERCHANT_PLANS : CUSTOMER_PLANS;
-  return set[tier] || set.basic;
+  return withPrice(set[tier] || set.basic);
 }
 
 function listPlans(audience = 'customer') {
   const set = audience === 'merchant' ? MERCHANT_PLANS : CUSTOMER_PLANS;
-  return Object.values(set);
+  return Object.values(set).map(withPrice);
 }
 
 // Returns trimmed, no-private-fields version suitable for /public/plans
