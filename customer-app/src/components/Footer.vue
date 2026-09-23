@@ -134,8 +134,8 @@ const year = new Date().getFullYear();
 .hh-footer {
   container-type: inline-size;
   margin-top: 56px;
-  background: #111111;
-  color: rgba(255, 255, 255, 0.82);
+  background: #063838; /* teal-800, brand palette */
+  color: rgba(255, 252, 246, 0.82);
   border-radius: 24px 24px 0 0;
   font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
   font-size: 16px;
@@ -162,7 +162,7 @@ const year = new Date().getFullYear();
   line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #ffffff;
+  color: #FFFCF6;
 }
 
 /* Brand */
@@ -177,8 +177,8 @@ const year = new Date().getFullYear();
   height: 44px;
   flex: none;
   border-radius: 12px;
-  background: #ffffff;
-  color: #111111;
+  background: #FFFCF6; /* cream-50 */
+  color: #063838;
   display: grid;
   place-items: center;
 }
@@ -187,7 +187,7 @@ const year = new Date().getFullYear();
   font-size: 22px;
   font-weight: 600;
   line-height: 1.1;
-  color: #ffffff;
+  color: #FFFCF6;
   letter-spacing: -0.01em;
 }
 .hh-footer__since {
@@ -196,7 +196,7 @@ const year = new Date().getFullYear();
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 252, 246, 0.55);
 }
 .hh-footer__stores {
   flex-basis: 100%;
@@ -210,13 +210,13 @@ const year = new Date().getFullYear();
   align-items: center;
   gap: 8px;
   padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 252, 246, 0.22);
   border-radius: 10px;
   font-size: 13px;
-  color: #ffffff;
+  color: #FFFCF6;
   transition: border-color 0.15s ease;
 }
-.hh-footer__store:hover { border-color: rgba(255, 255, 255, 0.6); }
+.hh-footer__store:hover { border-color: #FF8A7B; }
 
 /* Quick links: inline, each with a hairline underline */
 .hh-footer__links {
@@ -228,14 +228,14 @@ const year = new Date().getFullYear();
   padding: 0;
   background: none;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 252, 246, 0.22);
   font: inherit;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(255, 252, 246, 0.86);
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.hh-footer__link:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.7); }
+.hh-footer__link:hover { color: #FFFCF6; border-color: #FF8A7B; }
 
 /* Contact / hours */
 .hh-footer__lines {
@@ -244,20 +244,20 @@ const year = new Date().getFullYear();
   font-size: 14px;
   line-height: 1.45;
 }
-.hh-footer__lines--muted { color: rgba(255, 255, 255, 0.74); }
+.hh-footer__lines--muted { color: rgba(255, 252, 246, 0.74); }
 .hh-footer__plain {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 252, 246, 0.82);
   text-decoration: none;
   overflow-wrap: anywhere;
   transition: color 0.15s ease;
 }
-.hh-footer__plain:hover { color: #ffffff; }
+.hh-footer__plain:hover { color: #FFFCF6; }
 .hh-footer__text-btn {
   justify-self: start;
   padding: 0;
   background: none;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 252, 246, 0.22);
   font: inherit;
   cursor: pointer;
 }
@@ -267,7 +267,7 @@ const year = new Date().getFullYear();
   grid-column: 1 / -1;
   margin-top: 4px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 252, 246, 0.18);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -279,15 +279,15 @@ const year = new Date().getFullYear();
   border: 0;
   font: inherit;
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.64);
+  color: rgba(255, 252, 246, 0.64);
   cursor: pointer;
   transition: color 0.15s ease;
 }
-.hh-footer__legal-link:hover { color: #ffffff; }
+.hh-footer__legal-link:hover { color: #FFFCF6; }
 
 .hh-footer button:focus-visible,
 .hh-footer a:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid #FFFCF6;
   outline-offset: 3px;
   border-radius: 3px;
 }
