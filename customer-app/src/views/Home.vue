@@ -5,6 +5,7 @@ import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import { useDailyStore } from '../stores/daily';
 import { useFlagsStore } from '../stores/flags';
+import { usePricingStore, formatUSD } from '../stores/pricing';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 
 const router = useRouter();
@@ -12,6 +13,8 @@ const auth = useAuthStore();
 const daily = useDailyStore();
 const flags = useFlagsStore();
 const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
+const pricing = usePricingStore();
+pricing.load();
 
 const categories = ref([]);
 const nearbyMerchants = ref([]);
@@ -120,7 +123,7 @@ const greetingIcon = computed(() => {
           <div class="text-3xl font-bold mt-1">A new deal every day</div>
           <div class="mt-1 text-white/90 text-sm">Eat, drink, play for less at 100+ Bay Area spots.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            $12.99/mo · Get started →
+            <template v-if="pricing.gold">{{ formatUSD(pricing.gold.price.monthly) }}/mo · </template>Get started →
           </button>
         </div>
       </div>

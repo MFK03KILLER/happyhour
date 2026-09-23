@@ -9,6 +9,7 @@ import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 import { useDailyStore } from '../stores/daily';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
+import { usePricingStore, formatUSD } from '../stores/pricing';
 import { directionsUrl } from '../composables/useMapLink';
 
 const route = useRoute();
@@ -17,6 +18,8 @@ const { coords } = useGeolocation();
 const daily = useDailyStore();
 const toast = useToastStore();
 const auth = useAuthStore();
+const pricing = usePricingStore();
+pricing.load();
 
 const merchant = ref(null);
 const coupons = ref([]);
@@ -281,7 +284,7 @@ function offPeakLabel() {
           <div class="font-bold">Subscribe to unlock all</div>
         </div>
         <div class="text-right">
-          <div class="text-lg font-bold text-teal-700">$12.99 / mo</div>
+          <div v-if="pricing.gold" class="text-lg font-bold text-teal-700">{{ formatUSD(pricing.gold.price.monthly) }} / mo</div>
         </div>
       </div>
       <button @click="router.push('/subscribe')" class="ios-button-primary w-full">

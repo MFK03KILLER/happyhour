@@ -1,9 +1,21 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { usePricingStore, formatUSD } from '../stores/pricing';
 
 const router = useRouter();
 const billing = ref('monthly');
+const pricing = usePricingStore();
+pricing.load();
+
+// Everything below is derived from the live prices, so it stays true after an
+// admin changes them. (The old copy said "save 30%" and "~$3.50/mo" - left over
+// from $4.99 pricing.)
+const monthly = computed(() => pricing.gold?.price.monthly || 0);
+const yearly = computed(() => pricing.gold?.price.yearly || 0);
+const monthlyLabel = computed(() => (monthly.value ? formatUSD(monthly.value) : ''));
+const yearlySavePct = computed(() => (monthly.value ? Math.round((1 - yearly.value / (monthly.value * 12)) * 100) : 0));
+const yearlySave = computed(() => Math.max(0, monthly.value * 12 - yearly.value));
 
 const features = [
   { icon: 'sparkles', title: 'Hand-picked offers', text: 'Curated by locals at neighborhood spots, not anonymous discount mills.' },
@@ -70,11 +82,11 @@ const testimonials = [
             at your favorite spots.
           </h1>
           <p class="mt-5 text-lg text-ink-500 leading-relaxed max-w-md">
-            Happy Hour is America's friendliest coupon club. One $12.99 subscription unlocks BOGO meals, free coffee, and half-price entertainment at hundreds of local merchants.
+            Happy Hour is America's friendliest coupon club. One {{ monthlyLabel ? monthlyLabel + ' ' : '' }}subscription unlocks BOGO meals, free coffee, and half-price entertainment at hundreds of local merchants.
           </p>
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
             <button @click="router.push('/register')" class="rounded-full font-semibold text-white bg-coral-500 px-7 py-4 active:scale-[.97] transition shadow-lift">
-              Start saving — $12.99/mo
+              Start saving<template v-if="monthlyLabel"> — {{ monthlyLabel }}/mo</template>
             </button>
             <button @click="router.push('/login')" class="rounded-full font-semibold text-ink-900 bg-white border border-ink-300/40 px-7 py-4 active:scale-[.97] transition">
               I already have an account
@@ -227,7 +239,7 @@ const testimonials = [
             @click="billing='yearly'"
             class="px-5 py-2 rounded-full text-sm font-semibold transition"
             :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'"
-          >Yearly · save 30%</button>
+          >Yearly<template v-if="yearlySavePct > 0"> · save {{ yearlySavePct }}%</template></button>
         </div>
       </div>
 
@@ -239,10 +251,10 @@ const testimonials = [
             <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">All access</span>
           </div>
           <div class="mt-4 flex items-baseline gap-1">
-            <span class="text-5xl font-bold tracking-tight">${{ billing==='monthly' ? '12.99' : '129.99' }}</span>
+            <span v-if="pricing.gold" class="text-5xl font-bold tracking-tight">{{ formatUSD(billing==='monthly' ? monthly : yearly) }}</span>
             <span class="text-ink-500">/ {{ billing==='monthly' ? 'month' : 'year' }}</span>
           </div>
-          <div v-if="billing==='yearly'" class="text-sm text-coral-600 font-semibold mt-1">~$3.50/mo · save $18</div>
+          <div v-if="billing==='yearly' && yearly" class="text-sm text-coral-600 font-semibold mt-1">~{{ formatUSD(yearly / 12) }}/mo<template v-if="yearlySave > 0"> · save {{ formatUSD(yearlySave) }}</template></div>
 
           <ul class="mt-6 space-y-3 text-sm">
             <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Unlimited coupon redemptions</li>
@@ -293,7 +305,7 @@ const testimonials = [
       <div class="mt-10 space-y-3">
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">How does it work? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>
-          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pay $12.99/mo, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
+          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pay{{ monthlyLabel ? ' ' + monthlyLabel + '/mo' : '' }}, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
         </details>
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">Can I cancel anytime? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>
@@ -317,7 +329,7 @@ const testimonials = [
         <h2 class="text-4xl lg:text-5xl font-bold tracking-tight">Ready to save?</h2>
         <p class="mt-4 text-cream-50/80 text-lg">Join 12,400+ members and start saving this weekend.</p>
         <button @click="router.push('/register')" class="mt-8 rounded-full font-semibold text-ink-900 bg-coral-500 hover:bg-coral-400 px-8 py-4 active:scale-[.97] transition shadow-lift">
-          Start saving — $12.99/mo
+          Start saving<template v-if="monthlyLabel"> — {{ monthlyLabel }}/mo</template>
         </button>
         <div class="mt-3 text-xs text-white/60">7-day money-back guarantee · Cancel anytime</div>
       </div>

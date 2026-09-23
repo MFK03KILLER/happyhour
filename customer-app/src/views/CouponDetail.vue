@@ -6,6 +6,7 @@ import { useFlagsStore } from '../stores/flags';
 import { directionsUrl } from '../composables/useMapLink';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
+import { usePricingStore, formatUSD } from '../stores/pricing';
 import RedeemSheet from '../components/RedeemSheet.vue';
 
 const flags = useFlagsStore();
@@ -19,6 +20,8 @@ function openDirections(m) {
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const pricing = usePricingStore();
+pricing.load();
 const coupon = ref(null);
 const loading = ref(true);
 const claiming = ref(false);
@@ -148,7 +151,7 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
         </div>
         <div class="text-right">
           <div class="text-xs text-ink-300">From</div>
-          <div class="text-lg font-bold text-teal-700">$12.99/mo</div>
+          <div v-if="pricing.gold" class="text-lg font-bold text-teal-700">{{ formatUSD(pricing.gold.price.monthly) }}/mo</div>
         </div>
       </div>
       <div v-if="isSubscribed()" class="flex items-start gap-2 mb-2 text-[11px] leading-snug text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
