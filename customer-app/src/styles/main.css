@@ -81,4 +81,4 @@ body {
 /* Tablets and the native app render inside a centred 720px column. The footer
    runs edge to edge while its content stays aligned with that column. */
 .hh-column footer.hh-footer { margin-inline: calc(50% - 50vw); }
-.hh-column footer.hh-footer > .hh-footer__inner { max-width: 720px; }
+.hh-column footer.hh-footer > .hh-footer__wrap { max-width: 720px; }
