@@ -46,6 +46,13 @@ onMounted(async () => {
 
 function initGoogle() {
   if (!GOOGLE_CLIENT_ID) return;
+  // Loaded on demand, only on the web - the native apps never contact Google.
+  if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+    const sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client';
+    sc.async = true;
+    document.head.appendChild(sc);
+  }
   const tryInit = () => {
     if (!window.google?.accounts?.id) return setTimeout(tryInit, 300);
     window.google.accounts.id.initialize({

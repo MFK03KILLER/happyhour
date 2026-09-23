@@ -323,18 +323,6 @@ const testimonials = [
       </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="py-10 bg-ink-900 text-white/70">
-      <div class="max-w-6xl mx-auto px-5 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 8l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
-          </div>
-          <span class="font-bold text-white">Happy Hour</span>
-        </div>
-        <div class="text-sm">© 2026 Happy Hour</div>
-      </div>
-    </footer>
   </div>
 </template>
 
