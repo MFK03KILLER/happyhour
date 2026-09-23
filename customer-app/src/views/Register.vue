@@ -1,11 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import TermsModal from '../components/TermsModal.vue';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const form = ref({ fullName: '', email: '', phone: '', password: '' });
 const loading = ref(false);
@@ -34,7 +35,8 @@ async function submit() {
   error.value = '';
   try {
     await auth.register({ ...form.value, acceptedTermsVersion: termsVersion.value });
-    router.push('/');
+    const r = typeof route.query.redirect === 'string' ? route.query.redirect : '';
+    router.push(r.startsWith('/') && !r.startsWith('//') ? r : '/');
   } catch (e) {
     error.value = e.response?.data?.error?.message || 'Registration failed';
   } finally {

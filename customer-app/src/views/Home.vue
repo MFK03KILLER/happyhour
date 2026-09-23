@@ -93,8 +93,11 @@ const greetingIcon = computed(() => {
           <i :class="['fa-solid', greetingIcon]" class="text-teal-700 text-xl" aria-hidden="true"></i>
         </div>
       </div>
-      <button @click="router.push('/profile')" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
+      <button v-if="auth.isAuthenticated" @click="router.push('/profile')" aria-label="Profile" class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center font-bold shadow-soft active:scale-95">
         {{ firstName.charAt(0) }}
+      </button>
+      <button v-else @click="router.push('/login')" class="h-10 px-4 rounded-full bg-teal-700 text-white text-sm font-semibold shadow-soft active:scale-95">
+        Sign in
       </button>
     </header>
 

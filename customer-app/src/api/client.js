@@ -19,7 +19,7 @@ function redirectToLogin() {
   if (Capacitor.isNativePlatform()) {
     const h = window.location.hash;
     if (!h.startsWith('#/welcome') && !h.startsWith('#/login') && !h.startsWith('#/register')) {
-      window.location.hash = '#/welcome';
+      window.location.hash = '#/login';
     }
     return;
   }
@@ -49,8 +49,12 @@ client.interceptors.response.use(
     if (error.response && error.response.status === 401 && !original._retry) {
       const refreshToken = localStorage.getItem('hh_refresh_token');
       if (!refreshToken) {
-        clearSession();
-        redirectToLogin();
+        // A guest on a public page never had a session - fail the call quietly
+        // instead of bouncing them to the login wall (App Review 5.1.1(v)).
+        if (localStorage.getItem('hh_access_token')) {
+          clearSession();
+          redirectToLogin();
+        }
         return Promise.reject(error);
       }
       if (isRefreshing) {

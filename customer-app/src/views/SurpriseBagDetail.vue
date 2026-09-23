@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
 import ApplePaySheet from '../components/ApplePaySheet.vue';
 import { useToastStore } from '../stores/toast';
+import { useAuthStore } from '../stores/auth';
 import { useFlagsStore } from '../stores/flags';
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 const toast = useToastStore();
 const flags = useFlagsStore();
 const bag = ref(null);
@@ -56,6 +58,10 @@ function handleCheckoutReturn() {
 
 // Entry point for the buy button: Stripe redirect in production, mock sheet otherwise.
 async function startPurchase() {
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } });
+    return;
+  }
   if (paymentsProvider.value !== 'stripe') { showPay.value = true; return; }
   checkingOut.value = true;
   try {

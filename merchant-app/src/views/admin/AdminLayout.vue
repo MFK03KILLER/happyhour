@@ -11,6 +11,7 @@ const items = [
   { to: '/admin', label: 'Dashboard', icon: 'home' },
   { to: '/admin/revenue', label: 'Revenue', icon: 'dollar' },
   { to: '/admin/payments', label: 'Payments', icon: 'card' },
+  { to: '/admin/applications', label: 'Applications', icon: 'inbox' },
   { to: '/admin/vendors', label: 'Vendors', icon: 'building' },
   { to: '/admin/merchants', label: 'Merchants', icon: 'store' },
   { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
@@ -49,6 +50,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           :class="route.path === i.to ? 'bg-teal-600 text-white' : 'text-ink-700 hover:bg-cream-100'"
         >
           <svg v-if="i.icon==='home'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 12 12 3l9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg>
+          <svg v-if="i.icon==='inbox'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg>
           <svg v-if="i.icon==='building'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h6M9 11h6M9 15h6"/></svg>
           <svg v-if="i.icon==='store'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 9V7l2-4h12l2 4v2"/><path d="M4 9a3 3 0 0 0 6 0 3 3 0 0 0 4 0 3 3 0 0 0 6 0"/><path d="M5 9v11h14V9"/></svg>
           <svg v-if="i.icon==='tag'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m20 13-7 7-9-9V4h7l9 9z"/><circle cx="8" cy="8" r="1.5"/></svg>

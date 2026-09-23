@@ -37,7 +37,7 @@ function start() { router.push(auth.isAuthenticated ? '/profile' : '/login'); }
         <h2 class="text-lg font-bold mt-6 mb-2">What is kept</h2>
         <p>Payment receipts are retained for accounting and legal (tax) reasons, but they are anonymised — they no longer contain your name, email or phone number. Deletion is immediate and cannot be undone.</p>
         <h2 class="text-lg font-bold mt-6 mb-2">Need help?</h2>
-        <p>If you cannot sign in, email <a href="mailto:support@happyhourz.org" class="text-teal-700 underline">support@happyhourz.org</a> from the address on your account and we will delete it for you.</p>
+        <p>If you cannot sign in, email <a href="mailto:business9776@gmail.com" class="text-teal-700 underline">business9776@gmail.com</a> from the address on your account and we will delete it for you.</p>
         <button @click="start" class="ios-button-primary w-full mt-6">Sign in to delete my account</button>
       </article>
       <div class="text-center text-[11px] text-ink-300">

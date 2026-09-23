@@ -8,6 +8,7 @@ import RedeemSheet from '../components/RedeemSheet.vue';
 import { useGeolocation, distanceLabel } from '../composables/useGeolocation';
 import { useDailyStore } from '../stores/daily';
 import { useToastStore } from '../stores/toast';
+import { useAuthStore } from '../stores/auth';
 import { directionsUrl } from '../composables/useMapLink';
 
 const route = useRoute();
@@ -15,6 +16,7 @@ const router = useRouter();
 const { coords } = useGeolocation();
 const daily = useDailyStore();
 const toast = useToastStore();
+const auth = useAuthStore();
 
 const merchant = ref(null);
 const coupons = ref([]);
@@ -58,7 +60,9 @@ onMounted(async () => {
     if (coords.value) { params.lat = coords.value.lat; params.lng = coords.value.lng; }
     const [m, s] = await Promise.all([
       client.get(`/customer/merchants/${route.params.id}`, { params }),
-      client.get('/customer/subscription').catch(() => ({ data: { subscription: null } })),
+      auth.isAuthenticated
+        ? client.get('/customer/subscription').catch(() => ({ data: { subscription: null } }))
+        : Promise.resolve({ data: { subscription: null } }),
     ]);
     merchant.value = m.data.merchant;
     coupons.value = m.data.coupons;
@@ -82,6 +86,10 @@ function variantFor(c) {
 }
 
 async function onClaim(coupon) {
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } });
+    return;
+  }
   if (!isSubscribed.value) {
     toast.info('Become a member to claim coupons', { title: 'Membership required', action: { label: 'Subscribe →', handler: () => router.push('/subscribe') } });
     return;

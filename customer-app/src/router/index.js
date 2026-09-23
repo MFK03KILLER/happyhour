@@ -54,7 +54,7 @@ const routes = [
   { path: '/profile/addresses', component: AddressesView },
   { path: '/profile/payment-methods', component: PaymentMethodsView },
   { path: '/profile/notifications', component: NotificationsView },
-  { path: '/profile/help', component: HelpView },
+  { path: '/profile/help', component: HelpView, meta: { public: true } },
 ];
 
 const router = createRouter({
@@ -67,10 +67,23 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 });
 
+// Browsing is open to everyone (App Review 5.1.1(v)). Only account features -
+// claiming, wallet, orders, profile, membership - ask for a sign-in.
+const GUEST_PATHS = ['/', '/browse', '/map', '/tonight'];
+const GUEST_PREFIXES = ['/merchant-detail/', '/coupons/', '/surprise-bag/'];
+function guestAllowed(path) {
+  return GUEST_PATHS.includes(path) || GUEST_PREFIXES.some((p) => path.startsWith(p));
+}
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
   if (to.meta.public) return true;
-  if (!auth.isAuthenticated) return { path: '/welcome' };
+  if (!auth.isAuthenticated) {
+    // On the website a first-time visitor to "/" still gets the marketing page.
+    if (to.path === '/' && !Capacitor.isNativePlatform()) return { path: '/welcome' };
+    if (guestAllowed(to.path)) return true;
+    return { path: '/login', query: { redirect: to.fullPath } };
+  }
   if (!auth.user) {
     try { await auth.fetchMe(); } catch { return { path: '/welcome' }; }
   }

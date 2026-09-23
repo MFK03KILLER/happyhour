@@ -3,6 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../stores/auth';
 
 import LoginView from '../views/Login.vue';
+import ApplyView from '../views/Apply.vue';
+import AdminApplications from '../views/admin/AdminApplications.vue';
 import ScanView from '../views/Scan.vue';
 import HistoryView from '../views/History.vue';
 import StatsView from '../views/Stats.vue';
@@ -37,6 +39,7 @@ import AdminDeliveries from '../views/admin/AdminDeliveries.vue';
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
+  { path: '/apply', component: ApplyView, meta: { public: true } },
   { path: '/', component: ScanView, meta: { roles: ['merchant_staff'] } },
   { path: '/history', component: HistoryView, meta: { roles: ['merchant_staff'] } },
   { path: '/stats', component: StatsView, meta: { roles: ['merchant_staff'] } },
@@ -76,6 +79,7 @@ const routes = [
       { path: 'terms', component: AdminTerms },
       { path: 'site-content', component: AdminSiteContent },
       { path: 'audit', component: AdminAudit },
+      { path: 'applications', component: AdminApplications },
     ],
   },
 ];

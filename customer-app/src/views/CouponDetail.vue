@@ -5,6 +5,7 @@ import client from '../api/client';
 import { useFlagsStore } from '../stores/flags';
 import { directionsUrl } from '../composables/useMapLink';
 import { useToastStore } from '../stores/toast';
+import { useAuthStore } from '../stores/auth';
 import RedeemSheet from '../components/RedeemSheet.vue';
 
 const flags = useFlagsStore();
@@ -17,6 +18,7 @@ function openDirections(m) {
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 const coupon = ref(null);
 const loading = ref(true);
 const claiming = ref(false);
@@ -43,6 +45,10 @@ function isSubscribed() {
 }
 
 async function claim() {
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } });
+    return;
+  }
   if (!isSubscribed()) {
     router.push('/subscribe');
     return;

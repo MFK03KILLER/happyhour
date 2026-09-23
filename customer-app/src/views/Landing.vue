@@ -154,8 +154,8 @@ const testimonials = [
           <div class="text-xs text-ink-500 mt-1">Local merchants</div>
         </div>
         <div>
-          <div class="text-3xl font-bold text-teal-700">4.9★</div>
-          <div class="text-xs text-ink-500 mt-1">App Store rating</div>
+          <div class="text-3xl font-bold text-teal-700">1/day</div>
+          <div class="text-xs text-ink-500 mt-1">New member deal</div>
         </div>
         <div>
           <div class="text-3xl font-bold text-teal-700">12,400+</div>
@@ -332,7 +332,7 @@ const testimonials = [
           </div>
           <span class="font-bold text-white">Happy Hour</span>
         </div>
-        <div class="text-sm">© 2026 Happy Hour Inc. · Demo build</div>
+        <div class="text-sm">© 2026 Happy Hour</div>
       </div>
     </footer>
   </div>
