@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
+import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../../stores/auth';
 import TermsModal from '../../components/TermsModal.vue';
 
@@ -24,7 +25,9 @@ function can(perm) {
   return (auth.user?.permissions || []).includes(perm);
 }
 
-const visibleItems = computed(() => items.filter((i) => can(i.perm)));
+// Plans are never sold inside the native apps (see VendorPricing.vue).
+const inApp = Capacitor.isNativePlatform();
+const visibleItems = computed(() => items.filter((i) => can(i.perm) && !(inApp && i.to === '/vendor/pricing')));
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);
 
 async function doLogout() { await auth.logout(); router.push('/login'); }

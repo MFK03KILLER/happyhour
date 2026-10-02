@@ -149,6 +149,11 @@ async function signInApple() {
   loading.value = true;
   error.value = '';
   try {
+    // The web code is served live, so it can meet an app build that predates the plugin.
+    if (!Capacitor.isPluginAvailable('SignInWithApple')) {
+      error.value = 'Sign in with Apple needs the latest version of the app. Please update it, or sign in with email.';
+      return;
+    }
     const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
     const res = await SignInWithApple.authorize({
       clientId: 'app.happyhour.customer',
@@ -165,12 +170,17 @@ async function signInApple() {
     }
     goAfterLogin();
   } catch (e) {
-    // 1000/1001 are the user-cancelled codes; stay silent on those.
-    const code = String(e && e.code || '');
-    if (code === '1000' || code === '1001' || /cancel/i.test(e && e.message || '')) {
+    // ASAuthorizationError 1001 = the person closed Apple's sheet: say nothing.
+    // Anything else is a real failure (1000 = "unknown" - capability, threading
+    // or presentation problems), so show its code instead of hiding it.
+    const native = `${e?.code || ''} ${e?.message || ''}`;
+    const code = (native.match(/\b(10\d\d)\b/) || [])[1] || '';
+    if (code === '1001' || /cancel/i.test(native)) {
       // cancelled — no error shown
+    } else if (e?.response) {
+      error.value = e.response.data?.error?.message || 'Apple sign-in failed';
     } else {
-      error.value = e.response?.data?.error?.message || 'Apple sign-in failed';
+      error.value = `Apple sign-in failed${code ? ` (${code})` : ''}. Please try again, or sign in with email.`;
     }
   } finally {
     loading.value = false;

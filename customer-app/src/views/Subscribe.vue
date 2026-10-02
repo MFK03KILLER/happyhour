@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
+import CheckoutSheet from '../components/CheckoutSheet.vue';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
 
@@ -26,6 +26,12 @@ const promo = ref(null);        // { code, discountUSD, finalUSD }
 const promoError = ref('');
 const applyingPromo = ref(false);
 const checkingOut = ref(false);
+const activating = ref(false);
+
+// Until online payment is live (no Stripe keys yet) membership is free during
+// launch: one month at a time, no promo codes, nothing charged.
+const freeLaunch = computed(() => paymentsProvider.value !== 'stripe');
+watch(freeLaunch, (free) => { if (free) billing.value = 'monthly'; }, { immediate: true });
 
 async function loadSub() {
   const { data } = await client.get('/customer/subscription');
@@ -77,6 +83,13 @@ const finalPrice = computed(() => (promo.value && promo.value.finalUSD != null ?
 const selectedPriceLabel = computed(() => finalPrice.value.toFixed(2));
 const currentTier = computed(() => sub.value?.tier || currentPlan.value?.tier || 'basic');
 const isCurrentlyPaid = computed(() => sub.value && sub.value.tier !== 'basic' && new Date(sub.value.currentPeriodEnd) > new Date());
+// "Yearly · save 17%", from the live prices (admins change them in Admin → Pricing).
+const yearlySavePct = computed(() => {
+  const p = availablePlans.value.find((x) => x.tier === 'gold') || selected.value;
+  const m = p?.price?.monthly;
+  const y = p?.price?.yearly;
+  return m && y ? Math.round((1 - y / (m * 12)) * 100) : 0;
+});
 
 // A change of plan invalidates any applied promo discount.
 watch([selectedTier, billing], () => { clearPromo(); });
@@ -133,24 +146,24 @@ async function startStripeCheckout() {
   }
 }
 
-// Mock payment sheet confirm.
-async function onConfirm(paymentMethod) {
+// Free launch activation (no payment processor yet - nothing is charged).
+async function onConfirm() {
+  activating.value = true;
   try {
     const { data } = await client.post('/customer/subscription/subscribe', {
       tier: selectedTier.value,
-      plan: billing.value,
-      paymentMethod,
-      promoCode: promo.value?.code,
       audience: 'customer',
     });
     sub.value = data.subscription;
     currentPlan.value = data.plan;
     await auth.fetchMe();
     showPay.value = false;
-    toast.success(`You're on ${data.plan.label}!`, { title: 'Plan upgraded 🎉' });
+    toast.success(`Your ${data.plan.label} membership is active.`, { title: 'Welcome aboard 🎉' });
     router.push('/');
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Subscription failed', { title: 'Payment failed' });
+    toast.error(e.response?.data?.error?.message || 'Could not start your membership', { title: 'Something went wrong' });
+  } finally {
+    activating.value = false;
   }
 }
 
@@ -202,9 +215,9 @@ function pickTier(t) {
           <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
           <span class="chip bg-white/15 text-white">{{ currentPlan?.badge || 'Active' }}</span>
           <div class="mt-3 text-3xl font-bold">{{ currentPlan?.label }} Plan</div>
-          <div class="opacity-90 mt-1 capitalize">{{ sub.plan }} · ${{ sub.amountUSD?.toFixed(2) }}</div>
+          <div class="opacity-90 mt-1"><span class="capitalize">{{ sub.plan }}</span> · {{ freeLaunch || !sub.amountUSD ? 'Free during launch' : `$${sub.amountUSD.toFixed(2)}` }}</div>
           <div class="mt-3 text-sm opacity-90">
-            Next billing: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
+            Active until: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
           </div>
           <div v-if="sub.cancelAtPeriodEnd" class="mt-2 text-sm bg-black/20 rounded-xl px-3 py-2">
             Cancelling on {{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric' }) }}
@@ -226,10 +239,10 @@ function pickTier(t) {
           <p class="text-ink-500 mt-1 text-sm">Save more, every time you go out.</p>
         </div>
 
-        <div class="mt-4 flex justify-center">
+        <div v-if="!freeLaunch" class="mt-4 flex justify-center">
           <div class="inline-flex bg-cream-200 rounded-full p-1">
             <button @click="billing='monthly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">Monthly</button>
-            <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly · save</button>
+            <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly<template v-if="yearlySavePct > 0"> · save {{ yearlySavePct }}%</template></button>
           </div>
         </div>
 
@@ -256,6 +269,7 @@ function pickTier(t) {
               <div class="text-right">
                 <div class="text-2xl font-bold">${{ (p.price[billing] || 0).toFixed(2) }}</div>
                 <div class="text-[10px] uppercase tracking-wider text-ink-500">/ {{ billing === 'monthly' ? 'mo' : 'yr' }}</div>
+                <div v-if="freeLaunch && p.tier !== 'basic'" class="chip bg-teal-50 text-teal-700 text-[10px] mt-1">Free during launch</div>
               </div>
             </div>
 
@@ -273,7 +287,7 @@ function pickTier(t) {
         </div>
 
         <!-- Promo code -->
-        <div v-if="selectedTier !== 'basic' && selectedTier !== currentTier" class="mt-5">
+        <div v-if="!freeLaunch && selectedTier !== 'basic' && selectedTier !== currentTier" class="mt-5">
           <div v-if="!promo" class="flex gap-2">
             <input
               v-model="promoInput"
@@ -302,21 +316,27 @@ function pickTier(t) {
           class="ios-button-primary w-full mt-5"
         >
           <span v-if="checkingOut">Redirecting…</span>
+          <span v-else-if="freeLaunch">Start {{ selected?.label }} free</span>
           <span v-else>
             Get {{ selected?.label }} for
             <span v-if="promo" class="line-through opacity-70 mr-1">${{ listPrice.toFixed(2) }}</span>
             ${{ selectedPriceLabel }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
           </span>
         </button>
-        <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">7-day money-back guarantee · Cancel anytime</div>
+        <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">
+          {{ freeLaunch ? 'Free during launch · Nothing to pay · Cancel anytime' : '7-day money-back guarantee · Cancel anytime' }}
+        </div>
       </div>
     </template>
 
-    <ApplePaySheet
+    <CheckoutSheet
       v-if="showPay && selected"
-      :amount="finalPrice"
-      merchant-name="Happy Hour"
-      :item-name="`${selected.label} ${billing} membership`"
+      :title="`${selected.label} membership`"
+      amount-label="Free"
+      :item-name="`30 days · normally $${(selected.price?.monthly || 0).toFixed(2)}/mo`"
+      note="Online payment isn't open yet, so membership is free during our launch. You won't be charged, and nothing renews automatically."
+      :confirm-label="`Start ${selected.label} free`"
+      :busy="activating"
       @confirm="onConfirm"
       @close="showPay = false"
     />

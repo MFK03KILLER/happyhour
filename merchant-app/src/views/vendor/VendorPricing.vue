@@ -1,6 +1,14 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { Capacitor } from '@capacitor/core';
 import client from '../../api/client';
+
+// Venue plans are sold business-to-business by our team, never inside the iOS
+// or Android app (App Store rules on digital purchases). The website keeps them.
+const inApp = Capacitor.isNativePlatform();
+const paymentsProvider = ref('mock');
+// No payment processor yet: a plan change is free during launch (see the backend).
+const freeLaunch = computed(() => paymentsProvider.value !== 'stripe');
 
 const sub = ref(null);
 const currentPlan = ref(null);
@@ -17,6 +25,8 @@ onMounted(async () => {
     sub.value = data.subscription;
     currentPlan.value = data.plan;
     availablePlans.value = data.available || [];
+    paymentsProvider.value = data.paymentsProvider || 'mock';
+    if (freeLaunch.value) billing.value = 'monthly';
     if (data.tier && data.tier !== 'basic') selectedTier.value = data.tier;
   } finally { loading.value = false; }
 });
@@ -64,9 +74,13 @@ function tierColor(t) {
 <template>
   <div class="p-5 md:p-8">
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Pricing & Plan</h1>
-    <p class="text-ink-500 mt-1">Pick the plan that fits your business — upgrade lifts your active coupon limit, locations, and analytics.</p>
+    <p v-if="!inApp" class="text-ink-500 mt-1">Pick the plan that fits your business — upgrade lifts your active coupon limit, locations, and analytics.</p>
 
-    <div v-if="loading" class="mt-6 ios-card h-64 animate-pulse"></div>
+    <div v-if="inApp" class="mt-6 ios-card p-5 text-sm text-ink-700 leading-relaxed">
+      Plans are arranged with the Happy Hour partnerships team, not in the app.
+      To change your plan, email <a href="mailto:business9776@gmail.com" class="font-semibold text-teal-700">business9776@gmail.com</a>.
+    </div>
+    <div v-else-if="loading" class="mt-6 ios-card h-64 animate-pulse"></div>
 
     <template v-else>
       <!-- Current plan summary -->
@@ -74,9 +88,9 @@ function tierColor(t) {
         <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
         <span class="chip bg-white/15 text-white">{{ currentPlan?.badge || 'Active' }}</span>
         <div class="mt-3 text-3xl font-bold">{{ currentPlan?.label }} Merchant</div>
-        <div class="opacity-90 mt-1 capitalize">{{ sub.plan }} · ${{ sub.amountUSD?.toFixed(2) }}</div>
+        <div class="opacity-90 mt-1"><span class="capitalize">{{ sub.plan }}</span> · {{ freeLaunch || !sub.amountUSD ? 'Free during launch' : `$${sub.amountUSD.toFixed(2)}` }}</div>
         <div class="mt-3 text-sm opacity-90">
-          Next billing: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
+          Active until: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
         </div>
         <div v-if="sub.cancelAtPeriodEnd" class="mt-2 text-sm bg-black/20 rounded-xl px-3 py-2">
           Cancelling on {{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric' }) }}
@@ -90,7 +104,7 @@ function tierColor(t) {
         <div class="text-sm">You're on the <strong>Basic (free)</strong> plan — 1 active coupon, 1 location, basic traffic stats. Upgrade below to unlock more.</div>
       </div>
 
-      <div class="mt-6 flex justify-center">
+      <div v-if="!freeLaunch" class="mt-6 flex justify-center">
         <div class="inline-flex bg-cream-200 rounded-full p-1">
           <button @click="billing='monthly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">Monthly</button>
           <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly</button>
@@ -133,13 +147,15 @@ function tierColor(t) {
         @click="showConfirm = true"
         class="ios-button-primary w-full mt-5"
       >
-        {{ isPaid ? 'Switch to' : 'Get' }} {{ selected?.label }} — ${{ selectedPrice }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
+        <template v-if="freeLaunch">Start {{ selected?.label }} free</template>
+        <template v-else>{{ isPaid ? 'Switch to' : 'Get' }} {{ selected?.label }} — ${{ selectedPrice }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}</template>
       </button>
 
       <div v-if="showConfirm" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-lift">
           <div class="text-lg font-bold">Confirm subscription</div>
-          <p class="text-sm text-ink-500 mt-2">You'll be charged <strong>${{ selectedPrice }}</strong> {{ billing === 'monthly' ? 'monthly' : 'yearly' }} for the {{ selected?.label }} plan.</p>
+          <p v-if="freeLaunch" class="text-sm text-ink-500 mt-2">Online payment isn't open yet, so the {{ selected?.label }} plan is free during launch for 30 days. You won't be charged.</p>
+          <p v-else class="text-sm text-ink-500 mt-2">You'll be charged <strong>${{ selectedPrice }}</strong> {{ billing === 'monthly' ? 'monthly' : 'yearly' }} for the {{ selected?.label }} plan.</p>
           <div class="mt-4 flex gap-2">
             <button @click="showConfirm = false" class="ios-card flex-1 py-2.5 font-semibold text-ink-700">Cancel</button>
             <button @click="upgrade" :disabled="saving" class="ios-button-primary flex-1">{{ saving ? 'Processing…' : 'Confirm' }}</button>

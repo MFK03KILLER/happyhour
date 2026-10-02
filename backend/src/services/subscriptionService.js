@@ -69,34 +69,21 @@ async function activateSubscription({ user, aud, tierKey, billing, days, amountU
   return sub;
 }
 
-// Mock/no-processor path: charge instantly and activate. Also honours promo codes.
-async function subscribe({ userOrId, tier, plan, paymentMethod, audience, promoCode }) {
+// No payment processor configured yet: membership is free during launch.
+// Nothing is charged, so no payment or revenue is recorded, and the period is
+// always one month so nobody locks in a free year before online payment opens.
+// (This used to fake a successful card/Apple Pay charge, which App Review rejects.)
+async function subscribe({ userOrId, tier, audience }) {
   const user = userOrId._id ? userOrId : await User.findById(userOrId);
   if (!user) throw new NotFoundError('User not found');
   if (stripeService.isEnabled()) {
     throw new BadRequestError('Card payments are enabled — start Stripe checkout instead of /subscribe');
   }
-  const { aud, tierKey, billing, def, amount, days } = await resolvePlan({ user, tier, plan, audience });
-  const { promo, discountUSD, finalUSD } = await promoCodeService.validateAndPrice({
-    code: promoCode, audience: aud, tier: tierKey, amountUSD: amount, userId: user._id,
-  });
-  const payment = await paymentService.processMockPayment({
-    customerId: user._id,
-    amountUSD: finalUSD,
-    method: paymentMethod,
-    context: {
-      kind: 'subscription',
-      label: `${def.label} ${billing} (${aud})`,
-      refType: 'Subscription',
-      promoCode: promo ? promo.code : undefined,
-      discountUSD,
-    },
-  });
-  if (promo) await promoCodeService.recordRedemption(promo._id, user._id);
+  const { aud, tierKey, billing, def, days } = await resolvePlan({ user, tier, plan: 'monthly', audience });
   const sub = await activateSubscription({
-    user, aud, tierKey, billing, days, amountUSD: finalUSD, paymentMethod, payment, def,
+    user, aud, tierKey, billing, days, amountUSD: 0, paymentMethod: undefined, payment: null, def,
   });
-  return { subscription: sub, payment, plan: def, discountUSD, promoCode: promo ? promo.code : null };
+  return { subscription: sub, payment: null, plan: def, discountUSD: 0, promoCode: null, freeLaunch: true };
 }
 
 // Stripe path: create a Checkout Session and return its URL. Nothing is

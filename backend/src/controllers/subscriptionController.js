@@ -29,9 +29,6 @@ exports.subscribe = asyncHandler(async (req, res) => {
   const result = await subscriptionService.subscribe({
     userOrId: req.user,
     tier: req.body.tier,
-    plan: req.body.plan,
-    paymentMethod: req.body.paymentMethod,
-    promoCode: req.body.promoCode,
     audience,
   });
   res.status(201).json(result);

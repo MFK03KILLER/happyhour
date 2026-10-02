@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
@@ -9,6 +9,32 @@ const router = useRouter();
 async function signOut() { await auth.logout(); router.push('/login'); }
 
 const auth = useAuthStore();
+function can(p) { return (auth.user?.permissions || []).includes(p); }
+
+// The home screen is more than a camera button (App Review 4.2): the venue's
+// numbers, its latest redemptions and offers, and how customers get a code.
+const venue = ref(null);
+const stats = ref(null);
+const liveOffers = ref(null);
+async function loadHome() {
+  const jobs = [client.get('/merchant/me').then(({ data }) => { venue.value = data; })];
+  if (can('view_stats')) jobs.push(client.get('/merchant/stats').then(({ data }) => { stats.value = data; }));
+  if (can('view_coupons') || can('manage_coupons')) {
+    jobs.push(client.get('/merchant/coupons').then(({ data }) => {
+      liveOffers.value = (data.items || []).filter((c) => c.status === 'active').length;
+    }));
+  }
+  await Promise.allSettled(jobs);
+}
+onMounted(loadHome);
+const recent = computed(() => (stats.value?.recent || []).slice(0, 3));
+function when(d) {
+  const t = new Date(d);
+  return t.toDateString() === new Date().toDateString()
+    ? t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 const stage = ref('idle');
 const scannerOpen = ref(false);
 const result = ref(null);
@@ -44,6 +70,7 @@ function reset() {
   result.value = null;
   errorText.value = '';
   lastScanned.value = '';
+  loadHome();
 }
 </script>
 
@@ -54,6 +81,7 @@ function reset() {
         <div>
           <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">Merchant console</div>
           <div class="text-2xl font-bold mt-0.5">{{ auth.user?.fullName }}</div>
+          <div v-if="venue?.name" class="text-sm opacity-80 mt-0.5">{{ venue.name }}</div>
         </div>
         <button @click="signOut" class="text-xs opacity-80 active:opacity-50">Sign out</button>
       </div>
@@ -71,13 +99,62 @@ function reset() {
         <div class="text-sm opacity-80">Tap to open camera</div>
       </button>
 
+      <div v-if="stats" class="grid grid-cols-3 gap-3">
+        <router-link to="/stats" class="ios-card p-4 text-center active:scale-[.98] transition">
+          <div class="text-[11px] uppercase font-semibold text-ink-500 tracking-wider">Today</div>
+          <div class="text-2xl font-bold mt-1">{{ stats.today }}</div>
+        </router-link>
+        <router-link to="/stats" class="ios-card p-4 text-center active:scale-[.98] transition">
+          <div class="text-[11px] uppercase font-semibold text-ink-500 tracking-wider">This week</div>
+          <div class="text-2xl font-bold mt-1">{{ stats.week }}</div>
+        </router-link>
+        <router-link to="/stats" class="ios-card p-4 text-center active:scale-[.98] transition">
+          <div class="text-[11px] uppercase font-semibold text-ink-500 tracking-wider">Members</div>
+          <div class="text-2xl font-bold mt-1">{{ stats.uniqueCustomers }}</div>
+        </router-link>
+      </div>
+
+      <div v-if="stats" class="ios-card p-5">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Recent redemptions</div>
+          <router-link to="/history" class="text-sm font-semibold text-teal-700">See all</router-link>
+        </div>
+        <ul v-if="recent.length" class="mt-2 divide-y divide-cream-200">
+          <li v-for="r in recent" :key="r._id" class="py-2.5 flex items-center justify-between gap-3 text-sm">
+            <div class="min-w-0">
+              <div class="font-semibold truncate">{{ r.couponId?.title || 'Offer' }}</div>
+              <div class="text-xs text-ink-500 truncate">{{ r.customerId?.fullName || r.customerSnapshot?.name || 'Member' }}</div>
+            </div>
+            <div class="text-xs text-ink-500 flex-shrink-0">{{ when(r.scannedAt) }}</div>
+          </li>
+        </ul>
+        <p v-else class="mt-2 text-sm text-ink-500">No redemptions yet. Every code you scan shows up here, in History and in Stats.</p>
+      </div>
+
+      <router-link v-if="liveOffers !== null" to="/my-coupons" class="ios-card p-5 flex items-center justify-between gap-3 active:scale-[.98] transition">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Your offers</div>
+          <div class="font-bold mt-0.5 truncate">{{ liveOffers }} live {{ liveOffers === 1 ? 'offer' : 'offers' }}<template v-if="venue?.name"> at {{ venue.name }}</template></div>
+        </div>
+        <i class="fa-solid fa-chevron-right text-ink-300"></i>
+      </router-link>
+
       <div class="ios-card p-5">
         <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">How it works</div>
         <ol class="mt-3 space-y-2.5 text-sm text-ink-700">
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">1</span>Customer shows their QR from the Happy Hour app.</li>
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">2</span>You scan it with this app.</li>
-          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">3</span>Coupon redeems, customer details saved.</li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">1</span><span>A Happy Hour member opens your offer in the Happy Hour app or at happyhourz.org and taps <b>Claim</b>.</span></li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">2</span><span>A QR code appears on their phone. It refreshes every few seconds, so a screenshot won't scan: ask them to show it live at the counter.</span></li>
+          <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center flex-shrink-0">3</span><span>Tap <b>Scan a customer QR</b> and point the camera at it. The redemption is checked and saved to History and Stats.</span></li>
         </ol>
+      </div>
+
+      <div class="ios-card p-5">
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Good to know</div>
+        <ul class="mt-3 space-y-2 text-sm text-ink-700 list-disc pl-5">
+          <li>Offers can be redeemed only during your happy hour window, and not on the holiday dates you set.</li>
+          <li>Each member can redeem one offer per day.</li>
+          <li>Customers without a membership can join in the Happy Hour app or at happyhourz.org.</li>
+        </ul>
       </div>
     </div>
 
