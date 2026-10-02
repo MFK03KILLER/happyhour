@@ -1,9 +1,12 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { Capacitor } from '@capacitor/core';
 import client from '../../api/client';
 import { useAuthStore } from '../../stores/auth';
 
 const auth = useAuthStore();
+// Plans are never sold inside the native apps (see VendorPricing.vue).
+const inApp = Capacitor.isNativePlatform();
 const items = ref([]);
 const merchants = ref([]);
 const loading = ref(true);
@@ -187,11 +190,13 @@ onMounted(load);
         </div>
         <div>
           <div class="font-bold text-sm">{{ activeCount }} of {{ couponLimit >= 9999 ? '∞' : couponLimit }} active coupons used</div>
-          <div class="text-xs text-ink-500">Plan: <span class="font-semibold">{{ planLabel }}</span><span v-if="overLimit && couponLimit < 9999"> · Limit reached — pause one or upgrade</span></div>
+          <div class="text-xs text-ink-500">Plan: <span class="font-semibold">{{ planLabel }}</span><span v-if="overLimit && couponLimit < 9999"> · Limit reached — {{ inApp ? 'pause one, or contact us to change your plan' : 'pause one or upgrade' }}</span></div>
         </div>
       </div>
-      <router-link v-if="overLimit && couponLimit < 9999" to="/vendor/pricing" class="bg-teal-600 text-white px-3 py-1.5 rounded-full text-xs font-bold active:scale-95"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Upgrade</router-link>
-      <router-link v-else to="/vendor/pricing" class="text-xs font-semibold text-teal-700">View plans →</router-link>
+      <template v-if="!inApp">
+        <router-link v-if="overLimit && couponLimit < 9999" to="/vendor/pricing" class="bg-teal-600 text-white px-3 py-1.5 rounded-full text-xs font-bold active:scale-95"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Upgrade</router-link>
+        <router-link v-else to="/vendor/pricing" class="text-xs font-semibold text-teal-700">View plans →</router-link>
+      </template>
     </div>
 
     <div v-if="selectMode && selected.length" class="mt-4 ios-card p-3 flex items-center gap-2 flex-wrap bg-teal-50">
@@ -370,7 +375,7 @@ onMounted(load);
 
           <div v-if="saveError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 p-3 text-sm text-coral-700">
             <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ saveError }}
-            <router-link v-if="saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
+            <router-link v-if="!inApp && saveError.toLowerCase().includes('plan')" to="/vendor/pricing" class="block mt-2 text-teal-700 font-semibold underline">View pricing & upgrade →</router-link>
           </div>
           <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Create coupon') }}</button>
         </form>

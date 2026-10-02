@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
-import ApplePaySheet from '../components/ApplePaySheet.vue';
+import CheckoutSheet from '../components/CheckoutSheet.vue';
 import { useToastStore } from '../stores/toast';
 import { useAuthStore } from '../stores/auth';
 import { useFlagsStore } from '../stores/flags';
@@ -133,9 +133,11 @@ function pickupWindow() {
   return `${fmt(s)} – ${fmt(e)}`;
 }
 
-async function onConfirm(paymentMethod) {
+// Online payment isn't live yet, so no payment method is chosen here; the
+// backend's purchase schema still expects one, recorded as 'card'.
+async function onConfirm() {
   try {
-    const payload = { paymentMethod, fulfillment: fulfillment.value };
+    const payload = { paymentMethod: 'card', fulfillment: fulfillment.value };
     if (fulfillment.value === 'delivery') {
       payload.addressId = selectedAddressId.value;
       if (deliveryNotes.value) payload.deliveryNotes = deliveryNotes.value;
@@ -295,11 +297,13 @@ function savings() {
       </button>
     </div>
 
-    <ApplePaySheet
+    <CheckoutSheet
       v-if="showPay"
-      :amount="total"
-      :merchant-name="vendor()"
+      :title="vendor()"
+      :amount-label="`$${total.toFixed(2)}`"
       :item-name="bag.title"
+      note="Online payment isn't open yet, so you won't be charged in the app."
+      :confirm-label="fulfillment === 'delivery' ? 'Place order' : 'Reserve bag'"
       @confirm="onConfirm"
       @close="showPay = false"
     />
