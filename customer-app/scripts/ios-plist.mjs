@@ -9,6 +9,10 @@ const PLIST = 'ios/App/App/Info.plist';
 const ENTRIES = [
   ['NSLocationWhenInUseUsageDescription',
     '<string>Happy Hour uses your location to show partner venues near you.</string>'],
+  // The geolocation library references the "Always" API even though the app only
+  // asks "While Using"; without this key every upload gets warning ITMS-90683.
+  ['NSLocationAlwaysAndWhenInUseUsageDescription',
+    '<string>Happy Hour uses your location to show partner venues near you.</string>'],
   // Standard HTTPS only - declaring it here stops the export-compliance prompt.
   ['ITSAppUsesNonExemptEncryption', '<false/>'],
 ];
