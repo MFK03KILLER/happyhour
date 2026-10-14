@@ -42,6 +42,7 @@ exports.checkout = asyncHandler(async (req, res) => {
     tier: req.body.tier,
     plan: req.body.plan,
     promoCode: req.body.promoCode,
+    returnTo: req.body.returnTo === 'app' ? 'app' : 'web',
     audience,
   });
   res.status(201).json(result);

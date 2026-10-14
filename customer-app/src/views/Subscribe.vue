@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 import client from '../api/client';
 import CheckoutSheet from '../components/CheckoutSheet.vue';
 import { useToastStore } from '../stores/toast';
@@ -54,19 +55,27 @@ async function handleCheckoutReturn() {
     return;
   }
   if (status !== 'success') return;
+  if (!(await waitForMembership())) {
+    toast.info('Payment received — your membership will activate in a moment.', { title: 'Almost there', ttl: 8000 });
+  }
+}
+
+// Polls until a membership that started at/after `since` is active.
+async function waitForMembership(since = null, tries = 10) {
   confirming.value = true;
   try {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < tries; i++) {
       const data = await loadSub();
       const s = data.subscription;
-      if (s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date()) {
+      const fresh = !since || new Date(s?.currentPeriodStart) >= since;
+      if (s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date() && fresh) {
         await auth.fetchMe();
         toast.success(`You're on ${data.plan?.label || 'your new plan'}!`, { title: 'Payment received 🎉' });
-        return;
+        return true;
       }
       await new Promise((r) => setTimeout(r, 1500));
     }
-    toast.info('Payment received — your membership will activate in a moment.', { title: 'Almost there', ttl: 8000 });
+    return false;
   } finally { confirming.value = false; }
 }
 
@@ -129,6 +138,14 @@ async function startPurchase() {
   }
 }
 
+// In the native apps Stripe Checkout opens in the system browser sheet
+// (SFSafariViewController / Chrome Custom Tabs): Apple Pay and Google Pay work
+// there, but not inside the app's own WebView.
+const inAppBrowser = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Browser');
+const platform = Capacitor.getPlatform();
+// Never mention the other platform's wallet inside an app (App Store 2.3.10).
+const walletLine = platform === 'ios' ? 'Apple Pay or card' : platform === 'android' ? 'Google Pay or card' : 'Apple Pay, Google Pay or card';
+
 async function startStripeCheckout() {
   checkingOut.value = true;
   try {
@@ -137,8 +154,28 @@ async function startStripeCheckout() {
       plan: billing.value,
       promoCode: promo.value?.code,
       audience: 'customer',
+      returnTo: inAppBrowser ? 'app' : 'web',
     });
-    if (data.url) window.location.href = data.url;
+    if (data.activated) {
+      // A 100% promo code: nothing to pay, the membership is already on.
+      sub.value = data.subscription;
+      currentPlan.value = data.plan;
+      await auth.fetchMe();
+      toast.success(`Your ${data.plan.label} membership is active.`, { title: 'Welcome aboard 🎉' });
+      router.push('/');
+      return;
+    }
+    if (!data.url) return;
+    if (!inAppBrowser) { window.location.href = data.url; return; }
+    const since = new Date(Date.now() - 5000);
+    const { Browser } = await import('@capacitor/browser');
+    const listener = await Browser.addListener('browserFinished', async () => {
+      listener.remove();
+      if (!(await waitForMembership(since, 6))) {
+        toast.info("No payment was completed. If you did pay, your membership will show up in a minute.", { title: 'Checkout closed', ttl: 8000 });
+      }
+    });
+    await Browser.open({ url: data.url });
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not start checkout', { title: 'Checkout failed' });
   } finally {
@@ -167,15 +204,6 @@ async function onConfirm() {
   }
 }
 
-async function cancelSub() {
-  if (!confirm('Cancel at end of period?')) return;
-  const { data } = await client.post('/customer/subscription/cancel');
-  sub.value = data;
-}
-async function resumeSub() {
-  const { data } = await client.post('/customer/subscription/resume');
-  sub.value = data;
-}
 
 function tierBg(tier) {
   if (tier === 'gold') return 'from-coral-500 to-coral-600';
@@ -224,12 +252,7 @@ function pickTier(t) {
           </div>
         </div>
 
-        <div class="mt-3 flex gap-2">
-          <button v-if="!sub.cancelAtPeriodEnd" @click="cancelSub" class="ios-card flex-1 p-3 text-coral-600 font-semibold text-center">
-            Cancel
-          </button>
-          <button v-else @click="resumeSub" class="ios-button-primary flex-1">Resume</button>
-        </div>
+        <p class="mt-3 text-center text-xs text-ink-500">Your membership doesn't renew automatically, so there's nothing to cancel. When it ends, renew it here.</p>
       </div>
 
       <!-- Plan picker -->
@@ -324,7 +347,7 @@ function pickTier(t) {
           </span>
         </button>
         <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">
-          {{ freeLaunch ? 'Free during launch · Nothing to pay · Cancel anytime' : '7-day money-back guarantee · Cancel anytime' }}
+          {{ freeLaunch ? 'Free during launch · Nothing to pay' : `Secure payment by Stripe · ${walletLine} · No auto-renewal` }}
         </div>
       </div>
     </template>

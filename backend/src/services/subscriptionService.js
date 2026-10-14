@@ -88,19 +88,32 @@ async function subscribe({ userOrId, tier, audience }) {
 
 // Stripe path: create a Checkout Session and return its URL. Nothing is
 // activated until the webhook confirms payment (see finalizeStripeCheckout).
-async function createCheckout({ userOrId, tier, plan, audience, promoCode }) {
+// returnTo 'app': the native apps open Checkout in an in-app browser sheet
+// (SFSafariViewController / Custom Tabs, where Apple Pay and Google Pay work),
+// so Stripe sends the customer to a small page that says "return to the app".
+async function createCheckout({ userOrId, tier, plan, audience, promoCode, returnTo }) {
   const user = userOrId._id ? userOrId : await User.findById(userOrId);
   if (!user) throw new NotFoundError('User not found');
-  const { aud, tierKey, billing, def, amount } = await resolvePlan({ user, tier, plan, audience });
+  const { aud, tierKey, billing, def, amount, days } = await resolvePlan({ user, tier, plan, audience });
   const { promo, discountUSD, finalUSD } = await promoCodeService.validateAndPrice({
     code: promoCode, audience: aud, tier: tierKey, amountUSD: amount, userId: user._id,
   });
+  // A 100% promo code (e.g. the one given to App Review) leaves nothing to
+  // charge, and Stripe can't take $0 - activate directly instead.
+  if (finalUSD <= 0) {
+    if (promo) await promoCodeService.recordRedemption(promo._id, user._id);
+    const subscription = await activateSubscription({
+      user, aud, tierKey, billing, days, amountUSD: 0, paymentMethod: undefined, payment: null, def,
+    });
+    return { activated: true, subscription, plan: def, amountUSD: 0, discountUSD };
+  }
+  const inApp = returnTo === 'app';
   const session = await stripeService.createCheckoutSession({
     amountUSD: finalUSD,
     label: `Happy Hour — ${def.label} ${billing}`,
     customerEmail: user.email,
-    successPath: '/subscribe?checkout=success',
-    cancelPath: '/subscribe?checkout=cancel',
+    successPath: inApp ? '/checkout-done?status=success' : '/subscribe?checkout=success',
+    cancelPath: inApp ? '/checkout-done?status=cancel' : '/subscribe?checkout=cancel',
     metadata: {
       kind: 'subscription',
       userId: String(user._id),
@@ -140,6 +153,9 @@ async function finalizeStripeCheckout(session) {
       discountUSD: Number(md.discountUSD || 0),
     },
   });
+  // Stripe retries webhooks; a payment that already activated a membership
+  // must not restart its period.
+  if (await Subscription.exists({ payments: payment._id })) return { payment, alreadyProcessed: true };
   if (md.promoId) await promoCodeService.recordRedemption(md.promoId, user._id);
   const sub = await activateSubscription({
     user, aud, tierKey, billing, days, amountUSD, paymentMethod: 'card', payment, def,

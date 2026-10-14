@@ -97,6 +97,8 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
+  // Partner applications are website-only (App Review 3.1.1: no business sign-up in the app).
+  if (to.path === '/apply' && Capacitor.isNativePlatform()) return { path: '/login' };
   if (to.meta.public) return true;
   if (!auth.isAuthenticated) return { path: '/login' };
   if (!auth.user) { try { await auth.fetchMe(); } catch { return { path: '/login' }; } }
