@@ -12,6 +12,7 @@ const loading = ref(false);
 const error = ref('');
 
 const SUPPORT_EMAIL = 'business9776@gmail.com';
+const inApp = Capacitor.isNativePlatform();
 
 async function submit() {
   loading.value = true;
@@ -64,8 +65,13 @@ async function openPrivacy() {
       </p>
     </form>
 
-    <!-- The public path: any venue can learn how it works and apply -->
-    <div class="mt-10 max-w-sm mx-auto w-full rounded-3xl bg-white/10 border border-white/15 p-5">
+    <!-- In the native app there is no business sign-up at all: App Review counts
+         business registration as access to outside purchases (3.1.1). Venues
+         apply on the website; the app only signs in accounts we issue. -->
+    <p v-if="inApp" class="mt-10 max-w-sm mx-auto w-full text-center text-sm text-cream-50/75 leading-relaxed">
+      This app is for staff of Happy Hour partner venues. Sign-ins are provided by the Happy Hour team.
+    </p>
+    <div v-else class="mt-10 max-w-sm mx-auto w-full rounded-3xl bg-white/10 border border-white/15 p-5">
       <div class="font-semibold">Not a partner yet?</div>
       <p class="text-sm text-cream-50/75 mt-1 leading-relaxed">
         Accounts are issued to venues in the Happy Hour programme. Tell us about your place and we'll get you set up.

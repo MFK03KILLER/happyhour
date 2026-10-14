@@ -15,14 +15,17 @@ import { useAuthStore } from './stores/auth';
 const route = useRoute();
 const flagsStore = useFlagsStore();
 const auth = useAuthStore();
-const showSplash = ref(sessionStorage.getItem('hh_splash_shown') !== '1');
+// The post-checkout page opens inside the native app's browser sheet: no splash,
+// no location prompt there.
+const bare = window.location.pathname.startsWith('/checkout-done');
+const showSplash = ref(!bare && sessionStorage.getItem('hh_splash_shown') !== '1');
 const showOnboarding = ref(false);
 const { coords, status: geoStatus, request: requestGeo } = useGeolocation();
 
 onMounted(() => {
   flagsStore.load();
   usePricingStore().load();
-  if (!coords.value && geoStatus.value !== 'denied') {
+  if (!bare && !coords.value && geoStatus.value !== 'denied') {
     setTimeout(() => requestGeo(), showSplash.value ? 1300 : 200);
   }
   if (auth.isAuthenticated && localStorage.getItem('hh_onboarded') !== '1') {
@@ -36,7 +39,7 @@ function onSplashDone() {
 }
 
 const hideTabs = computed(() => {
-  if (['/login', '/register', '/welcome', '/subscribe'].includes(route.path)) return true;
+  if (['/login', '/register', '/welcome', '/subscribe', '/checkout-done'].includes(route.path)) return true;
   if (route.path.startsWith('/coupons/')) return true;
   if (route.path.startsWith('/merchant-detail/')) return true;
   if (route.path.startsWith('/surprise-bag/')) return true;
@@ -49,7 +52,7 @@ const hideTabs = computed(() => {
 // Hidden on transactional flows (Redeem, Subscribe, Login) so it doesn't
 // distract from a single-step action.
 const showFooter = computed(() => {
-  if (['/login', '/register', '/subscribe'].includes(route.path)) return false;
+  if (['/login', '/register', '/subscribe', '/checkout-done'].includes(route.path)) return false;
   if (route.path.includes('/redeem')) return false;
   if (route.path === '/map') return false;
   return true;

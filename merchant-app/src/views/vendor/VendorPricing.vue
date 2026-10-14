@@ -76,7 +76,9 @@ function tierColor(t) {
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Pricing & Plan</h1>
     <p v-if="!inApp" class="text-ink-500 mt-1">Pick the plan that fits your business — upgrade lifts your active coupon limit, locations, and analytics.</p>
 
-    <div v-if="inApp" class="mt-6 ios-card p-5 text-sm text-ink-700 leading-relaxed">
+    <!-- Venue plans have no card checkout: once payments are live they are
+         arranged with our team (and never sold inside the apps). -->
+    <div v-if="inApp || (!loading && !freeLaunch)" class="mt-6 ios-card p-5 text-sm text-ink-700 leading-relaxed">
       Plans are arranged with the Happy Hour partnerships team, not in the app.
       To change your plan, email <a href="mailto:business9776@gmail.com" class="font-semibold text-teal-700">business9776@gmail.com</a>.
     </div>

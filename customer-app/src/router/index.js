@@ -14,6 +14,7 @@ import ProfileView from '../views/Profile.vue';
 import LoginView from '../views/Login.vue';
 import RegisterView from '../views/Register.vue';
 import SubscribeView from '../views/Subscribe.vue';
+import CheckoutDoneView from '../views/CheckoutDone.vue';
 import PaymentMethodsView from '../views/PaymentMethods.vue';
 import NotificationsView from '../views/Notifications.vue';
 import HelpView from '../views/Help.vue';
@@ -38,6 +39,7 @@ const routes = [
   { path: '/delete-account', component: DeleteAccountInfoView, meta: { public: true } },
   { path: '/', component: HomeView },
   { path: '/subscribe', component: SubscribeView },
+  { path: '/checkout-done', component: CheckoutDoneView, meta: { public: true } },
   { path: '/browse', component: BrowseView },
   { path: '/tonight', component: TonightsDealsView },
   { path: '/surprise-bag/:id', component: SurpriseBagDetailView },

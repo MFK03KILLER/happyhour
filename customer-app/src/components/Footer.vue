@@ -25,6 +25,9 @@ const SUPPORT_EMAIL = 'business9776@gmail.com';
 const STORE_LINKS = { appStore: '', googlePlay: '' };
 const showStores = !Capacitor.isNativePlatform() && (STORE_LINKS.appStore || STORE_LINKS.googlePlay);
 
+// Business sign-up pages stay on the website only: App Review treats business
+// registration inside an app as a route to outside purchases (3.1.1).
+const BUSINESS_ONLY = ['content_company_partner', 'content_company_corporate'];
 const QUICK_LINKS = [
   { label: '2026 Membership', key: 'content_membership_2026' },
   { label: 'VIP Key', key: 'content_membership_vip' },
@@ -35,7 +38,7 @@ const QUICK_LINKS = [
   { label: 'FAQs', key: 'content_help_faqs' },
   { label: 'Rules of Use', key: 'content_help_rules' },
   { label: 'Contact', key: 'content_help_contact' },
-];
+].filter((l) => !(Capacitor.isNativePlatform() && BUSINESS_ONLY.includes(l.key)));
 
 const LEGAL = [
   { label: 'Privacy Policy', key: 'content_legal_privacy' },
