@@ -13,7 +13,7 @@ const siteSettingService = require('../services/siteSettingService');
 
 const REVIEW = {
   email: 'review@happyhour.demo',
-  password: 'Review-MCzmv444!',
+  password: 'HourTest#2026',
   fullName: 'App Review',
   phone: '(415) 555-2077',
 };
