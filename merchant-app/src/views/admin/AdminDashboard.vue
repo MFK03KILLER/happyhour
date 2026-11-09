@@ -44,32 +44,32 @@ function kindLabel(k) {
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
     <p class="text-ink-500 mt-1">Platform overview</p>
 
-    <div v-if="loading" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div v-if="loading" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
       <div v-for="i in 8" :key="i" class="ios-card h-28 animate-pulse"></div>
     </div>
 
     <template v-else-if="stats">
       <div class="mt-6">
         <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold mb-3">Revenue</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="ios-card p-5 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div class="ios-card min-w-0 p-5 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
             <div class="text-xs uppercase tracking-wider font-semibold opacity-80">Today</div>
-            <div class="text-3xl font-bold mt-2">{{ fmt(stats.revenue?.today?.total) }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ fmt(stats.revenue?.today?.total) }}</div>
             <div class="text-xs opacity-80 mt-1">{{ stats.revenue?.today?.count || 0 }} payments</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">This week</div>
-            <div class="text-3xl font-bold mt-2">{{ fmt(stats.revenue?.week?.total) }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ fmt(stats.revenue?.week?.total) }}</div>
             <div class="text-xs text-ink-300 mt-1">{{ stats.revenue?.week?.count || 0 }} payments</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">This month</div>
-            <div class="text-3xl font-bold mt-2">{{ fmt(stats.revenue?.month?.total) }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ fmt(stats.revenue?.month?.total) }}</div>
             <div class="text-xs text-ink-300 mt-1">{{ stats.revenue?.month?.count || 0 }} payments</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">All time</div>
-            <div class="text-3xl font-bold mt-2">{{ fmt(stats.revenue?.allTime?.total) }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ fmt(stats.revenue?.allTime?.total) }}</div>
             <div class="text-xs text-ink-300 mt-1">{{ stats.revenue?.allTime?.count || 0 }} payments</div>
           </div>
         </div>
@@ -77,29 +77,29 @@ function kindLabel(k) {
 
       <div class="mt-8">
         <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold mb-3">Activity</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="ios-card p-5">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Redemptions today</div>
-            <div class="text-3xl font-bold mt-2">{{ stats.todayRedemptions }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ stats.todayRedemptions }}</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Redemptions total</div>
-            <div class="text-3xl font-bold mt-2">{{ stats.totalRedemptions }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ stats.totalRedemptions }}</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Customers</div>
-            <div class="text-3xl font-bold mt-2">{{ stats.totalCustomers }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ stats.totalCustomers }}</div>
           </div>
-          <div class="ios-card p-5">
+          <div class="ios-card min-w-0 p-5">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Merchants</div>
-            <div class="text-3xl font-bold mt-2">{{ stats.totalMerchants }}</div>
+            <div class="text-2xl md:text-3xl font-bold mt-2 truncate">{{ stats.totalMerchants }}</div>
             <div class="text-xs text-ink-300 mt-1">{{ stats.totalVendors }} vendors</div>
           </div>
         </div>
       </div>
 
-      <div class="mt-8 grid md:grid-cols-2 gap-4">
-        <div v-if="stats.topMerchant" class="ios-card p-5">
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <div v-if="stats.topMerchant" class="ios-card min-w-0 p-5">
           <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Top merchant</div>
           <div class="flex items-center gap-3 mt-3">
             <img v-if="stats.topMerchant.merchant.logoUrl" :src="stats.topMerchant.merchant.logoUrl" class="w-12 h-12 rounded-xl object-cover bg-cream-200" />
@@ -110,7 +110,7 @@ function kindLabel(k) {
           </div>
         </div>
 
-        <div class="ios-card p-5">
+        <div class="ios-card min-w-0 p-5">
           <div class="flex items-center justify-between mb-3">
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Recent payments</div>
             <router-link to="/admin/payments" class="text-sm font-semibold text-teal-700">See all →</router-link>
