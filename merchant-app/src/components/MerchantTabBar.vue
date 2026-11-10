@@ -26,7 +26,7 @@ const tabs = computed(() => {
   if (can('manage_hours')) {
     t.push({ to: '/holidays', label: 'Holidays', icon: 'fa-calendar-xmark' });
   }
-  t.push({ to: '/settings', label: 'Store', icon: 'fa-store' });
+  t.push({ to: '/settings', label: 'Account', icon: 'fa-circle-user' });
   return t;
 });
 

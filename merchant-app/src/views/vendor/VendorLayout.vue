@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../../stores/auth';
 import TermsModal from '../../components/TermsModal.vue';
@@ -28,6 +28,11 @@ function can(perm) {
 // Plans are never sold inside the native apps (see VendorPricing.vue).
 const inApp = Capacitor.isNativePlatform();
 const visibleItems = computed(() => items.filter((i) => can(i.perm) && !(inApp && i.to === '/vendor/pricing')));
+// Phones/tablets get the sidebar as a slide-in drawer (the old sideways chip
+// row hid half the menu, and Sign out was a tiny link).
+const menuOpen = ref(false);
+watch(() => route.path, () => { menuOpen.value = false; });
+
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);
 
 async function doLogout() { await auth.logout(); router.push('/login'); }
@@ -35,7 +40,11 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
 
 <template>
   <div class="min-h-screen bg-cream-100 flex">
-    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-cream-200 safe-top">
+    <div v-if="menuOpen" class="md:hidden fixed inset-0 z-40 bg-black/40 animate-fade-in" @click="menuOpen = false"></div>
+    <aside
+      class="flex-col bg-white border-r border-cream-200 safe-top safe-bottom fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto shadow-lift md:static md:z-auto md:w-64 md:max-w-none md:shadow-none md:flex md:flex-shrink-0"
+      :class="menuOpen ? 'flex' : 'hidden'"
+    >
       <div class="px-5 py-4 flex items-center gap-2 border-b border-cream-200">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-white">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 8l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
@@ -70,25 +79,14 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
       </div>
     </aside>
 
-    <main class="flex-1 min-w-0">
-      <header class="md:hidden safe-top px-5 pb-3 pt-3 bg-white border-b border-cream-200 flex items-center justify-between">
-        <div class="font-bold">{{ current.label }}</div>
-        <button @click="doLogout" class="text-xs text-coral-600 font-semibold">Sign out</button>
-      </header>
-      <div class="md:hidden flex gap-2 px-5 py-3 overflow-x-auto scroll-no-bar bg-white border-b border-cream-200">
-        <router-link v-for="i in visibleItems" :key="i.to" :to="i.to"
-          class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
-          :class="route.path === i.to ? 'bg-teal-600 text-white' : 'bg-cream-100 text-ink-700'">
-          {{ i.label }}
-        </router-link>
-      </div>
-      <router-view />
-      <!-- Footer for mobile -->
-      <footer class="md:hidden border-t border-cream-200 mt-4 px-5 py-3 bg-white">
-        <button @click="showTerms = true" class="text-xs text-ink-500 underline">
-          <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
+    <main class="flex-1 min-w-0 overflow-x-clip">
+      <header class="md:hidden sticky top-0 z-30 safe-top px-3 pb-3 bg-white/95 backdrop-blur border-b border-cream-200 flex items-center gap-2">
+        <button type="button" class="w-10 h-10 rounded-full flex items-center justify-center active:bg-cream-200" aria-label="Open menu" @click="menuOpen = true">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-      </footer>
+        <div class="font-bold text-lg truncate flex-1">{{ current.label }}</div>
+      </header>
+      <router-view />
     </main>
     <TermsModal :show="showTerms" audience="merchant" @close="showTerms = false" />
   </div>

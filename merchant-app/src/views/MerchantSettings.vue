@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
@@ -15,6 +15,12 @@ const form = ref(null);
 const showTerms = ref(false);
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
+
+const ROLE_LABELS = {
+  vendor_owner: 'Owner', vendor_manager: 'Manager', vendor_location_manager: 'Location manager',
+  vendor_cashier: 'Cashier', vendor_marketing: 'Marketing', vendor_accountant: 'Accountant',
+};
+const roleLabel = computed(() => ROLE_LABELS[auth.user?.roleSlug] || 'Staff');
 
 const DAYS = [
   { key: 'mon', label: 'Mon' }, { key: 'tue', label: 'Tue' }, { key: 'wed', label: 'Wed' },
@@ -70,8 +76,8 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     <header class="bg-gradient-to-br from-teal-700 to-teal-800 text-white safe-top px-5 pb-8 rounded-b-3xl">
       <div class="pt-2 flex items-center justify-between">
         <div>
-          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">Your location</div>
-          <h1 class="text-2xl font-bold mt-0.5">Store</h1>
+          <div class="text-xs opacity-80 font-semibold uppercase tracking-wider">You &amp; your location</div>
+          <h1 class="text-2xl font-bold mt-0.5">Account</h1>
         </div>
         <button v-if="can('manage_hours') && !editing" @click="openEdit" class="bg-white text-teal-700 px-4 py-2 rounded-full text-sm font-bold active:scale-95">
           <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
@@ -142,6 +148,21 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     </template>
 
     <div v-else-if="merchant" class="px-5 -mt-6 space-y-4">
+      <!-- Who's signed in, first thing on the page: staff couldn't find Sign out
+           when it sat below all the store details. -->
+      <div class="ios-card p-5">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-lg font-bold flex-shrink-0">{{ auth.user?.fullName?.charAt(0) }}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold truncate">{{ auth.user?.fullName }}</div>
+            <div class="text-xs text-ink-500 truncate">{{ auth.user?.email }}</div>
+            <div class="mt-1 chip bg-teal-50 text-teal-700 text-[11px]">{{ roleLabel }}</div>
+          </div>
+        </div>
+        <button @click="doLogout" class="mt-4 w-full rounded-full border border-coral-500/40 text-coral-600 font-semibold py-2.5 active:bg-coral-50">
+          <i class="fa-solid fa-arrow-right-from-bracket mr-1.5"></i>Sign out
+        </button>
+      </div>
       <div class="ios-card overflow-hidden">
         <div class="relative h-32 bg-cream-200">
           <img v-if="merchant.coverImageUrl" :src="merchant.coverImageUrl" class="w-full h-full object-cover" />
@@ -177,23 +198,6 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </div>
       </div>
 
-      <div class="ios-card p-5">
-        <div class="text-xs uppercase font-semibold text-ink-500 tracking-wider">Logged in as</div>
-        <div class="mt-2 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold">{{ auth.user?.fullName?.charAt(0) }}</div>
-          <div class="flex-1 min-w-0">
-            <div class="font-semibold truncate">{{ auth.user?.fullName }}</div>
-            <div class="text-xs text-ink-500 truncate">{{ auth.user?.email }}</div>
-          </div>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-1.5">
-          <span v-for="p in (auth.user?.permissions || [])" :key="p" class="chip bg-cream-200 text-ink-500 text-[10px]">{{ p.replace(/_/g, ' ') }}</span>
-        </div>
-      </div>
-
-      <button @click="doLogout" class="ios-card w-full p-4 text-coral-600 font-semibold active:bg-cream-100 text-center">
-        Sign out
-      </button>
 
       <button @click="showTerms = true" class="block mx-auto text-xs text-ink-500 underline pt-2">
         <i class="fa-regular fa-file-lines mr-1"></i>Merchant Terms of Service
