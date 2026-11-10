@@ -5,6 +5,8 @@ const deliveryCtrl = require('../controllers/deliveryController');
 const { authenticate, authorize, requirePermission } = require('../middlewares/auth');
 const requireFeature = require('../middlewares/featureFlag');
 const { writeLimiter } = require('../middlewares/rateLimit');
+const validate = require('../middlewares/validate');
+const { teamCreateSchema, teamUpdateSchema } = require('../validators/vendorValidators');
 
 router.use(authenticate(), authorize('vendor'));
 
@@ -45,8 +47,8 @@ router.delete('/coupons/:id', requirePermission('manage_coupons'), writeLimiter,
 
 router.get('/roles', requirePermission('view_team'), ctrl.listRoles);
 router.get('/team', requirePermission('view_team'), ctrl.listTeam);
-router.post('/team', requirePermission('manage_team'), writeLimiter, ctrl.createTeamMember);
-router.put('/team/:id', requirePermission('manage_team'), writeLimiter, ctrl.updateTeamMember);
+router.post('/team', requirePermission('manage_team'), writeLimiter, validate(teamCreateSchema), ctrl.createTeamMember);
+router.put('/team/:id', requirePermission('manage_team'), writeLimiter, validate(teamUpdateSchema), ctrl.updateTeamMember);
 router.delete('/team/:id', requirePermission('manage_team'), writeLimiter, ctrl.removeTeamMember);
 
 router.get('/holidays', ctrl.listHolidays);

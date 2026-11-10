@@ -83,7 +83,7 @@ function reset() {
           <div class="text-2xl font-bold mt-0.5">{{ auth.user?.fullName }}</div>
           <div v-if="venue?.name" class="text-sm opacity-80 mt-0.5">{{ venue.name }}</div>
         </div>
-        <button @click="signOut" class="text-xs opacity-80 active:opacity-50">Sign out</button>
+        <button @click="signOut" class="flex-shrink-0 bg-white/15 border border-white/20 rounded-full px-3.5 py-1.5 text-xs font-semibold active:bg-white/25"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign out</button>
       </div>
     </header>
 

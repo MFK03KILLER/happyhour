@@ -9,6 +9,8 @@ const loading = ref(true);
 const showForm = ref(false);
 const editing = ref(null);
 const lastCreated = ref(null);
+const saving = ref(false);
+const formError = ref('');
 
 function blankForm() {
   return { fullName: '', email: '', password: '', merchantId: '', roleSlug: 'vendor_cashier' };
@@ -29,7 +31,7 @@ async function load() {
   } finally { loading.value = false; }
 }
 
-function openNew() { editing.value = null; form.value = blankForm(); showForm.value = true; }
+function openNew() { editing.value = null; form.value = blankForm(); formError.value = ''; showForm.value = true; }
 function openEdit(u) {
   editing.value = u;
   form.value = {
@@ -39,22 +41,43 @@ function openEdit(u) {
     merchantId: u.merchantId?._id || u.merchantId || '',
     roleSlug: u.roleSlug || 'vendor_cashier',
   };
+  formError.value = '';
   showForm.value = true;
 }
 
+// Checked here, not by the browser: iOS shows no validation bubbles, so a bad
+// field used to make "Add member" do nothing at all.
+function validate() {
+  const f = form.value;
+  if (!f.fullName.trim()) return "Enter the member's full name.";
+  if (!editing.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) return 'Enter a valid email address.';
+  if ((!editing.value || f.password) && f.password.length < 8) return 'The password needs at least 8 characters (tap Generate).';
+  if (!f.roleSlug) return 'Choose a role.';
+  return '';
+}
+
 async function save() {
-  const payload = { ...form.value };
+  formError.value = validate();
+  if (formError.value) return;
+  const payload = { ...form.value, fullName: form.value.fullName.trim(), email: form.value.email.trim().toLowerCase() };
   if (!payload.merchantId) delete payload.merchantId;
-  if (editing.value) {
-    if (!payload.password) delete payload.password;
-    delete payload.email;
-    await client.put(`/vendor/team/${editing.value._id}`, payload);
-  } else {
-    await client.post('/vendor/team', payload);
-    lastCreated.value = { email: form.value.email, password: form.value.password, name: form.value.fullName };
+  saving.value = true;
+  try {
+    if (editing.value) {
+      if (!payload.password) delete payload.password;
+      delete payload.email;
+      await client.put(`/vendor/team/${editing.value._id}`, payload, { silent: true });
+    } else {
+      await client.post('/vendor/team', payload, { silent: true });
+      lastCreated.value = { email: payload.email, password: form.value.password, name: payload.fullName };
+    }
+    showForm.value = false;
+    await load();
+  } catch (e) {
+    formError.value = e.response?.data?.error?.message || 'Could not save. Check your connection and try again.';
+  } finally {
+    saving.value = false;
   }
-  showForm.value = false;
-  await load();
 }
 
 async function del(id) {
@@ -130,7 +153,7 @@ onMounted(load);
           <div class="text-xl font-bold">{{ editing ? 'Edit member' : 'Add member' }}</div>
           <button @click="showForm = false" class="text-ink-500">Cancel</button>
         </div>
-        <form @submit.prevent="save" class="space-y-3">
+        <form @submit.prevent="save" novalidate class="space-y-3">
           <input v-model="form.fullName" class="input" placeholder="Full name" required />
           <input v-model="form.email" type="email" class="input" placeholder="Email" :disabled="!!editing" required />
           <div class="flex gap-2">
@@ -157,7 +180,8 @@ onMounted(load);
             </label>
           </div>
 
-          <button type="submit" class="ios-button-primary w-full mt-2">{{ editing ? 'Save changes' : 'Add member' }}</button>
+          <div v-if="formError" class="rounded-2xl bg-coral-500/10 border border-coral-500/30 px-4 py-3 text-sm text-coral-700">{{ formError }}</div>
+          <button type="submit" :disabled="saving" class="ios-button-primary w-full mt-2 disabled:opacity-60">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Add member') }}</button>
         </form>
       </div>
     </div>

@@ -76,22 +76,29 @@ exports.listTeam = asyncHandler(async (req, res) => {
   res.json({ items });
 });
 
+// A team member may only get one of this vendor's roles, and only one of its
+// own locations - never another vendor's.
+async function assertTeamRole(vendorId, roleSlug) {
+  const roles = await roleService.listAvailable(vendorId);
+  if (!roles.some((r) => r.slug === roleSlug)) throw new NotFoundError('Role not found');
+  return roleService.permissionsForRole(roleSlug);
+}
+async function assertOwnLocation(vendorId, merchantId) {
+  if (!merchantId) return;
+  const m = await merchantService.getById(merchantId).catch(() => null);
+  const owner = m && (m.vendorId?._id || m.vendorId);
+  if (!owner || owner.toString() !== vendorId.toString()) throw new NotFoundError('Location not found');
+}
+
 exports.createTeamMember = asyncHandler(async (req, res) => {
   const vendorId = ensureVendor(req);
-  const { email, password, fullName, merchantId, roleSlug, permissions } = req.body;
+  const { email, password, fullName, merchantId, roleSlug } = req.body;
   const existing = await userRepo.findByEmail(email);
   if (existing) throw new ConflictError('Email already in use');
+  await assertOwnLocation(vendorId, merchantId);
+  const perms = await assertTeamRole(vendorId, roleSlug);
+  const chosenRole = roleSlug;
   const passwordHash = await bcrypt.hash(password, 12);
-  let perms = permissions;
-  let chosenRole = roleSlug;
-  if (roleSlug) {
-    perms = await roleService.permissionsForRole(roleSlug);
-    if (!perms.length) throw new NotFoundError('Role not found');
-  }
-  if (!perms || !perms.length) {
-    chosenRole = 'vendor_cashier';
-    perms = await roleService.permissionsForRole('vendor_cashier');
-  }
   const user = await userRepo.create({
     email, passwordHash, fullName,
     role: 'merchant_staff',
@@ -109,15 +116,21 @@ exports.updateTeamMember = asyncHandler(async (req, res) => {
   const user = await userRepo.findById(req.params.id);
   if (!user) throw new NotFoundError('User not found');
   if (user.vendorId?.toString() !== vendorId.toString()) throw new ForbiddenError('Not in your team');
+  const self = user._id.toString() === req.user._id.toString();
   const update = {};
   if (req.body.fullName) update.fullName = req.body.fullName;
-  if (req.body.merchantId !== undefined) update.merchantId = req.body.merchantId || undefined;
-  if (req.body.status) update.status = req.body.status;
-  if (req.body.roleSlug) {
-    const perms = await roleService.permissionsForRole(req.body.roleSlug);
-    if (!perms.length) throw new NotFoundError('Role not found');
+  if (req.body.merchantId !== undefined) {
+    await assertOwnLocation(vendorId, req.body.merchantId);
+    update.merchantId = req.body.merchantId || undefined;
+  }
+  if (req.body.status) {
+    if (self) throw new ForbiddenError("You can't suspend your own account");
+    update.status = req.body.status;
+  }
+  if (req.body.roleSlug && req.body.roleSlug !== user.roleSlug) {
+    if (self) throw new ForbiddenError("You can't change your own role");
+    update.permissions = await assertTeamRole(vendorId, req.body.roleSlug);
     update.roleSlug = req.body.roleSlug;
-    update.permissions = perms;
   }
   if (req.body.password) update.passwordHash = await bcrypt.hash(req.body.password, 12);
   const updated = await userRepo.update(req.params.id, update);
@@ -182,6 +195,7 @@ exports.removeTeamMember = asyncHandler(async (req, res) => {
   const user = await userRepo.findById(req.params.id);
   if (!user) throw new NotFoundError('User not found');
   if (user.vendorId?.toString() !== vendorId.toString()) throw new ForbiddenError('Not in your team');
+  if (user._id.toString() === req.user._id.toString()) throw new ForbiddenError("You can't remove your own account");
   await userRepo.delete(req.params.id);
   res.status(204).end();
 });

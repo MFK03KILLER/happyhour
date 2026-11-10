@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/auth';
 import { useFlagsStore } from './stores/flags';
 import MerchantTabBar from './components/MerchantTabBar.vue';
 import AcceptMerchantTermsGate from './components/AcceptMerchantTermsGate.vue';
+import Notifier from './components/Notifier.vue';
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -30,6 +31,7 @@ const wideRoute = computed(() => ['/admin', '/vendor', '/login', '/apply'].some(
     </div>
     <MerchantTabBar v-if="showTabs" />
     <AcceptMerchantTermsGate />
+    <Notifier />
   </div>
 </template>
 

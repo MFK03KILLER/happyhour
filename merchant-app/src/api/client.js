@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import { notify, apiErrorMessage } from '../lib/notify';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api/v1';
 
@@ -54,6 +55,9 @@ client.interceptors.response.use(
         isRefreshing = false;
       }
     }
+    // A failed save/delete must never fail silently (pass { silent: true } to opt out).
+    const method = (original?.method || 'get').toLowerCase();
+    if (method !== 'get' && !original?.silent && error.response?.status !== 401) notify(apiErrorMessage(error));
     return Promise.reject(error);
   }
 );
