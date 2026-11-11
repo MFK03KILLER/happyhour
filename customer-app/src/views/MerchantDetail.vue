@@ -163,7 +163,7 @@ function offPeakLabel() {
       <img :src="merchant.coverImageUrl || merchant.logoUrl" class="w-full h-64 object-cover" />
       <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
-      <button @click="goBack(router)" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
+      <button @click="goBack(router)" aria-label="Back" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
         <i class="fa-solid fa-arrow-left text-ink-900"></i>
       </button>
       <button class="absolute top-[max(env(safe-area-inset-top),16px)] right-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
