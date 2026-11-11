@@ -66,7 +66,12 @@ const router = createRouter({
     ? createWebHashHistory()
     : createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior: () => ({ top: 0 }),
+  // Pages swap with an out-in fade (App.vue), so scroll only once the old page
+  // has left - otherwise the new page opened at the old page's scroll offset
+  // (Back landed on Home's footer). Back/forward returns to where you were.
+  scrollBehavior: (to, from, saved) => new Promise((resolve) => {
+    setTimeout(() => resolve(saved || { top: 0 }), 260);
+  }),
 });
 
 // Browsing is open to everyone (App Review 5.1.1(v)). Only account features -
