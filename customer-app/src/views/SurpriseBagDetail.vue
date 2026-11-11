@@ -165,6 +165,10 @@ function savings() {
 </script>
 
 <template>
+  <!-- One root element: <Transition mode="out-in"> in App.vue can only animate a
+       single root; with several, leaving this page never finished and Back showed
+       an empty Home. -->
+  <div>
   <div v-if="loading" class="p-6"><div class="h-72 bg-cream-200 rounded-3xl animate-pulse"></div></div>
   <div v-else-if="bag" class="pb-32">
     <div class="relative">
@@ -308,5 +312,6 @@ function savings() {
       @confirm="onConfirm"
       @close="showPay = false"
     />
+  </div>
   </div>
 </template>

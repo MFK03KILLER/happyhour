@@ -153,6 +153,10 @@ function offPeakLabel() {
 </script>
 
 <template>
+  <!-- One root element: <Transition mode="out-in"> in App.vue can only animate a
+       single root; with several, leaving this page never finished and Back showed
+       an empty Home. -->
+  <div>
   <div v-if="loading" class="p-6 safe-top">
     <div class="h-72 bg-cream-200 rounded-3xl animate-pulse mb-4"></div>
     <div class="h-32 bg-cream-200 rounded-2xl animate-pulse"></div>
@@ -363,4 +367,5 @@ function offPeakLabel() {
         </div>
       </div>
     </div>
+  </div>
 </template>
