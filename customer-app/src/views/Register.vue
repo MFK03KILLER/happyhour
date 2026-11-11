@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
@@ -47,7 +48,7 @@ async function submit() {
 
 <template>
   <div class="min-h-screen flex flex-col safe-top px-6 pb-10">
-    <button @click="$router.back()" class="mt-3 w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
+    <button @click="goBack($router)" class="mt-3 w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
     </button>
     <h1 class="mt-6 text-3xl font-bold tracking-tight">Create your account</h1>

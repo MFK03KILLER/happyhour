@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 import { onMounted, onUnmounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
@@ -148,7 +149,7 @@ onUnmounted(stopAll);
 <template>
   <div class="min-h-screen flex flex-col bg-gradient-to-b from-teal-700 via-teal-800 to-ink-900 text-white safe-top">
     <header class="px-5 pt-4 flex items-center justify-between">
-      <button @click="router.back()" class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center active:scale-95">
+      <button @click="goBack(router)" class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center active:scale-95">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
       <div class="font-semibold">Show to merchant</div>

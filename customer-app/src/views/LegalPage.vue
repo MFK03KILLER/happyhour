@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 // Public, crawlable legal pages: /privacy, /terms, /eula.
 // Linked from the Google Play / App Store listings, so they must work without login.
 import { onMounted, ref, computed } from 'vue';
@@ -41,7 +42,7 @@ onMounted(async () => {
   } finally { loading.value = false; }
 });
 
-function goBack() { if (window.history.length > 1) router.back(); else router.push('/welcome'); }
+function goBack() { if (window.history.length > 1) goBack(router); else router.push('/welcome'); }
 </script>
 
 <template>

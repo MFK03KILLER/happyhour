@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
@@ -119,7 +120,7 @@ function goMerchant(m) { router.push(`/merchant-detail/${m._id}`); }
         <div class="text-4xl mb-3">🗺️</div>
         <div class="font-bold">{{ error }}</div>
         <p class="text-sm text-ink-500 mt-1">Ask the admin to enable Maps.</p>
-        <button @click="router.back()" class="mt-4 ios-button-primary">Go back</button>
+        <button @click="goBack(router)" class="mt-4 ios-button-primary">Go back</button>
       </div>
     </div>
 
@@ -129,7 +130,7 @@ function goMerchant(m) { router.push(`/merchant-detail/${m._id}`); }
 
       <!-- Top bar -->
       <header class="absolute top-0 inset-x-0 z-[1000] safe-top p-3 flex items-center gap-2 pointer-events-none">
-        <button @click="router.back()" class="w-11 h-11 rounded-full bg-white shadow-lift flex items-center justify-center active:scale-95 pointer-events-auto">
+        <button @click="goBack(router)" class="w-11 h-11 rounded-full bg-white shadow-lift flex items-center justify-center active:scale-95 pointer-events-auto">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <div class="bg-white rounded-full shadow-lift px-4 py-2.5 flex-1 pointer-events-auto flex items-center gap-2">
