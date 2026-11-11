@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Capacitor } from '@capacitor/core';
@@ -220,7 +221,7 @@ function pickTier(t) {
 <template>
   <div class="min-h-screen pb-12 safe-top bg-cream-100">
     <header class="px-5 pt-4 pb-3 flex items-center bg-white border-b border-cream-200">
-      <button @click="router.back()" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
+      <button @click="goBack(router)" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="flex-1 text-center font-semibold -ml-8">Membership</div>

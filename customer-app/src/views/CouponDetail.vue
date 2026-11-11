@@ -1,4 +1,5 @@
 <script setup>
+import { goBack } from '../utils/goBack';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client from '../api/client';
@@ -84,7 +85,7 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
     <div class="relative">
       <img :src="coupon.heroImageUrl" :alt="coupon.title" class="w-full h-80 object-cover" />
       <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent"></div>
-      <button @click="router.back()" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
+      <button @click="goBack(router)" class="absolute top-[max(env(safe-area-inset-top),16px)] left-4 w-11 h-11 rounded-full glass flex items-center justify-center active:scale-95">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="absolute -bottom-6 left-5 right-5">
