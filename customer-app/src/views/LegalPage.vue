@@ -42,13 +42,13 @@ onMounted(async () => {
   } finally { loading.value = false; }
 });
 
-function goBack() { if (window.history.length > 1) goBack(router); else router.push('/welcome'); }
+function back() { goBack(router, '/welcome'); }
 </script>
 
 <template>
   <div class="min-h-screen bg-cream-100 safe-top pb-16">
     <header class="px-5 pt-4 pb-3 flex items-center bg-white border-b border-cream-200">
-      <button @click="goBack" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200" aria-label="Back">
+      <button @click="back" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200" aria-label="Back">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="flex-1 text-center font-semibold -ml-8">{{ title }}</div>
