@@ -12,6 +12,8 @@ router.use(authenticate(), authorize('merchant_staff'));
 router.get('/me', ctrl.me);
 router.put('/me', requirePermission('manage_hours'), writeLimiter, ctrl.updateMe);
 
+// Pause/resume this location's happy hour (only venues the admin allowed).
+router.put('/happy-hour', requirePermission('manage_hours'), writeLimiter, ctrl.setHappyHourPause);
 router.post('/scan', requirePermission('scan_coupons'), scanLimiter, validate(scanSchema), ctrl.scan);
 
 router.get('/redemptions', requirePermission('view_stats'), ctrl.recent);

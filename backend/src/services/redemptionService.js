@@ -85,6 +85,12 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
   }
   const customer = await userRepo.findById(redemption.customerId._id);
   const couponService = require('./couponService');
+  const scanningVenue = await merchantRepo.findById(merchantId);
+  if (scanningVenue?.happyHourPausedUntil && scanningVenue.happyHourPausedUntil > new Date()) {
+    const err = new BadRequestError('Happy hour is paused at this location. Turn it back on in the app to redeem.');
+    err.code = 'HAPPY_HOUR_PAUSED';
+    throw err;
+  }
   // Test-mode accounts (internal QA) may redeem at any time, ignoring the
   // happy-hour active-time window and holiday blackout dates.
   if (!(customer && customer.testMode) && !couponService.couponIsActiveNow(coupon)) {

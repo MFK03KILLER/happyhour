@@ -26,6 +26,22 @@ exports.me = asyncHandler(async (req, res) => {
   res.json({ user: req.user });
 });
 
+// After an Apple/Google sign-up: optional phone + marketing consent, and a
+// password so the account also works where that sign-in isn't offered (the
+// desktop website has no Sign in with Apple button on Windows, etc).
+exports.completeProfile = asyncHandler(async (req, res) => {
+  const bcrypt = require('bcryptjs');
+  const User = require('../models/User');
+  const user = await User.findById(req.user._id);
+  const { phone, marketingEmail, marketingSms, password } = req.body;
+  if (phone !== undefined) user.phone = phone || undefined;
+  user.marketingOptIn = { email: !!marketingEmail, sms: !!marketingSms && !!(phone || user.phone), updatedAt: new Date() };
+  if (password) user.passwordHash = await bcrypt.hash(password, 12);
+  user.profileCompletedAt = new Date();
+  await user.save();
+  res.json({ user });
+});
+
 exports.changePassword = asyncHandler(async (req, res) => {
   await authService.changePassword(req.user._id, req.body.currentPassword, req.body.newPassword);
   res.status(204).end();

@@ -38,7 +38,15 @@ const deleteAccountSchema = z.object({
   reason: z.string().max(300).optional(),
 });
 
+const completeProfileSchema = z.object({
+  phone: z.string().trim().max(20).regex(/^[0-9+()-s.]*$/, 'Enter a valid phone number').optional(),
+  marketingEmail: z.boolean().optional(),
+  marketingSms: z.boolean().optional(),
+  password: z.string().min(8, 'Password needs at least 8 characters').max(128).optional(),
+});
+
 module.exports = {
+  completeProfileSchema,
   deleteAccountSchema,
   registerSchema,
   loginSchema,

@@ -145,6 +145,16 @@ async function claim({ customerId, couponId }) {
   if (coupon.validUntil < new Date()) throw new BadRequestError('Coupon expired');
   const claimingUser = await User.findById(customerId);
   if (!claimingUser) throw new NotFoundError('User not found');
+  // A venue may pause its happy hour; an offer is claimable while any of its
+  // locations is not paused.
+  if (coupon.merchantIds?.length) {
+    const open = await Merchant.countDocuments({ _id: { $in: coupon.merchantIds }, $or: [{ happyHourPausedUntil: null }, { happyHourPausedUntil: { $lte: new Date() } }] });
+    if (!open) {
+      const err = new BadRequestError('This venue has paused happy hour for now. Please try again later.');
+      err.code = 'HAPPY_HOUR_PAUSED';
+      throw err;
+    }
+  }
   // Test-mode accounts skip the holiday blackout + active-subscription gates.
   if (!claimingUser.testMode) {
     const holidayInfo = await holidayInfoForCoupon(coupon);

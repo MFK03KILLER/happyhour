@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import { saveResponse, readResponse, clearOfflineCache } from './offlineCache';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api/v1';
 
@@ -9,6 +10,7 @@ const client = axios.create({
 });
 
 function clearSession() {
+  clearOfflineCache();
   localStorage.removeItem('hh_access_token');
   localStorage.removeItem('hh_refresh_token');
 }
@@ -42,10 +44,35 @@ function flushQueue(error, token) {
   pendingRequests = [];
 }
 
+let offlineNoticeAt = 0;
+function noticeOffline() {
+  if (Date.now() - offlineNoticeAt < 20000) return;
+  offlineNoticeAt = Date.now();
+  window.dispatchEvent(new CustomEvent('hh-offline'));
+}
+
 client.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    if ((r.config.method || 'get') === 'get') saveResponse(r.config, r.data);
+    return r;
+  },
   async (error) => {
     const original = error.config;
+    // Weak connection: retry a read once, then fall back to the last copy we saw.
+    const isRead = original && (original.method || 'get') === 'get';
+    const flaky = !error.response || error.response.status >= 500;
+    if (isRead && flaky) {
+      if (!original._netRetry) {
+        original._netRetry = true;
+        await new Promise((r) => setTimeout(r, 900));
+        return client(original);
+      }
+      const cached = readResponse(original);
+      if (cached !== null) {
+        noticeOffline();
+        return { data: cached, status: 200, statusText: 'OK (saved copy)', headers: {}, config: original, fromCache: true };
+      }
+    }
     if (error.response && error.response.status === 401 && !original._retry) {
       const refreshToken = localStorage.getItem('hh_refresh_token');
       if (!refreshToken) {

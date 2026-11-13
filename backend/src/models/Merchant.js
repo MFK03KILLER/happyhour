@@ -39,6 +39,10 @@ const merchantSchema = new mongoose.Schema({
   phone: String,
   website: String,
   acceptsNFC: { type: Boolean, default: true },
+  // Admin grants a venue the right to pause its own happy hour (busy hour etc).
+  canPauseHappyHour: { type: Boolean, default: false },
+  // While in the future, the venue's offers can't be claimed or scanned.
+  happyHourPausedUntil: { type: Date, default: null },
   rating: { type: Number, default: 0, min: 0, max: 5 },
   ratingCount: { type: Number, default: 0 },
   priceLevel: { type: Number, default: 2, min: 1, max: 4 },

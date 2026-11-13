@@ -24,6 +24,13 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
   passwordHash: String,
   phone: String,
+  // Marketing consent, asked after an Apple/Google sign-up (optional).
+  marketingOptIn: {
+    email: { type: Boolean, default: false },
+    sms: { type: Boolean, default: false },
+    updatedAt: Date,
+  },
+  profileCompletedAt: Date,
   fullName: { type: String, required: true },
   avatarUrl: String,
   authProvider: { type: String, enum: ['password', 'google', 'apple'], default: 'password' },
@@ -70,6 +77,7 @@ const userSchema = new mongoose.Schema({
 
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
+  obj.hasPassword = !!obj.passwordHash;
   delete obj.passwordHash;
   delete obj.refreshTokens;
   return obj;

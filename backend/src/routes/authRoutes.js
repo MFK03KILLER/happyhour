@@ -8,6 +8,7 @@ const {
   loginSchema,
   refreshSchema,
   changePasswordSchema,
+  completeProfileSchema,
   googleSignInSchema,
   appleSignInSchema,
   deleteAccountSchema,
@@ -94,6 +95,7 @@ router.get('/me', authenticate(), ctrl.me);
  *     summary: Change current user's password
  *     security: [{ bearerAuth: [] }]
  */
+router.post('/complete-profile', authenticate(), validate(completeProfileSchema), ctrl.completeProfile);
 router.post('/change-password', authenticate(), validate(changePasswordSchema), ctrl.changePassword);
 
 /**

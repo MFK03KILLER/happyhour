@@ -34,6 +34,20 @@ exports.stats = asyncHandler(async (req, res) => {
   res.json(data);
 });
 
+exports.setHappyHourPause = asyncHandler(async (req, res) => {
+  const merchantId = ensureMerchant(req);
+  const Merchant = require('../models/Merchant');
+  const m = await Merchant.findById(merchantId);
+  if (!m.canPauseHappyHour) {
+    return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Pausing happy hour is not enabled for this location. Contact Happy Hour support.' } });
+  }
+  const minutes = Number(req.body.minutes) || 0;           // 0 = turn back on
+  if (minutes < 0 || minutes > 24 * 60) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Pause between 0 and 24 hours' } });
+  m.happyHourPausedUntil = minutes ? new Date(Date.now() + minutes * 60000) : null;
+  await m.save();
+  res.json({ happyHourPausedUntil: m.happyHourPausedUntil, canPauseHappyHour: true });
+});
+
 exports.me = asyncHandler(async (req, res) => {
   const merchantId = ensureMerchant(req);
   const m = await merchantService.getById(merchantId);

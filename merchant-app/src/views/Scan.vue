@@ -27,6 +27,26 @@ async function loadHome() {
   await Promise.allSettled(jobs);
 }
 onMounted(loadHome);
+
+// Pause happy hour (only for venues the Happy Hour admin allowed).
+const pausing = ref(false);
+const pausedUntil = computed(() => {
+  const t = venue.value?.happyHourPausedUntil;
+  return t && new Date(t) > new Date() ? new Date(t) : null;
+});
+const canPause = computed(() => !!venue.value?.canPauseHappyHour && can('manage_hours'));
+async function setPause(minutes) {
+  if (minutes && !window.confirm("Pause happy hour? Customers won't be able to claim or redeem your offers until it's back on.")) return;
+  pausing.value = true;
+  try {
+    const { data } = await client.put('/merchant/happy-hour', { minutes });
+    venue.value = { ...venue.value, happyHourPausedUntil: data.happyHourPausedUntil };
+  } finally { pausing.value = false; }
+}
+function endOfDayMinutes() {
+  const end = new Date(); end.setHours(23, 59, 0, 0);
+  return Math.max(1, Math.round((end - Date.now()) / 60000));
+}
 const recent = computed(() => (stats.value?.recent || []).slice(0, 3));
 function when(d) {
   const t = new Date(d);
@@ -98,6 +118,24 @@ function reset() {
         <div class="text-xl font-bold">Scan a customer QR</div>
         <div class="text-sm opacity-80">Tap to open camera</div>
       </button>
+
+      <div v-if="canPause" class="ios-card p-5" :class="pausedUntil && 'border-2 border-amber-300 bg-amber-50'">
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">Happy hour</div>
+            <div class="font-bold mt-0.5" :class="pausedUntil ? 'text-amber-800' : 'text-teal-700'">
+              {{ pausedUntil ? 'Paused until ' + pausedUntil.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'On — customers can redeem' }}
+            </div>
+          </div>
+          <button v-if="pausedUntil" :disabled="pausing" class="ios-button-primary py-2 px-4 text-sm disabled:opacity-60" @click="setPause(0)">Turn on</button>
+        </div>
+        <div v-if="!pausedUntil" class="mt-3 grid grid-cols-3 gap-2">
+          <button :disabled="pausing" class="ios-card py-2.5 text-sm font-semibold text-amber-800 active:scale-95" @click="setPause(60)">Pause 1h</button>
+          <button :disabled="pausing" class="ios-card py-2.5 text-sm font-semibold text-amber-800 active:scale-95" @click="setPause(120)">Pause 2h</button>
+          <button :disabled="pausing" class="ios-card py-2.5 text-sm font-semibold text-amber-800 active:scale-95" @click="setPause(endOfDayMinutes())">Rest of day</button>
+        </div>
+        <p class="mt-2 text-xs text-ink-500">While paused, your offers can't be claimed or scanned. It turns back on by itself.</p>
+      </div>
 
       <div v-if="stats" class="grid grid-cols-3 gap-3">
         <router-link to="/stats" class="ios-card p-4 text-center active:scale-[.98] transition">
