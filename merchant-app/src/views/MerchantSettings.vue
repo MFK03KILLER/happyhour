@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import TermsModal from '../components/TermsModal.vue';
+import ChangePasswordSheet from '../components/ChangePasswordSheet.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -13,6 +14,7 @@ const editing = ref(false);
 const saving = ref(false);
 const form = ref(null);
 const showTerms = ref(false);
+const showPw = ref(false);
 
 function can(p) { return (auth.user?.permissions || []).includes(p); }
 
@@ -159,7 +161,8 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
             <div class="mt-1 chip bg-teal-50 text-teal-700 text-[11px]">{{ roleLabel }}</div>
           </div>
         </div>
-        <button @click="doLogout" class="mt-4 w-full rounded-full border border-coral-500/40 text-coral-600 font-semibold py-2.5 active:bg-coral-50">
+        <button @click="showPw = true" class="mt-4 w-full rounded-full border border-teal-600/30 text-teal-700 font-semibold py-2.5 active:bg-teal-50"><i class="fa-solid fa-key mr-1.5"></i>Change password</button>
+        <button @click="doLogout" class="mt-2 w-full rounded-full border border-coral-500/40 text-coral-600 font-semibold py-2.5 active:bg-coral-50">
           <i class="fa-solid fa-arrow-right-from-bracket mr-1.5"></i>Sign out
         </button>
       </div>
@@ -205,5 +208,6 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     </div>
 
     <TermsModal :show="showTerms" audience="merchant" @close="showTerms = false" />
+    <ChangePasswordSheet v-if="showPw" @close="showPw = false" />
   </div>
 </template>

@@ -16,6 +16,9 @@ import RegisterView from '../views/Register.vue';
 import SubscribeView from '../views/Subscribe.vue';
 import CheckoutDoneView from '../views/CheckoutDone.vue';
 import CompleteAccountView from '../views/CompleteAccount.vue';
+import ForgotPasswordView from '../views/ForgotPassword.vue';
+import ResetPasswordView from '../views/ResetPassword.vue';
+import ChangePasswordView from '../views/ChangePassword.vue';
 import PaymentMethodsView from '../views/PaymentMethods.vue';
 import NotificationsView from '../views/Notifications.vue';
 import HelpView from '../views/Help.vue';
@@ -41,6 +44,9 @@ const routes = [
   { path: '/', component: HomeView },
   { path: '/subscribe', component: SubscribeView },
   { path: '/complete-account', component: CompleteAccountView },
+  { path: '/forgot-password', component: ForgotPasswordView, meta: { public: true } },
+  { path: '/reset-password', component: ResetPasswordView, meta: { public: true } },
+  { path: '/profile/password', component: ChangePasswordView },
   { path: '/checkout-done', component: CheckoutDoneView, meta: { public: true } },
   { path: '/browse', component: BrowseView },
   { path: '/tonight', component: TonightsDealsView },

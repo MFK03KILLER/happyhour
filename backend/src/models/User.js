@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema({
     updatedAt: Date,
   },
   profileCompletedAt: Date,
+  // Forgot-password: sha256 of the emailed token, single use.
+  resetTokenHash: { type: String, select: false },
+  resetTokenExpires: Date,
   fullName: { type: String, required: true },
   avatarUrl: String,
   authProvider: { type: String, enum: ['password', 'google', 'apple'], default: 'password' },

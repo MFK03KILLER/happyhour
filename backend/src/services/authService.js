@@ -102,10 +102,58 @@ async function logout(userId, refreshToken) {
 async function changePassword(userId, currentPassword, newPassword) {
   const user = await userRepo.findById(userId);
   if (!user) throw new BadRequestError('User not found');
-  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
-  if (!ok) throw new UnauthorizedError('Current password incorrect');
+  // Accounts created with Apple/Google have no password yet: set one directly.
+  if (user.passwordHash) {
+    const ok = await bcrypt.compare(currentPassword || '', user.passwordHash);
+    if (!ok) throw new BadRequestError('Your current password is incorrect');
+  }
+  if ((currentPassword || '') === newPassword) throw new BadRequestError('Choose a password different from the current one');
   user.passwordHash = await bcrypt.hash(newPassword, 12);
   await user.save();
+}
+
+const RESET_TTL_MS = 30 * 60 * 1000;
+const sha256 = (v) => require('crypto').createHash('sha256').update(v).digest('hex');
+
+// Always answers the same way, whether or not the email has an account.
+async function requestPasswordReset(email) {
+  const User = require('../models/User');
+  const mail = require('./mailService');
+  const user = await User.findOne({ email: String(email || '').trim().toLowerCase(), status: 'active' });
+  if (!user) return;
+  const token = require('crypto').randomBytes(32).toString('hex');
+  user.resetTokenHash = sha256(token);
+  user.resetTokenExpires = new Date(Date.now() + RESET_TTL_MS);
+  await user.save();
+  const link = `https://happyhourz.org/reset-password?token=${token}`;
+  await mail.send({
+    to: user.email,
+    subject: 'Reset your Happy Hour password',
+    text: `Hi ${user.fullName || ''},
+
+Tap the link below to choose a new password. It works for 30 minutes.
+
+${link}
+
+If you didn't ask for this, ignore this email - your password stays the same.
+
+Happy Hour`,
+    html: `<p>Hi ${user.fullName || ''},</p><p>Tap the button below to choose a new password. It works for 30 minutes.</p><p><a href="${link}" style="display:inline-block;background:#0E5C5C;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:600">Choose a new password</a></p><p style="color:#666">If you didn't ask for this, ignore this email - your password stays the same.</p><p>Happy Hour</p>`,
+  }).catch((err) => require('../utils/logger').error({ err }, 'reset email failed'));
+}
+
+async function resetPassword(token, newPassword) {
+  const User = require('../models/User');
+  const user = await User.findOne({ resetTokenHash: sha256(String(token || '')), resetTokenExpires: { $gt: new Date() } }).select('+resetTokenHash');
+  if (!user) throw new BadRequestError('This reset link is invalid or has expired. Ask for a new one.');
+  user.passwordHash = await bcrypt.hash(newPassword, 12);
+  user.resetTokenHash = undefined;
+  user.resetTokenExpires = undefined;
+  user.failedLoginAttempts = 0;
+  user.lockUntil = undefined;
+  user.refreshTokens = [];            // sign out everywhere
+  await user.save();
+  return { email: user.email, role: user.role };
 }
 
 // Self-service account deletion (Google Play / App Store requirement).
@@ -147,4 +195,6 @@ async function deleteAccount(userId, { password } = {}) {
   return { deleted: true };
 }
 
-module.exports = { register, login, refresh, logout, changePassword, issueTokens, deleteAccount };
+module.exports = {
+  requestPasswordReset,
+  resetPassword, register, login, refresh, logout, changePassword, issueTokens, deleteAccount };

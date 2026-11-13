@@ -44,28 +44,69 @@ function onOffline() { toast.info("You're offline or the connection is slow - sh
 window.addEventListener('hh-offline', onOffline);
 onUnmounted(() => window.removeEventListener('hh-offline', onOffline));
 
-// iOS-style back: swipe right from the left edge of the screen. The app runs
-// as a web page inside the iOS shell, which has no native back gesture.
+// iOS-style back: drag from the left edge. The page follows the finger like
+// the native gesture; let go past a third of the screen (or flick) to go back,
+// otherwise it springs back. The app is a web page inside the iOS shell, which
+// has no native back gesture of its own.
 const TAB_ROOTS = ['/', '/browse', '/wallet', '/orders', '/profile', '/welcome', '/login'];
-let swipe = null;
+const pageEl = ref(null);
+const EDGE = 30;
+let drag = null;
+function setPage(x, animate) {
+  const el = pageEl.value;
+  if (!el) return;
+  el.style.transition = animate ? 'transform 260ms cubic-bezier(.2,.8,.2,1), box-shadow 260ms ease' : 'none';
+  el.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+  el.style.boxShadow = x ? '-12px 0 30px rgba(0,0,0,.18)' : '';
+}
 function onTouchStart(e) {
   const t = e.touches[0];
-  swipe = t.clientX <= 28 && !TAB_ROOTS.includes(route.path) ? { x: t.clientX, y: t.clientY, done: false } : null;
+  drag = t.clientX <= EDGE && !TAB_ROOTS.includes(route.path) && e.touches.length === 1
+    ? { x0: t.clientX, y0: t.clientY, dx: 0, t: performance.now(), v: 0, mode: 'pending' }
+    : null;
 }
 function onTouchMove(e) {
-  if (!swipe || swipe.done) return;
+  if (!drag) return;
   const t = e.touches[0];
-  const dx = t.clientX - swipe.x;
-  const dy = Math.abs(t.clientY - swipe.y);
-  if (dy > 60 || dx < -10) { swipe = null; return; }
-  if (dx > 80 && dy < 50) { swipe.done = true; goBack(router); }
+  const dx = t.clientX - drag.x0;
+  const dy = t.clientY - drag.y0;
+  if (drag.mode === 'pending') {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > dx) { drag = null; return; }   // a scroll
+    if (dx > 8) drag.mode = 'drag'; else return;
+  }
+  e.preventDefault();                                                     // keep the page from scrolling
+  const now = performance.now();
+  drag.v = (Math.max(0, dx) - drag.dx) / Math.max(1, now - drag.t);       // px per ms
+  drag.t = now;
+  drag.dx = Math.max(0, dx);
+  setPage(drag.dx, false);
+}
+function onTouchEnd() {
+  if (!drag) return;
+  const d = drag;
+  drag = null;
+  if (d.mode !== 'drag') return;
+  const w = window.innerWidth;
+  if (d.dx > w * 0.33 || (d.v > 0.5 && d.dx > 40)) {
+    setPage(w, true);
+    setTimeout(() => {
+      goBack(router);
+      setTimeout(() => setPage(0, false), 30);
+    }, 200);
+  } else {
+    setPage(0, true);
+  }
 }
 if (isNative || 'ontouchstart' in window) {
   window.addEventListener('touchstart', onTouchStart, { passive: true });
-  window.addEventListener('touchmove', onTouchMove, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('touchend', onTouchEnd, { passive: true });
+  window.addEventListener('touchcancel', onTouchEnd, { passive: true });
   onUnmounted(() => {
     window.removeEventListener('touchstart', onTouchStart);
     window.removeEventListener('touchmove', onTouchMove);
+    window.removeEventListener('touchend', onTouchEnd);
+    window.removeEventListener('touchcancel', onTouchEnd);
   });
 }
 
@@ -74,7 +115,7 @@ if (isNative || 'ontouchstart' in window) {
 watch(() => [auth.user, route.path], ([u, path]) => {
   if (!u || u.role !== 'customer' || u.hasPassword || u.profileCompletedAt) return;
   if (u.authProvider === 'password') return;
-  if (['/complete-account', '/checkout-done', '/privacy', '/terms', '/eula'].includes(path)) return;
+  if (['/complete-account', '/checkout-done', '/privacy', '/terms', '/eula', '/reset-password'].includes(path)) return;
   if (sessionStorage.getItem('hh_profile_later') === '1') return;
   router.replace({ path: '/complete-account', query: { redirect: path } });
 }, { immediate: true });
@@ -85,7 +126,7 @@ function onSplashDone() {
 }
 
 const hideTabs = computed(() => {
-  if (['/login', '/register', '/welcome', '/subscribe', '/checkout-done', '/complete-account'].includes(route.path)) return true;
+  if (['/login', '/register', '/welcome', '/subscribe', '/checkout-done', '/complete-account', '/forgot-password', '/reset-password', '/profile/password'].includes(route.path)) return true;
   if (route.path.startsWith('/coupons/')) return true;
   if (route.path.startsWith('/merchant-detail/')) return true;
   if (route.path.startsWith('/surprise-bag/')) return true;
@@ -101,7 +142,7 @@ const showFooter = computed(() => {
   // Apps don't have website footers: in the iOS/Android app the same links live
   // under Profile → About & legal.
   if (isNative) return false;
-  if (route.path === '/complete-account') return false;
+  if (['/complete-account', '/forgot-password', '/reset-password', '/profile/password'].includes(route.path)) return false;
   if (['/login', '/register', '/subscribe', '/checkout-done'].includes(route.path)) return false;
   if (route.path.includes('/redeem')) return false;
   if (route.path === '/map') return false;
@@ -115,7 +156,7 @@ const isLanding = computed(() => route.path === '/welcome');
   <OnboardingModal v-if="showOnboarding" @done="showOnboarding = false" />
   <ToastContainer />
   <DesktopFrame :landing="isLanding">
-    <div class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
+    <div ref="pageEl" class="min-h-full bg-cream-100 text-ink-900 flex flex-col">
       <router-view v-slot="{ Component }">
         <transition name="page" mode="out-in">
           <component :is="Component" />

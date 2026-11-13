@@ -2,6 +2,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { useAuthStore } from '../../stores/auth';
+import ChangePasswordSheet from '../../components/ChangePasswordSheet.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -28,6 +29,7 @@ const items = [
 // Phones/tablets get the same sidebar as a slide-in drawer (the old row of
 // sideways-scrolling chips hid most of the menu).
 const menuOpen = ref(false);
+const showPw = ref(false);
 watch(() => route.path, () => { menuOpen.value = false; });
 
 const current = computed(() => items.find((i) => i.to === route.path) || items[0]);
@@ -76,7 +78,8 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
           {{ i.label }}
         </router-link>
       </nav>
-      <div class="p-3 border-t border-cream-200">
+      <div class="p-3 border-t border-cream-200 space-y-1">
+        <button @click="showPw = true" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-ink-700 hover:bg-cream-100"><i class="fa-solid fa-key mr-1.5"></i>Change password</button>
         <button @click="doLogout" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-coral-600 hover:bg-coral-50">
           Sign out
         </button>
@@ -93,5 +96,6 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
 
       <router-view />
     </main>
+    <ChangePasswordSheet v-if="showPw" @close="showPw = false" />
   </div>
 </template>

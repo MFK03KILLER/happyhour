@@ -42,6 +42,16 @@ exports.completeProfile = asyncHandler(async (req, res) => {
   res.json({ user });
 });
 
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  await authService.requestPasswordReset(req.body.email);
+  res.json({ ok: true });
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const r = await authService.resetPassword(req.body.token, req.body.password);
+  res.json({ ok: true, role: r.role });
+});
+
 exports.changePassword = asyncHandler(async (req, res) => {
   await authService.changePassword(req.user._id, req.body.currentPassword, req.body.newPassword);
   res.status(204).end();

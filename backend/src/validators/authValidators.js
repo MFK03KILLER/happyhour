@@ -18,8 +18,8 @@ const refreshSchema = z.object({
 });
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(128),
+  currentPassword: z.string().max(128).optional().default(''),
+  newPassword: z.string().min(8, 'New password needs at least 8 characters').max(128),
 });
 
 const googleSignInSchema = z.object({
@@ -45,7 +45,15 @@ const completeProfileSchema = z.object({
   password: z.string().min(8, 'Password needs at least 8 characters').max(128).optional(),
 });
 
+const forgotPasswordSchema = z.object({ email: z.string().trim().email('Enter a valid email address') });
+const resetPasswordSchema = z.object({
+  token: z.string().min(20),
+  password: z.string().min(8, 'Password needs at least 8 characters').max(128),
+});
+
 module.exports = {
+  forgotPasswordSchema,
+  resetPasswordSchema,
   completeProfileSchema,
   deleteAccountSchema,
   registerSchema,

@@ -4,11 +4,13 @@ import { computed, ref, watch } from 'vue';
 import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from '../../stores/auth';
 import TermsModal from '../../components/TermsModal.vue';
+import ChangePasswordSheet from '../../components/ChangePasswordSheet.vue';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const showTerms = ref(false);
+const showPw = ref(false);
 
 const items = [
   { to: '/vendor', label: 'Dashboard', icon: 'home', perm: null },
@@ -72,6 +74,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
         </router-link>
       </nav>
       <div class="p-3 border-t border-cream-200 space-y-1">
+        <button @click="showPw = true" class="w-full text-left px-3 py-2.5 rounded-2xl text-sm font-semibold text-ink-700 hover:bg-cream-100"><i class="fa-solid fa-key mr-1.5"></i>Change password</button>
         <button @click="showTerms = true" class="w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold text-ink-500 hover:bg-cream-100">
           <i class="fa-regular fa-file-lines mr-1.5"></i>Merchant Terms of Service
         </button>
@@ -88,6 +91,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
       </header>
       <router-view />
     </main>
+    <ChangePasswordSheet v-if="showPw" @close="showPw = false" />
     <TermsModal :show="showTerms" audience="merchant" @close="showTerms = false" />
   </div>
 </template>
