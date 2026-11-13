@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { clearOfflineCache } from '../api/offlineCache';
 import client from '../api/client';
 
 export const useAuthStore = defineStore('auth', {
@@ -52,6 +53,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('hh_refresh_token', data.refreshToken);
     },
     clearSession() {
+      clearOfflineCache();
       this.user = null;
       this.accessToken = null;
       this.refreshToken = null;

@@ -226,6 +226,11 @@ function offPeakLabel() {
         </div>
       </div>
 
+      <div v-if="merchant.happyHourPausedUntil && new Date(merchant.happyHourPausedUntil) > new Date()" class="mt-3 ios-card p-4 flex items-start gap-3 bg-amber-50 border border-amber-300">
+        <i class="fa-solid fa-circle-pause text-amber-600 text-xl mt-0.5"></i>
+        <div class="text-sm"><div class="font-bold text-amber-800">Happy hour is paused right now</div>
+          <div class="text-amber-800/80">This venue is busy. Offers are back at {{ new Date(merchant.happyHourPausedUntil).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) }}.</div></div>
+      </div>
       <div v-if="offPeakLabel()" class="mt-3 ios-card p-4 flex items-start gap-3 bg-coral-500/5 border border-coral-500/20">
         <div class="w-10 h-10 rounded-xl bg-coral-500 text-white flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-clock"></i>

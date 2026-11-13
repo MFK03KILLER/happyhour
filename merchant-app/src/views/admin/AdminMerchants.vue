@@ -29,6 +29,15 @@ async function save() {
   await load();
 }
 
+// Lets a venue pause its own happy hour from the merchant app (busy hour etc).
+async function togglePause(m) {
+  const next = !m.canPauseHappyHour;
+  const { data } = await client.put(`/admin/merchants/${m._id}`, { canPauseHappyHour: next, ...(next ? {} : { happyHourPausedUntil: null }) });
+  m.canPauseHappyHour = data.canPauseHappyHour;
+  m.happyHourPausedUntil = data.happyHourPausedUntil;
+}
+function pausedNow(m) { return m.happyHourPausedUntil && new Date(m.happyHourPausedUntil) > new Date(); }
+
 async function del(id) {
   if (!confirm('Delete merchant?')) return;
   await client.delete(`/admin/merchants/${id}`);
@@ -58,6 +67,11 @@ onMounted(load);
           <div class="font-semibold truncate">{{ m.name }}</div>
           <div class="text-sm text-ink-500 truncate">{{ m.address?.street }}, {{ m.address?.city }}, {{ m.address?.state }}</div>
           <div class="text-xs text-ink-300 mt-0.5">{{ m.vendorId?.name }} · {{ m.category }}</div>
+          <label class="mt-2 inline-flex items-center gap-2 text-xs font-semibold cursor-pointer" :class="m.canPauseHappyHour ? 'text-teal-700' : 'text-ink-500'">
+            <input type="checkbox" :checked="m.canPauseHappyHour" class="w-4 h-4 accent-teal-700" @change="togglePause(m)" />
+            Can pause happy hour
+            <span v-if="pausedNow(m)" class="chip bg-amber-50 text-amber-700 text-[10px]">Paused now</span>
+          </label>
         </div>
         <button @click="del(m._id)" class="text-sm text-coral-600 font-semibold">Delete</button>
       </div>
