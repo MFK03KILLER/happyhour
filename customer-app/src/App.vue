@@ -113,9 +113,11 @@ if (isNative || 'ontouchstart' in window) {
 // Signed up with Apple or Google and never finished the account: ask once for
 // an optional phone/marketing consent and a password (to sign in on the web).
 watch(() => [auth.user, route.path], ([u, path]) => {
-  if (!u || u.role !== 'customer' || u.hasPassword || u.profileCompletedAt) return;
-  if (u.authProvider === 'password') return;
-  if (['/complete-account', '/checkout-done', '/privacy', '/terms', '/eula', '/reset-password'].includes(path)) return;
+  // Only act on the full profile from /auth/me (the login response lacks these
+  // fields), and never while a sign-in screen is still finishing its redirect.
+  if (!u || u.role !== 'customer' || u.hasPassword !== false || u.profileCompletedAt) return;
+  if (!['apple', 'google'].includes(u.authProvider)) return;
+  if (['/login', '/register', '/welcome', '/complete-account', '/checkout-done', '/privacy', '/terms', '/eula', '/reset-password', '/forgot-password'].includes(path)) return;
   if (sessionStorage.getItem('hh_profile_later') === '1') return;
   router.replace({ path: '/complete-account', query: { redirect: path } });
 }, { immediate: true });
