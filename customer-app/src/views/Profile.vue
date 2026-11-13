@@ -108,8 +108,8 @@ async function deleteAccount() {
           <span class="font-medium">Payment methods</span>
           <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
         </router-link>
-        <router-link v-if="auth.user && !auth.user.hasPassword" to="/complete-account?redirect=/profile" class="w-full flex items-center justify-between p-4 active:bg-cream-100">
-          <span class="font-medium">Set a password <span class="block text-xs text-ink-500 font-normal">Sign in on the website with your email</span></span>
+        <router-link to="/profile/password" class="w-full flex items-center justify-between p-4 active:bg-cream-100">
+          <span class="font-medium">{{ auth.user?.hasPassword === false ? 'Set a password' : 'Change password' }}</span>
           <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
         </router-link>
         <router-link to="/profile/help" class="w-full flex items-center justify-between p-4 active:bg-cream-100">

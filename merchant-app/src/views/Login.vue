@@ -32,6 +32,16 @@ async function submit() {
 
 // Legal pages open in an in-app browser sheet (SFSafariViewController on iOS),
 // never by throwing the user out to Safari.
+async function openForgot() {
+  const url = `https://happyhourz.org/forgot-password${email.value ? `?email=${encodeURIComponent(email.value)}` : ''}`;
+  if (Capacitor.isNativePlatform()) {
+    const { Browser } = await import('@capacitor/browser');
+    await Browser.open({ url });
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+}
+
 async function openPrivacy() {
   const url = 'https://happyhourz.org/privacy';
   if (Capacitor.isNativePlatform()) {
@@ -61,7 +71,7 @@ async function openPrivacy() {
         {{ loading ? 'Signing in…' : 'Sign in' }}
       </button>
       <p class="text-center text-xs text-cream-50/60 pt-1">
-        Trouble signing in? <a :href="`mailto:${SUPPORT_EMAIL}`" class="underline text-cream-50/80">Email us</a>
+        <button type="button" class="underline text-cream-50/80 font-semibold" @click="openForgot">Forgot password?</button> · Trouble signing in? <a :href="`mailto:${SUPPORT_EMAIL}`" class="underline text-cream-50/80">Email us</a>
       </p>
     </form>
 

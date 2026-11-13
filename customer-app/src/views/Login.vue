@@ -234,7 +234,8 @@ async function submit() {
 
     <form @submit.prevent="submit" class="space-y-3 max-w-sm mx-auto w-full" :class="hasSocial ? '' : 'mt-8'">
       <input v-model="email" type="email" class="input" placeholder="Email address" required />
-      <input v-model="password" type="password" class="input" placeholder="Password" required />
+      <input v-model="password" type="password" autocomplete="current-password" class="input" placeholder="Password" required />
+      <router-link :to="{ path: '/forgot-password', query: email ? { email } : {} }" class="block text-right text-sm font-semibold text-teal-700 -mt-1 pr-1">Forgot password?</router-link>
       <div v-if="error" class="text-coral-600 text-sm pl-2">{{ error }}</div>
       <button type="submit" class="ios-button-primary w-full" :disabled="loading">
         {{ loading ? 'Signing in…' : 'Sign in' }}
