@@ -104,15 +104,16 @@ const greetingIcon = computed(() => {
       </button>
     </header>
 
-    <div v-if="!daily.loading && daily.remaining < daily.limit" class="mx-5 mt-4 ios-card p-3 flex items-center gap-3">
+    <router-link v-if="!daily.loading && daily.tier !== 'free'" to="/subscribe" class="mx-5 mt-4 ios-card p-3 flex items-center gap-3">
       <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center">
         <i class="fa-solid fa-ticket"></i>
       </div>
       <div class="flex-1">
-        <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">Today's quota</div>
-        <div class="font-bold">{{ daily.remaining }} of {{ daily.limit }} coupons remaining</div>
+        <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">{{ daily.planLabel }} member</div>
+        <div class="font-bold">{{ daily.unlimited ? 'Unlimited coupons (test account)' : `${daily.limit} coupon${daily.limit === 1 ? '' : 's'} per restaurant this month` }}</div>
       </div>
-    </div>
+      <i class="fa-solid fa-chevron-right text-ink-300"></i>
+    </router-link>
 
     <section class="mx-5 mt-4">
       <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-coral-500 via-coral-600 to-coral-600 text-white shadow-lift">
@@ -123,7 +124,7 @@ const greetingIcon = computed(() => {
           <div class="text-3xl font-bold mt-1">A new deal every day</div>
           <div class="mt-1 text-white/90 text-sm">Eat, drink, play for less at 100+ Bay Area spots.</div>
           <button @click="router.push('/subscribe')" class="mt-4 bg-white text-coral-600 font-semibold rounded-full px-5 py-2.5 text-sm active:scale-95 transition">
-            <template v-if="pricing.gold">{{ formatUSD(pricing.gold.price.monthly) }}/mo · </template>Get started →
+            <template v-if="pricing.entry">From {{ formatUSD(pricing.entry.price.monthly) }}/mo · </template>Get started →
           </button>
         </div>
       </div>

@@ -8,8 +8,9 @@ export const usePricingStore = defineStore('pricing', {
   state: () => ({ plans: [], loaded: false }),
   getters: {
     plan: (s) => (tier) => s.plans.find((p) => p.tier === tier) || null,
-    // The entry-level paid plan, shown on "become a member" prompts.
-    gold: (s) => s.plans.find((p) => p.tier === 'gold') || null,
+    // The cheapest paid plan, for "From $X/mo" prompts.
+    entry: (s) => s.plans.filter((p) => p.price?.monthly > 0).sort((a, b) => a.price.monthly - b.price.monthly)[0] || null,
+    paid: (s) => s.plans.filter((p) => p.price?.monthly > 0).sort((a, b) => a.price.monthly - b.price.monthly),
   },
   actions: {
     async load(force = false) {

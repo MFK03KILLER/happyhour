@@ -87,8 +87,8 @@ function statusLabel(s) {
         <p class="text-ink-500 mt-1">Your claimed coupons.</p>
       </div>
       <div class="ios-card p-3 text-center">
-        <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">Today</div>
-        <div class="text-xl font-bold text-teal-700">{{ daily.remainingLabel }}<span class="text-sm text-ink-500">/{{ daily.limitLabel }}</span></div>
+        <div class="text-[10px] uppercase tracking-wider font-semibold text-ink-500">{{ daily.planLabel }}</div>
+        <div class="text-xl font-bold text-teal-700">{{ daily.limitLabel }}<span class="text-xs text-ink-500 font-semibold"> / restaurant / mo</span></div>
       </div>
     </header>
 

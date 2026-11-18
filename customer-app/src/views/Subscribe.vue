@@ -1,4 +1,7 @@
 <script setup>
+// Membership: three monthly plans (Basic / Gold / Premium), each buying a number
+// of coupon redemptions per restaurant per month. Paid by Stripe as a monthly
+// auto-renewing subscription; members can switch plans or cancel here.
 import { goBack } from '../utils/goBack';
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
@@ -18,39 +21,38 @@ const currentPlan = ref(null);
 const availablePlans = ref([]);
 const showPay = ref(false);
 const selectedTier = ref('gold');
-const billing = ref('monthly');
 const loading = ref(true);
 const paymentsProvider = ref('mock');
 
-// Promo code state
 const promoInput = ref('');
 const promo = ref(null);        // { code, discountUSD, finalUSD }
 const promoError = ref('');
 const applyingPromo = ref(false);
 const checkingOut = ref(false);
 const activating = ref(false);
+const busy = ref(false);
 
-// Until online payment is live (no Stripe keys yet) membership is free during
-// launch: one month at a time, no promo codes, nothing charged.
+// No payment processor configured: membership is free during launch.
 const freeLaunch = computed(() => paymentsProvider.value !== 'stripe');
-watch(freeLaunch, (free) => { if (free) billing.value = 'monthly'; }, { immediate: true });
 
 async function loadSub() {
   const { data } = await client.get('/customer/subscription');
   sub.value = data.subscription;
   currentPlan.value = data.plan;
-  availablePlans.value = data.available || [];
+  availablePlans.value = (data.available || []).filter((p) => p.tier !== 'free');
   paymentsProvider.value = data.paymentsProvider || 'mock';
+  if (isActive.value && availablePlans.value.some((p) => p.tier === sub.value.tier)) {
+    selectedTier.value = nextTierUp(sub.value.tier) || sub.value.tier;
+  }
   return data;
 }
 
-// Stripe sends the customer back here after checkout. The subscription is
-// activated by the webhook, which can land a moment after the redirect — so
-// poll briefly until it shows up instead of showing a stale "not subscribed".
+// Stripe sends the customer back here after checkout; the webhook may land a
+// moment later, so poll briefly.
 async function handleCheckoutReturn() {
   const status = route.query.checkout;
   if (!status) return;
-  router.replace({ path: '/subscribe' });   // strip the query param
+  router.replace({ path: '/subscribe' });
   if (status === 'cancel') {
     toast.info('Checkout cancelled — you have not been charged.', { title: 'Cancelled' });
     return;
@@ -61,14 +63,13 @@ async function handleCheckoutReturn() {
   }
 }
 
-// Polls until a membership that started at/after `since` is active.
 async function waitForMembership(since = null, tries = 10) {
   confirming.value = true;
   try {
     for (let i = 0; i < tries; i++) {
       const data = await loadSub();
       const s = data.subscription;
-      const fresh = !since || new Date(s?.currentPeriodStart) >= since;
+      const fresh = !since || new Date(s?.updatedAt || s?.currentPeriodStart) >= since;
       if (s && s.status === 'active' && new Date(s.currentPeriodEnd) > new Date() && fresh) {
         await auth.fetchMe();
         toast.success(`You're on ${data.plan?.label || 'your new plan'}!`, { title: 'Payment received 🎉' });
@@ -81,30 +82,25 @@ async function waitForMembership(since = null, tries = 10) {
 }
 
 onMounted(async () => {
-  try {
-    await loadSub();
-  } finally { loading.value = false; }
+  try { await loadSub(); } finally { loading.value = false; }
   await handleCheckoutReturn();
 });
 
+const isActive = computed(() => !!sub.value && sub.value.status === 'active' && new Date(sub.value.currentPeriodEnd) > new Date());
+const currentTier = computed(() => (isActive.value ? sub.value.tier : 'free'));
+const autoRenews = computed(() => isActive.value && !!sub.value.stripeSubscriptionId);
 const selected = computed(() => availablePlans.value.find((p) => p.tier === selectedTier.value));
-const listPrice = computed(() => selected.value?.price?.[billing.value] || 0);
+const listPrice = computed(() => selected.value?.price?.monthly || 0);
 const finalPrice = computed(() => (promo.value && promo.value.finalUSD != null ? promo.value.finalUSD : listPrice.value));
-const selectedPriceLabel = computed(() => finalPrice.value.toFixed(2));
-const currentTier = computed(() => sub.value?.tier || currentPlan.value?.tier || 'basic');
-const isCurrentlyPaid = computed(() => sub.value && sub.value.tier !== 'basic' && new Date(sub.value.currentPeriodEnd) > new Date());
-// "Yearly · save 17%", from the live prices (admins change them in Admin → Pricing).
-const yearlySavePct = computed(() => {
-  const p = availablePlans.value.find((x) => x.tier === 'gold') || selected.value;
-  const m = p?.price?.monthly;
-  const y = p?.price?.yearly;
-  return m && y ? Math.round((1 - y / (m * 12)) * 100) : 0;
-});
+const RANK = { free: 0, basic: 1, gold: 2, premium: 3 };
+function nextTierUp(t) { return { basic: 'gold', gold: 'premium' }[t] || null; }
+const changing = computed(() => isActive.value && selectedTier.value !== currentTier.value);
+const upgrade = computed(() => RANK[selectedTier.value] > RANK[currentTier.value]);
+const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const perRestaurant = (p) => p?.limits?.redemptionsPerRestaurantMonthly || 0;
 
-// A change of plan invalidates any applied promo discount.
-watch([selectedTier, billing], () => { clearPromo(); });
-
-function clearPromo() { promo.value = null; promoError.value = ''; }
+watch(selectedTier, () => { promo.value = null; promoError.value = ''; });
 
 async function applyPromo() {
   promoError.value = '';
@@ -112,53 +108,38 @@ async function applyPromo() {
   applyingPromo.value = true;
   try {
     const { data } = await client.post('/customer/subscription/validate-promo', {
-      code: promoInput.value.trim(),
-      tier: selectedTier.value,
-      plan: billing.value,
-      audience: 'customer',
+      code: promoInput.value.trim(), tier: selectedTier.value, plan: 'monthly', audience: 'customer',
     });
     if (data.valid) {
       promo.value = { code: data.code, discountUSD: data.discountUSD, finalUSD: data.finalUSD };
-      toast.success(`Code ${data.code} applied — you save $${data.discountUSD.toFixed(2)}`, { title: 'Promo applied 🎟️' });
+      toast.success(`Code ${data.code} applied — first month ${money(data.finalUSD)}`, { title: 'Promo applied 🎟️' });
     } else {
       promoError.value = 'Invalid promo code';
     }
   } catch (e) {
     promoError.value = e.response?.data?.error?.message || 'Invalid promo code';
-  } finally {
-    applyingPromo.value = false;
-  }
+  } finally { applyingPromo.value = false; }
 }
 
-// Entry point when the user taps the buy button.
-async function startPurchase() {
-  if (paymentsProvider.value === 'stripe') {
-    await startStripeCheckout();
-  } else {
-    showPay.value = true;
-  }
-}
-
-// In the native apps Stripe Checkout opens in the system browser sheet
-// (SFSafariViewController / Chrome Custom Tabs): Apple Pay and Google Pay work
-// there, but not inside the app's own WebView.
 const inAppBrowser = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Browser');
 const platform = Capacitor.getPlatform();
 // Never mention the other platform's wallet inside an app (App Store 2.3.10).
 const walletLine = platform === 'ios' ? 'Apple Pay or card' : platform === 'android' ? 'Google Pay or card' : 'Apple Pay, Google Pay or card';
 
+async function startPurchase() {
+  if (changing.value && autoRenews.value) return changePlan();
+  if (paymentsProvider.value === 'stripe') return startStripeCheckout();
+  showPay.value = true;
+}
+
 async function startStripeCheckout() {
   checkingOut.value = true;
   try {
     const { data } = await client.post('/customer/subscription/checkout', {
-      tier: selectedTier.value,
-      plan: billing.value,
-      promoCode: promo.value?.code,
-      audience: 'customer',
+      tier: selectedTier.value, plan: 'monthly', promoCode: promo.value?.code, audience: 'customer',
       returnTo: inAppBrowser ? 'app' : 'web',
     });
     if (data.activated) {
-      // A 100% promo code: nothing to pay, the membership is already on.
       sub.value = data.subscription;
       currentPlan.value = data.plan;
       await auth.fetchMe();
@@ -173,25 +154,50 @@ async function startStripeCheckout() {
     const listener = await Browser.addListener('browserFinished', async () => {
       listener.remove();
       if (!(await waitForMembership(since, 6))) {
-        toast.info("No payment was completed. If you did pay, your membership will show up in a minute.", { title: 'Checkout closed', ttl: 8000 });
+        toast.info('No payment was completed. If you did pay, your membership will show up in a minute.', { title: 'Checkout closed', ttl: 8000 });
       }
     });
     await Browser.open({ url: data.url });
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not start checkout', { title: 'Checkout failed' });
-  } finally {
-    checkingOut.value = false;
-  }
+  } finally { checkingOut.value = false; }
 }
 
-// Free launch activation (no payment processor yet - nothing is charged).
+async function changePlan() {
+  const target = selected.value;
+  const msg = upgrade.value
+    ? `Switch to ${target.label} for ${money(target.price.monthly)}/month?\n\nYou'll be charged the difference for the rest of this month now, and ${money(target.price.monthly)} each month after.`
+    : `Switch to ${target.label} for ${money(target.price.monthly)}/month?\n\nThe unused part of this month is credited to your next bill.`;
+  if (!window.confirm(msg)) return;
+  busy.value = true;
+  try {
+    const { data } = await client.post('/customer/subscription/change', { tier: selectedTier.value });
+    sub.value = data.subscription;
+    currentPlan.value = data.plan;
+    await auth.fetchMe();
+    toast.success(`You're now on ${data.plan.label}.`, { title: 'Plan changed' });
+  } catch (e) {
+    toast.error(e.response?.data?.error?.message || 'Could not change your plan', { title: 'Something went wrong' });
+  } finally { busy.value = false; }
+}
+
+async function setCancel(cancel) {
+  if (cancel && !window.confirm(`Cancel your membership? You keep it until ${fmtDate(sub.value.currentPeriodEnd)} and won't be charged again.`)) return;
+  busy.value = true;
+  try {
+    const { data } = await client.post(cancel ? '/customer/subscription/cancel' : '/customer/subscription/resume');
+    sub.value = data;
+    toast.success(cancel ? `Cancelled. Your membership stays active until ${fmtDate(data.currentPeriodEnd)}.` : 'Your membership will renew as usual.', { title: cancel ? 'Membership cancelled' : 'Membership resumed' });
+  } catch (e) {
+    toast.error(e.response?.data?.error?.message || 'Something went wrong');
+  } finally { busy.value = false; }
+}
+
+// Free launch activation (no payment processor configured - nothing charged).
 async function onConfirm() {
   activating.value = true;
   try {
-    const { data } = await client.post('/customer/subscription/subscribe', {
-      tier: selectedTier.value,
-      audience: 'customer',
-    });
+    const { data } = await client.post('/customer/subscription/subscribe', { tier: selectedTier.value, audience: 'customer' });
     sub.value = data.subscription;
     currentPlan.value = data.plan;
     await auth.fetchMe();
@@ -200,28 +206,29 @@ async function onConfirm() {
     router.push('/');
   } catch (e) {
     toast.error(e.response?.data?.error?.message || 'Could not start your membership', { title: 'Something went wrong' });
-  } finally {
-    activating.value = false;
-  }
+  } finally { activating.value = false; }
 }
-
 
 function tierBg(tier) {
   if (tier === 'gold') return 'from-coral-500 to-coral-600';
   if (tier === 'premium') return 'from-purple-600 to-fuchsia-700';
-  return 'from-ink-500 to-ink-700';
+  return 'from-teal-600 to-teal-800';
 }
-
-function pickTier(t) {
-  if (t === 'basic') return;
-  selectedTier.value = t;
-}
+const ctaLabel = computed(() => {
+  if (!selected.value) return '';
+  if (checkingOut.value) return 'Redirecting…';
+  if (busy.value) return 'One moment…';
+  if (freeLaunch.value) return `Start ${selected.value.label} free`;
+  if (changing.value && autoRenews.value) return `${upgrade.value ? 'Upgrade' : 'Switch'} to ${selected.value.label} — ${money(listPrice.value)}/mo`;
+  return `Get ${selected.value.label} — ${money(finalPrice.value)}${promo.value ? ' first month' : '/mo'}`;
+});
+const showCta = computed(() => selected.value && (!isActive.value || (changing.value && (autoRenews.value || freeLaunch.value))));
 </script>
 
 <template>
   <div class="min-h-screen pb-12 safe-top bg-cream-100">
     <header class="px-5 pt-4 pb-3 flex items-center bg-white border-b border-cream-200">
-      <button @click="goBack(router)" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
+      <button aria-label="Back" @click="goBack(router)" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center active:bg-cream-200">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div class="flex-1 text-center font-semibold -ml-8">Membership</div>
@@ -238,117 +245,84 @@ function pickTier(t) {
     <div v-if="loading" class="px-5 mt-6"><div class="h-64 bg-cream-200 rounded-3xl animate-pulse"></div></div>
 
     <template v-else>
-      <!-- Currently subscribed banner -->
-      <div v-if="isCurrentlyPaid" class="px-5 mt-5">
+      <!-- Current membership -->
+      <div v-if="isActive" class="px-5 mt-5">
         <div class="rounded-3xl bg-gradient-to-br text-white p-6 shadow-lift relative overflow-hidden" :class="tierBg(currentTier)">
           <div class="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10"></div>
-          <span class="chip bg-white/15 text-white">{{ currentPlan?.badge || 'Active' }}</span>
-          <div class="mt-3 text-3xl font-bold">{{ currentPlan?.label }} Plan</div>
-          <div class="opacity-90 mt-1"><span class="capitalize">{{ sub.plan }}</span> · {{ freeLaunch || !sub.amountUSD ? 'Free during launch' : `$${sub.amountUSD.toFixed(2)}` }}</div>
+          <span class="chip bg-white/15 text-white">Your plan</span>
+          <div class="mt-3 text-3xl font-bold">{{ currentPlan?.label }}</div>
+          <div class="opacity-90 mt-1">{{ perRestaurant(currentPlan) }} coupon{{ perRestaurant(currentPlan) === 1 ? '' : 's' }} per restaurant every month</div>
           <div class="mt-3 text-sm opacity-90">
-            Active until: <span class="font-semibold">{{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }}</span>
-          </div>
-          <div v-if="sub.cancelAtPeriodEnd" class="mt-2 text-sm bg-black/20 rounded-xl px-3 py-2">
-            Cancelling on {{ new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric' }) }}
+            <template v-if="autoRenews && !sub.cancelAtPeriodEnd">Renews {{ fmtDate(sub.currentPeriodEnd) }} · {{ money(sub.amountUSD) }}/month</template>
+            <template v-else-if="autoRenews">Cancelled · active until {{ fmtDate(sub.currentPeriodEnd) }}</template>
+            <template v-else>Active until {{ fmtDate(sub.currentPeriodEnd) }}</template>
           </div>
         </div>
-
-        <p class="mt-3 text-center text-xs text-ink-500">Your membership doesn't renew automatically, so there's nothing to cancel. When it ends, renew it here.</p>
+        <div v-if="autoRenews" class="mt-3">
+          <button v-if="!sub.cancelAtPeriodEnd" :disabled="busy" class="ios-card w-full p-3 text-coral-600 font-semibold text-center disabled:opacity-60" @click="setCancel(true)">Cancel membership</button>
+          <button v-else :disabled="busy" class="ios-button-primary w-full disabled:opacity-60" @click="setCancel(false)">Keep my membership</button>
+        </div>
       </div>
 
-      <!-- Plan picker -->
-      <div class="px-5 mt-5">
+      <div class="px-5 mt-6">
         <div class="text-center">
-          <h1 class="text-2xl font-bold tracking-tight">Pick your plan</h1>
-          <p class="text-ink-500 mt-1 text-sm">Save more, every time you go out.</p>
-        </div>
-
-        <div v-if="!freeLaunch" class="mt-4 flex justify-center">
-          <div class="inline-flex bg-cream-200 rounded-full p-1">
-            <button @click="billing='monthly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'">Monthly</button>
-            <button @click="billing='yearly'" class="px-5 py-1.5 rounded-full text-sm font-semibold transition" :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'">Yearly<template v-if="yearlySavePct > 0"> · save {{ yearlySavePct }}%</template></button>
-          </div>
+          <h1 class="text-2xl font-bold tracking-tight">{{ isActive ? 'Change plan' : 'Pick your plan' }}</h1>
+          <p class="text-ink-500 mt-1 text-sm">Each plan gives you coupons at every participating restaurant, every month.</p>
         </div>
 
         <div class="mt-5 space-y-3">
-          <div
+          <button
             v-for="p in availablePlans"
             :key="p.tier"
-            @click="pickTier(p.tier)"
-            class="ios-card p-5 cursor-pointer transition relative"
-            :class="[
-              selectedTier === p.tier ? 'ring-2 ring-teal-600 scale-[1.01]' : 'opacity-90 hover:opacity-100',
-              p.tier === 'basic' ? 'cursor-default opacity-70' : ''
-            ]"
+            type="button"
+            class="ios-card w-full text-left p-5 transition relative"
+            :class="selectedTier === p.tier ? 'ring-2 ring-teal-600' : 'opacity-90'"
+            @click="selectedTier = p.tier"
           >
-            <div v-if="p.badge" class="absolute -top-2 right-4 chip text-white text-[10px]" :class="p.tier === 'gold' ? 'bg-coral-500' : p.tier === 'premium' ? 'bg-purple-600' : 'bg-ink-500'">
-              {{ p.badge }}
-            </div>
-            <div v-if="currentTier === p.tier && isCurrentlyPaid" class="absolute -top-2 left-4 chip bg-teal-600 text-white text-[10px]">Current</div>
-            <div class="flex items-start justify-between">
+            <div v-if="p.badge" class="absolute -top-2 right-4 chip text-white text-[10px]" :class="p.tier === 'gold' ? 'bg-coral-500' : p.tier === 'premium' ? 'bg-purple-600' : 'bg-ink-500'">{{ p.badge }}</div>
+            <div v-if="currentTier === p.tier" class="absolute -top-2 left-4 chip bg-teal-600 text-white text-[10px]">Current</div>
+            <div class="flex items-start justify-between gap-3">
               <div>
                 <div class="text-xl font-bold">{{ p.label }}</div>
-                <div class="text-xs text-ink-500">{{ p.description }}</div>
+                <div class="text-sm font-semibold text-teal-700 mt-0.5">{{ perRestaurant(p) }} coupon{{ perRestaurant(p) === 1 ? '' : 's' }} per restaurant / month</div>
               </div>
-              <div class="text-right">
-                <div class="text-2xl font-bold">${{ (p.price[billing] || 0).toFixed(2) }}</div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-500">/ {{ billing === 'monthly' ? 'mo' : 'yr' }}</div>
-                <div v-if="freeLaunch && p.tier !== 'basic'" class="chip bg-teal-50 text-teal-700 text-[10px] mt-1">Free during launch</div>
+              <div class="text-right flex-shrink-0">
+                <div class="text-2xl font-bold">{{ money(p.price.monthly) }}</div>
+                <div class="text-[10px] uppercase tracking-wider text-ink-500">/ month</div>
+                <div v-if="freeLaunch" class="chip bg-teal-50 text-teal-700 text-[10px] mt-1">Free during launch</div>
               </div>
             </div>
-
             <ul class="mt-4 space-y-1.5 text-sm">
               <li v-for="b in p.bullets" :key="b" class="flex gap-2">
-                <span class="w-4 h-4 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0 text-[10px]">✓</span>
-                {{ b }}
-              </li>
-              <li v-for="b in p.crossedOut" :key="b" class="flex gap-2 text-ink-300 line-through">
-                <span class="w-4 h-4 rounded-full bg-cream-200 text-ink-300 flex items-center justify-center flex-shrink-0 text-[10px]">✕</span>
-                {{ b }}
+                <span class="w-4 h-4 mt-0.5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0 text-[10px]">✓</span>
+                <span>{{ b }}</span>
               </li>
             </ul>
-          </div>
+          </button>
         </div>
 
-        <!-- Promo code -->
-        <div v-if="!freeLaunch && selectedTier !== 'basic' && selectedTier !== currentTier" class="mt-5">
+        <div class="mt-5 ios-card p-4 text-sm text-ink-700">
+          <div class="font-semibold">How the coupon limit works</div>
+          <p class="mt-1 text-ink-500">Visiting the same restaurant? Basic gives you 1 coupon there each month, Gold 2 and Premium 4. Every restaurant has its own allowance, and it resets on the 1st of each month.</p>
+        </div>
+
+        <!-- Promo code (new memberships only) -->
+        <div v-if="!freeLaunch && !isActive" class="mt-5">
           <div v-if="!promo" class="flex gap-2">
-            <input
-              v-model="promoInput"
-              class="input flex-1 uppercase"
-              placeholder="Promo code"
-              @keyup.enter="applyPromo"
-            />
-            <button @click="applyPromo" :disabled="applyingPromo || !promoInput.trim()" class="ios-card px-4 font-semibold text-teal-700 active:scale-95 disabled:opacity-50">
-              {{ applyingPromo ? '…' : 'Apply' }}
-            </button>
+            <input v-model="promoInput" class="input flex-1 uppercase" placeholder="Promo code" @keyup.enter="applyPromo" />
+            <button :disabled="applyingPromo || !promoInput.trim()" class="ios-card px-4 font-semibold text-teal-700 active:scale-95 disabled:opacity-50" @click="applyPromo">{{ applyingPromo ? '…' : 'Apply' }}</button>
           </div>
           <div v-else class="ios-card p-3 flex items-center justify-between bg-green-50 border border-green-200">
-            <div class="text-sm">
-              <span class="font-bold font-mono text-green-700">{{ promo.code }}</span>
-              <span class="text-green-800"> — you save ${{ promo.discountUSD.toFixed(2) }}</span>
-            </div>
-            <button @click="clearPromo" class="text-xs text-ink-500 font-semibold">Remove</button>
+            <div class="text-sm"><span class="font-bold font-mono text-green-700">{{ promo.code }}</span><span class="text-green-800"> — first month {{ money(promo.finalUSD) }}</span></div>
+            <button class="text-xs text-ink-500 font-semibold" @click="promo = null">Remove</button>
           </div>
           <div v-if="promoError" class="text-coral-600 text-xs pl-2 mt-1">{{ promoError }}</div>
         </div>
 
-        <button
-          v-if="selectedTier !== 'basic' && selectedTier !== currentTier"
-          @click="startPurchase"
-          :disabled="checkingOut"
-          class="ios-button-primary w-full mt-5"
-        >
-          <span v-if="checkingOut">Redirecting…</span>
-          <span v-else-if="freeLaunch">Start {{ selected?.label }} free</span>
-          <span v-else>
-            Get {{ selected?.label }} for
-            <span v-if="promo" class="line-through opacity-70 mr-1">${{ listPrice.toFixed(2) }}</span>
-            ${{ selectedPriceLabel }} / {{ billing === 'monthly' ? 'mo' : 'yr' }}
-          </span>
-        </button>
-        <div v-if="selectedTier !== 'basic'" class="text-center text-xs text-ink-300 mt-2">
-          {{ freeLaunch ? 'Free during launch · Nothing to pay' : `Secure payment by Stripe · ${walletLine} · No auto-renewal` }}
+        <button v-if="showCta" :disabled="checkingOut || busy" class="ios-button-primary w-full mt-5 disabled:opacity-60" @click="startPurchase">{{ ctaLabel }}</button>
+        <p v-if="isActive && changing && !autoRenews && !freeLaunch" class="mt-4 text-center text-sm text-ink-500">To change this membership, contact support.</p>
+        <div class="text-center text-xs text-ink-300 mt-3">
+          {{ freeLaunch ? 'Free during launch · Nothing to pay' : `Secure payment by Stripe · ${walletLine} · Renews monthly · Cancel anytime` }}
         </div>
       </div>
     </template>
@@ -357,7 +331,7 @@ function pickTier(t) {
       v-if="showPay && selected"
       :title="`${selected.label} membership`"
       amount-label="Free"
-      :item-name="`30 days · normally $${(selected.price?.monthly || 0).toFixed(2)}/mo`"
+      :item-name="`30 days · normally ${money(selected.price?.monthly)}/mo`"
       note="Online payment isn't open yet, so membership is free during our launch. You won't be charged, and nothing renews automatically."
       :confirm-label="`Start ${selected.label} free`"
       :busy="activating"

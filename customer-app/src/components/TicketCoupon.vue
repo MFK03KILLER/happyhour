@@ -1,4 +1,5 @@
 <script setup>
+import { couponTierBadge } from '../utils/couponTier';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -66,7 +67,7 @@ function onClaim() { if (!props.locked) emit('claim', props.coupon); }
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
               <div class="text-[10px] uppercase tracking-wider font-bold opacity-80">{{ variantLabel }}</div>
-              <div class="font-bold text-[15px] leading-tight mt-0.5 break-words">{{ coupon.title }}</div>
+              <div class="font-bold text-[15px] leading-tight mt-0.5 break-words">{{ coupon.title }}<span v-if="couponTierBadge(coupon)" class="ml-1.5 align-middle inline-block rounded-full bg-black/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{{ couponTierBadge(coupon) }}</span></div>
               <div class="text-xs opacity-85 mt-0.5 break-words line-clamp-2">{{ coupon.subtitle }}</div>
             </div>
             <div v-if="locked" class="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">

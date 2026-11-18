@@ -48,16 +48,20 @@ function valid(v) {
   const n = Number(v);
   return Number.isFinite(n) && n >= 0.5;
 }
+// Customer memberships are monthly only (Nov 2026); merchant plans keep yearly.
+const hasYearly = (p) => p.audience === 'merchant';
+
 function changed(p) {
   const d = drafts[id(p)];
   return d && (Number(d.monthly) !== p.price.monthly || Number(d.yearly) !== p.price.yearly);
 }
 function canSave(p) {
   const d = drafts[id(p)];
-  return d && changed(p) && valid(d.monthly) && valid(d.yearly) && !status[id(p)].saving;
+  return d && changed(p) && valid(d.monthly) && (!hasYearly(p) || valid(d.yearly)) && !status[id(p)].saving;
 }
 // "Yearly = 10 months of monthly · save 17%"
 function yearlyNote(p) {
+  if (!hasYearly(p)) return '';
   const d = drafts[id(p)];
   const m = Number(d?.monthly), y = Number(d?.yearly);
   if (!valid(m) || !valid(y)) return '';
@@ -71,11 +75,12 @@ async function save(p) {
   const d = drafts[id(p)];
   const st = status[id(p)];
   const label = `${p.label} (${p.audience})`;
-  if (!window.confirm(`Change ${label} to ${money(d.monthly)} a month and ${money(d.yearly)} a year?\n\nNew purchases use this price immediately. Current members keep their price until their period ends.`)) return;
+  const priceText = hasYearly(p) ? `${money(d.monthly)} a month and ${money(d.yearly)} a year` : `${money(d.monthly)} a month`;
+  if (!window.confirm(`Change ${label} to ${priceText}?\n\nNew members and plan changes use this price immediately. Members already on monthly auto-renew keep the price they joined at.`)) return;
   st.saving = true; st.msg = ''; st.error = '';
   try {
     const { data } = await client.put(`/admin/pricing/${p.audience}/${p.tier}`, {
-      monthly: Number(d.monthly), yearly: Number(d.yearly),
+      monthly: Number(d.monthly), yearly: hasYearly(p) ? Number(d.yearly) : 0,
     });
     apply(data);
     st.msg = 'Saved - live now';
@@ -110,8 +115,8 @@ onMounted(load);
     <p class="text-ink-500 mt-1">Membership prices for the website, the iPhone app and the Android app.</p>
 
     <div class="mt-5 rounded-2xl border border-teal-600/20 bg-teal-50 px-4 py-3 text-sm text-teal-900 leading-relaxed">
-      <b>Changes go live immediately</b> for new purchases everywhere. Current members keep the price they paid
-      until their billing period ends.
+      <b>Changes go live immediately</b> for new members and plan changes, everywhere. Members already on monthly
+      auto-renew keep the price they joined at.
       <div class="mt-1 text-teal-800/80">
         To show the live price in Site Content, write <code class="px-1 rounded bg-white/70">&#123;&#123;price:gold:monthly&#125;&#125;</code>
         or <code class="px-1 rounded bg-white/70">&#123;&#123;price:gold:yearly&#125;&#125;</code>.
@@ -143,11 +148,11 @@ onMounted(load);
               <span v-if="p.overridden" class="chip bg-amber-50 text-amber-700 text-[10px]">Custom price</span>
               <span v-else class="chip bg-cream-200 text-ink-500 text-[10px]">Default</span>
             </div>
-            <p v-if="s.key === 'customer' && p.tier !== 'gold'" class="text-xs text-ink-500 mt-1">
-              Shown to customers only while the “Subscription tiers” feature is on (Admin → Features).
+            <p v-if="s.key === 'customer'" class="text-xs text-ink-500 mt-1">
+              Monthly membership, renews automatically.
             </p>
 
-            <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="mt-4 grid gap-3" :class="hasYearly(p) ? 'grid-cols-2' : 'grid-cols-1'">
               <label class="block">
                 <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Monthly</span>
                 <div class="relative mt-1">
@@ -156,7 +161,7 @@ onMounted(load);
                          class="input pl-8" :class="valid(drafts[id(p)].monthly) ? '' : 'border-coral-500'" />
                 </div>
               </label>
-              <label class="block">
+              <label v-if="hasYearly(p)" class="block">
                 <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Yearly</span>
                 <div class="relative mt-1">
                   <span class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-500">$</span>
@@ -168,7 +173,7 @@ onMounted(load);
 
             <div class="mt-2 text-xs text-ink-500 min-h-[1rem]">{{ yearlyNote(p) }}</div>
             <div class="text-xs text-ink-300">
-              Default {{ money(p.defaultPrice.monthly) }} / {{ money(p.defaultPrice.yearly) }}
+              Default {{ money(p.defaultPrice.monthly) }}<template v-if="hasYearly(p)"> / {{ money(p.defaultPrice.yearly) }}</template>
               <template v-if="p.overridden && p.updatedAt"> · changed {{ new Date(p.updatedAt).toLocaleDateString() }}</template>
             </div>
             <div v-if="!valid(drafts[id(p)].monthly) || !valid(drafts[id(p)].yearly)" class="mt-2 text-xs text-coral-600">

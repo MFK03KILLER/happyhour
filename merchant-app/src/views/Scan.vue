@@ -1,4 +1,5 @@
 <script setup>
+import { planStyle } from '../lib/plans';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client from '../api/client';
@@ -225,6 +226,9 @@ function reset() {
           <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Customer</div>
           <div class="font-bold mt-0.5">{{ result.customer?.fullName }}</div>
           <div class="text-sm text-ink-500">{{ result.customer?.email }}</div>
+          <div v-if="result.member?.tier" class="mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold" :class="planStyle(result.member.tier).cls">
+            <i class="fa-solid fa-crown text-xs"></i>{{ planStyle(result.member.tier).label }} member
+          </div>
         </div>
         <div class="border-t border-cream-200 pt-4">
           <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Offer</div>

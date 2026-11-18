@@ -1,4 +1,5 @@
 <script setup>
+import { couponTierBadge } from '../utils/couponTier';
 const props = defineProps({
   coupon: { type: Object, required: true },
 });
@@ -22,6 +23,7 @@ function merchantCity() {
   >
     <div class="ios-card overflow-hidden">
       <div class="relative aspect-[16/10] bg-cream-200">
+        <span v-if="couponTierBadge(coupon)" class="absolute top-2 left-2 z-10 chip bg-purple-600 text-white text-[10px]">{{ couponTierBadge(coupon) }}</span>
         <img
           v-if="coupon.heroImageUrl"
           :src="coupon.heroImageUrl"
