@@ -64,7 +64,7 @@ const couponSchema = z.object({
   termsAndConditions: z.string().optional(),
   maxUsesPerCustomer: z.number().int().min(1).default(1),
   totalRedemptionsLimit: z.number().int().optional(),
-  requiredPlanTier: z.enum(['none', 'lite', 'plus', 'pro']).optional(),
+  requiredPlanTier: z.enum(['basic', 'gold', 'premium', 'none', 'lite', 'plus', 'pro']).optional(),
   validFrom: z.coerce.date(),
   validUntil: z.coerce.date(),
   priceUSD: z.number().min(0).default(0),

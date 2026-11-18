@@ -1,4 +1,5 @@
 <script setup>
+import { claimErrorToast } from '../utils/claimError';
 import { goBack } from '../utils/goBack';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -69,7 +70,7 @@ async function claim() {
       activeNow: data.activeNow !== false,
     };
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Could not claim', { title: 'Claim failed' });
+    claimErrorToast(toast, router, e);
   } finally {
     claiming.value = false;
   }
@@ -156,12 +157,12 @@ function locations() { const ms = coupon.value?.merchantIds || []; return ms.sli
         </div>
         <div class="text-right">
           <div class="text-xs text-ink-300">From</div>
-          <div v-if="pricing.gold" class="text-lg font-bold text-teal-700">{{ formatUSD(pricing.gold.price.monthly) }}/mo</div>
+          <div v-if="pricing.entry" class="text-lg font-bold text-teal-700">{{ formatUSD(pricing.entry.price.monthly) }}/mo</div>
         </div>
       </div>
       <div v-if="isSubscribed()" class="flex items-start gap-2 mb-2 text-[11px] leading-snug text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
         <i class="fa-regular fa-clock mt-0.5 flex-shrink-0"></i>
-        <span>Redeemable <strong>weekdays 2–5 PM only</strong> · excludes public holidays · limit <strong>1 claim per day</strong>.</span>
+        <span>Redeemable <strong>weekdays 2–5 PM only</strong> · excludes public holidays · your plan's <strong>monthly coupons per restaurant</strong> apply.</span>
       </div>
       <button @click="claim" class="ios-button-primary w-full text-base" :disabled="claiming">
         <span v-if="claiming">Claiming…</span>

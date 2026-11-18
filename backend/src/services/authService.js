@@ -72,7 +72,7 @@ async function issueTokens(user, userAgent) {
       merchantId: user.merchantId,
       permissions: user.permissions || [],
       roleSlug: user.roleSlug || null,
-      planTier: user.planTier || 'basic',
+      planTier: user.planTier || 'free',
       status: user.status,
       acceptedTerms: user.acceptedTerms || null,
       acceptedMerchantTerms: user.acceptedMerchantTerms || null,

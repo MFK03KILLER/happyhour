@@ -46,10 +46,94 @@ async function createCheckoutSession({ amountUSD, label, customerEmail, metadata
   });
 }
 
+// ---------------- Recurring memberships ----------------
+// One Stripe Product per plan (found by metadata, created on first use). Prices
+// are sent inline on each subscription, so the admin's price for new members
+// lives in our database (Admin -> Pricing), not in Stripe.
+const productCache = {};
+async function ensureProduct(tier, label) {
+  if (productCache[tier]) return productCache[tier];
+  const stripe = getStripe();
+  const found = await stripe.products.search({ query: `metadata['hh_tier']:'${tier}' AND active:'true'` }).catch(() => ({ data: [] }));
+  const product = found.data[0] || await stripe.products.create({
+    name: `Happy Hour ${label} membership`,
+    metadata: { hh_tier: tier },
+  });
+  productCache[tier] = product.id;
+  return product.id;
+}
+
+async function ensureCustomer(user) {
+  const stripe = getStripe();
+  if (user.stripeCustomerId) return user.stripeCustomerId;
+  const customer = await stripe.customers.create({
+    email: user.email,
+    name: user.fullName,
+    metadata: { userId: String(user._id) },
+  });
+  user.stripeCustomerId = customer.id;
+  await user.save();
+  return customer.id;
+}
+
+function monthlyPriceData(productId, amountUSD) {
+  return { currency: 'usd', product: productId, unit_amount: Math.round(Number(amountUSD) * 100), recurring: { interval: 'month' } };
+}
+
+// Checkout for a monthly auto-renewing membership. A promo code takes money
+// off the first month only.
+async function createSubscriptionCheckout({ user, tier, label, amountUSD, discountUSD, metadata, successPath, cancelPath }) {
+  const stripe = getStripe();
+  const [customer, product] = await Promise.all([ensureCustomer(user), ensureProduct(tier, label)]);
+  let discounts;
+  if (discountUSD > 0) {
+    const coupon = await stripe.coupons.create({
+      amount_off: Math.round(Number(discountUSD) * 100), currency: 'usd', duration: 'once',
+      name: metadata?.promoCode ? `Promo ${metadata.promoCode}` : 'Promo',
+    });
+    discounts = [{ coupon: coupon.id }];
+  }
+  return stripe.checkout.sessions.create({
+    mode: 'subscription',
+    customer,
+    line_items: [{ quantity: 1, price_data: monthlyPriceData(product, amountUSD) }],
+    discounts,
+    subscription_data: { metadata: metadata || {} },
+    metadata: metadata || {},
+    success_url: `${env.APP_BASE_URL}${successPath}`,
+    cancel_url: `${env.APP_BASE_URL}${cancelPath}`,
+  });
+}
+
+// Switch an existing membership to another plan, charging/crediting the
+// difference for the rest of the month right away.
+async function changeSubscriptionPlan({ subscriptionId, tier, label, amountUSD }) {
+  const stripe = getStripe();
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const product = await ensureProduct(tier, label);
+  return stripe.subscriptions.update(subscriptionId, {
+    items: [{ id: sub.items.data[0].id, price_data: monthlyPriceData(product, amountUSD) }],
+    proration_behavior: 'always_invoice',
+    cancel_at_period_end: false,
+    metadata: { ...sub.metadata, tier },
+  });
+}
+
+async function setCancelAtPeriodEnd(subscriptionId, cancel) {
+  return getStripe().subscriptions.update(subscriptionId, { cancel_at_period_end: !!cancel });
+}
+
+async function retrieveSubscription(subscriptionId) {
+  return getStripe().subscriptions.retrieve(subscriptionId);
+}
+
 function verifyWebhook(rawBody, signature) {
   const stripe = getStripe();
   if (!env.STRIPE_WEBHOOK_SECRET) throw new BadRequestError('Stripe webhook secret not configured');
   return stripe.webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
 }
 
-module.exports = { isEnabled, getStripe, createCheckoutSession, verifyWebhook };
+module.exports = {
+  isEnabled, getStripe, createCheckoutSession, verifyWebhook,
+  createSubscriptionCheckout, changeSubscriptionPlan, setCancelAtPeriodEnd, retrieveSubscription,
+};

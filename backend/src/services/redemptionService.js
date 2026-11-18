@@ -112,6 +112,13 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
     throw err;
   }
   const merchant = await merchantRepo.findById(merchantId);
+  // Monthly allowance per restaurant, and which plan this redemption counts
+  // against (shown to staff; used to pay restaurants back by plan).
+  const vendorId = coupon.vendorId?._id || coupon.vendorId || scanningVenue?.vendorId?._id;
+  const vendorName = scanningVenue?.vendorId?.name || scanningVenue?.name;
+  const snapshot = customer ? await require('./membershipService').assertCanRedeem(customer, vendorId, vendorName) : {};
+  redemption.vendorId = vendorId;
+  Object.assign(redemption, snapshot);
   redemption.status = 'completed';
   redemption.scannedAt = new Date();
   redemption.scannedByUserId = scannedByUserId;
@@ -132,6 +139,7 @@ async function scanByMerchant({ scannedByUserId, merchantId, qrToken }) {
   return {
     redemption,
     customer: customer ? { id: customer._id, fullName: customer.fullName, email: customer.email } : null,
+    member: { tier: redemption.memberTier, planPriceUSD: redemption.memberPlanPriceUSD },
     coupon,
     merchant,
     usesRemaining: updatedPurchased.usesRemaining,

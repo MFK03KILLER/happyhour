@@ -8,9 +8,7 @@ const Subscription = require('../models/Subscription');
 const Merchant = require('../models/Merchant');
 const { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors');
 
-// Every member may claim ONE coupon per day (resets at local midnight).
-// Test-mode accounts are exempt (see ensureDailyLimit / getDailyStatus).
-const DAILY_CLAIM_LIMIT = 1;
+// Claim limits: a monthly allowance per restaurant by plan (membershipService).
 
 function haversineKm(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null;
@@ -117,26 +115,6 @@ async function holidayInfoForCoupon(coupon) {
   return { isHoliday: false };
 }
 
-async function ensureDailyLimit(customerId) {
-  const user = await User.findById(customerId);
-  if (!user) throw new NotFoundError('User not found');
-  // Test-mode accounts have no daily cap.
-  if (user.testMode) return { user, limit: Infinity, remaining: Infinity };
-  const limit = DAILY_CLAIM_LIMIT;
-  const now = new Date();
-  const resetAt = user.dailyClaimsResetAt ? new Date(user.dailyClaimsResetAt) : null;
-  const sameDay = resetAt && resetAt.toDateString() === now.toDateString();
-  if (!sameDay) {
-    user.dailyClaimsCount = 0;
-    user.dailyClaimsResetAt = now;
-    await user.save();
-  }
-  if (user.dailyClaimsCount >= limit) {
-    throw new ForbiddenError(`Daily limit reached. You can claim ${limit} coupon per day. Resets at midnight.`);
-  }
-  return { user, limit, remaining: limit - user.dailyClaimsCount };
-}
-
 async function claim({ customerId, couponId }) {
   const coupon = await couponRepo.findById(couponId);
   if (!coupon) throw new NotFoundError('Coupon not found');
@@ -163,19 +141,28 @@ async function claim({ customerId, couponId }) {
     }
     await subscriptionService.ensureActive(customerId);
   }
-  const { user } = await ensureDailyLimit(customerId);
+  // Already holding an unscanned claim for this coupon: show that one again
+  // instead of spending another coupon from the monthly allowance.
+  const PurchasedCoupon = require('../models/PurchasedCoupon');
+  const open = await PurchasedCoupon.findOne({ customerId, couponId: coupon._id, status: 'active', usesRemaining: { $gt: 0 } });
+  if (open) {
+    const activeNow0 = claimingUser.testMode ? true : couponIsActiveNow(coupon);
+    return { purchased: open, coupon, activeNow: activeNow0, activeWindow: coupon.activeWindow || null, reused: true };
+  }
+  const membership = require('./membershipService');
+  const allowance = await membership.assertCanClaim(claimingUser, coupon);
+  // One claim = one redemption: that's what the monthly allowance counts.
   const purchased = await purchasedRepo.create({
     customerId,
     couponId: coupon._id,
-    usesRemaining: coupon.maxUsesPerCustomer,
+    usesRemaining: 1,
     expiresAt: coupon.validUntil,
   });
-  if (!claimingUser.testMode) {
-    user.dailyClaimsCount += 1;
-    await user.save();
-  }
   const activeNow = claimingUser.testMode ? true : couponIsActiveNow(coupon);
-  return { purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null };
+  return {
+    purchased, coupon, activeNow, activeWindow: coupon.activeWindow || null,
+    allowance: allowance ? { tier: allowance.tier, limit: allowance.limit, remaining: Math.max(0, allowance.remaining - 1) } : null,
+  };
 }
 
 // Shared validation + pricing for a surprise-bag purchase. Used by BOTH the mock
@@ -385,16 +372,18 @@ async function couponsByMerchant({ merchantId, customerLat, customerLng, limit =
   return annotateWithDistance(items, customerLat, customerLng);
 }
 
-async function getDailyStatus(customerId) {
+// Kept at /customer/daily-status for older app code: there is no daily cap any
+// more; this reports the plan's monthly allowance per restaurant instead.
+async function getDailyStatus(customerId, vendorId) {
   const user = await User.findById(customerId);
-  if (!user) return { limit: DAILY_CLAIM_LIMIT, used: 0, remaining: DAILY_CLAIM_LIMIT };
-  if (user.testMode) return { limit: null, used: 0, remaining: null, unlimited: true };
-  const limit = DAILY_CLAIM_LIMIT;
-  const now = new Date();
-  const resetAt = user.dailyClaimsResetAt ? new Date(user.dailyClaimsResetAt) : null;
-  const sameDay = resetAt && resetAt.toDateString() === now.toDateString();
-  const used = sameDay ? (user.dailyClaimsCount || 0) : 0;
-  return { limit, used, remaining: Math.max(0, limit - used) };
+  if (!user) return { tier: 'free', perRestaurantMonthly: 0, unlimited: false };
+  if (user.testMode) return { tier: 'test', perRestaurantMonthly: null, unlimited: true, limit: null, remaining: null };
+  const a = await require('./membershipService').allowance(user, vendorId);
+  return {
+    tier: a.tier, perRestaurantMonthly: a.limit, resetsAt: a.resetsAt, unlimited: false,
+    ...(vendorId ? { used: a.used, remaining: a.remaining } : {}),
+    limit: a.limit, remaining: vendorId ? a.remaining : a.limit,
+  };
 }
 
 async function bulkUpdate({ vendorId, ids, action }) {

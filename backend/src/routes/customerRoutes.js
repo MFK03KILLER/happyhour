@@ -105,6 +105,7 @@ router.post('/subscription/resume', writeLimiter, subCtrl.resume);
  *     security: [{ bearerAuth: [] }]
  */
 router.post('/subscription/checkout', writeLimiter, subCtrl.checkout);
+router.post('/subscription/change', writeLimiter, subCtrl.changePlan);
 
 /**
  * @openapi

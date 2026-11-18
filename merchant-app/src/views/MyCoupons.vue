@@ -1,4 +1,5 @@
 <script setup>
+import { TIER_OPTIONS } from '../lib/plans';
 import { onMounted, ref } from 'vue';
 import client from '../api/client';
 import { useAuthStore } from '../stores/auth';
@@ -14,7 +15,7 @@ function can(p) { return (auth.user?.permissions || []).includes(p); }
 function blankForm() {
   return {
     title: '', subtitle: '', description: '',
-    heroImageUrl: '', offerType: 'BOGO', discountValue: 0,
+    heroImageUrl: '', offerType: 'BOGO', discountValue: 0, requiredPlanTier: 'basic',
     maxUsesPerCustomer: 1, categorySlug: 'dining',
     validFrom: new Date().toISOString().slice(0, 10),
     validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -44,7 +45,7 @@ function openEdit(c) {
   form.value = {
     title: c.title || '', subtitle: c.subtitle || '', description: c.description || '',
     heroImageUrl: c.heroImageUrl || '',
-    offerType: c.offerType || 'BOGO', discountValue: c.discountValue || 0,
+    offerType: c.offerType || 'BOGO', discountValue: c.discountValue || 0, requiredPlanTier: ({ none: 'basic', lite: 'basic', plus: 'gold', pro: 'premium' }[c.requiredPlanTier] || c.requiredPlanTier || 'basic'),
     maxUsesPerCustomer: c.maxUsesPerCustomer || 1,
     categorySlug: c.categorySlug || 'dining',
     validFrom: c.validFrom ? new Date(c.validFrom).toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
@@ -172,6 +173,12 @@ onMounted(load);
                 {{ offerTypeLabel(t) }}
               </button>
             </div>
+            <label class="block">
+              <span class="text-xs uppercase font-semibold text-ink-500">Who can claim</span>
+              <select v-model="form.requiredPlanTier" class="input mt-1">
+                <option v-for="o in TIER_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+            </label>
           </div>
 
           <input v-if="['PERCENT_OFF','FLAT_OFF'].includes(form.offerType)" v-model.number="form.discountValue" type="number" min="0" class="input" :placeholder="form.offerType === 'PERCENT_OFF' ? 'Discount %' : 'Discount $'" />

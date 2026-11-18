@@ -1,21 +1,18 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { usePricingStore, formatUSD } from '../stores/pricing';
 
 const router = useRouter();
-const billing = ref('monthly');
 const pricing = usePricingStore();
 pricing.load();
 
 // Everything below is derived from the live prices, so it stays true after an
 // admin changes them. (The old copy said "save 30%" and "~$3.50/mo" - left over
 // from $4.99 pricing.)
-const monthly = computed(() => pricing.gold?.price.monthly || 0);
-const yearly = computed(() => pricing.gold?.price.yearly || 0);
-const monthlyLabel = computed(() => (monthly.value ? formatUSD(monthly.value) : ''));
-const yearlySavePct = computed(() => (monthly.value ? Math.round((1 - yearly.value / (monthly.value * 12)) * 100) : 0));
-const yearlySave = computed(() => Math.max(0, monthly.value * 12 - yearly.value));
+const monthly = computed(() => pricing.entry?.price.monthly || 0);
+const monthlyLabel = computed(() => (monthly.value ? `from ${formatUSD(monthly.value)}` : ''));
+const perRestaurant = (p) => p?.limits?.redemptionsPerRestaurantMonthly || 0;
 
 const features = [
   { icon: 'sparkles', title: 'Hand-picked offers', text: 'Curated by locals at neighborhood spots, not anonymous discount mills.' },
@@ -82,7 +79,7 @@ const testimonials = [
             at your favorite spots.
           </h1>
           <p class="mt-5 text-lg text-ink-500 leading-relaxed max-w-md">
-            Happy Hour is America's friendliest coupon club. One {{ monthlyLabel ? monthlyLabel + ' ' : '' }}subscription unlocks BOGO meals, free coffee, and half-price entertainment at hundreds of local merchants.
+            Happy Hour is America's friendliest coupon club. Memberships{{ monthlyLabel ? ' ' + monthlyLabel + '/month' : '' }} unlock BOGO meals, free coffee, and half-price entertainment at local restaurants, every month.
           </p>
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
             <button @click="router.push('/register')" class="rounded-full font-semibold text-white bg-coral-500 px-7 py-4 active:scale-[.97] transition shadow-lift">
@@ -166,8 +163,8 @@ const testimonials = [
           <div class="text-xs text-ink-500 mt-1">Local merchants</div>
         </div>
         <div>
-          <div class="text-3xl font-bold text-teal-700">1/day</div>
-          <div class="text-xs text-ink-500 mt-1">New member deal</div>
+          <div class="text-3xl font-bold text-teal-700">1–4</div>
+          <div class="text-xs text-ink-500 mt-1">Coupons per restaurant, monthly</div>
         </div>
         <div>
           <div class="text-3xl font-bold text-teal-700">12,400+</div>
@@ -228,48 +225,24 @@ const testimonials = [
         <p class="mt-3 text-ink-500">Cancel any time. No fine print.</p>
       </div>
 
-      <div class="mt-10 flex items-center justify-center">
-        <div class="inline-flex bg-cream-200 rounded-full p-1">
-          <button
-            @click="billing='monthly'"
-            class="px-5 py-2 rounded-full text-sm font-semibold transition"
-            :class="billing==='monthly' ? 'bg-white shadow-soft' : 'text-ink-500'"
-          >Monthly</button>
-          <button
-            @click="billing='yearly'"
-            class="px-5 py-2 rounded-full text-sm font-semibold transition"
-            :class="billing==='yearly' ? 'bg-white shadow-soft' : 'text-ink-500'"
-          >Yearly<template v-if="yearlySavePct > 0"> · save {{ yearlySavePct }}%</template></button>
-        </div>
-      </div>
-
-      <div class="mt-10 max-w-md mx-auto ios-card p-8 relative overflow-hidden">
-        <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-coral-500/10"></div>
-        <div class="relative">
+      <div class="mt-10 grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+        <div v-for="p in pricing.paid" :key="p.tier" class="ios-card p-7 relative overflow-hidden flex flex-col" :class="p.tier === 'gold' ? 'ring-2 ring-coral-500' : ''">
           <div class="flex items-center justify-between">
-            <span class="chip bg-coral-500 text-white">Most popular</span>
-            <span class="text-xs font-semibold text-ink-500 uppercase tracking-wider">All access</span>
+            <span class="text-xl font-bold">{{ p.label }}</span>
+            <span v-if="p.badge" class="chip text-white" :class="p.tier === 'gold' ? 'bg-coral-500' : 'bg-purple-600'">{{ p.badge }}</span>
           </div>
           <div class="mt-4 flex items-baseline gap-1">
-            <span v-if="pricing.gold" class="text-5xl font-bold tracking-tight">{{ formatUSD(billing==='monthly' ? monthly : yearly) }}</span>
-            <span class="text-ink-500">/ {{ billing==='monthly' ? 'month' : 'year' }}</span>
+            <span class="text-4xl font-bold tracking-tight">{{ formatUSD(p.price.monthly) }}</span>
+            <span class="text-ink-500">/ month</span>
           </div>
-          <div v-if="billing==='yearly' && yearly" class="text-sm text-coral-600 font-semibold mt-1">~{{ formatUSD(yearly / 12) }}/mo<template v-if="yearlySave > 0"> · save {{ formatUSD(yearlySave) }}</template></div>
-
-          <ul class="mt-6 space-y-3 text-sm">
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Unlimited coupon redemptions</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Every merchant unlocked</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Secure rotating QR codes</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Apple Pay, Google Pay, or card</li>
-            <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> Cancel anytime</li>
+          <div class="mt-1 text-sm font-semibold text-teal-700">{{ perRestaurant(p) }} coupon{{ perRestaurant(p) === 1 ? '' : 's' }} per restaurant every month</div>
+          <ul class="mt-5 space-y-2.5 text-sm flex-1">
+            <li v-for="bl in p.bullets" :key="bl" class="flex gap-2"><span class="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">✓</span> {{ bl }}</li>
           </ul>
-
-          <button @click="router.push('/register')" class="ios-button-primary w-full mt-7 text-base">
-            Start saving today
-          </button>
-          <div class="text-center text-xs text-ink-300 mt-3">7-day money-back guarantee</div>
+          <button @click="router.push('/register')" class="w-full mt-6 rounded-full font-semibold py-3 active:scale-[.97] transition" :class="p.tier === 'gold' ? 'bg-coral-500 text-white' : 'bg-teal-700 text-white'">Choose {{ p.label }}</button>
         </div>
       </div>
+      <p class="mt-6 text-center text-sm text-ink-500 max-w-xl mx-auto">Coupons reset on the 1st of every month. Each restaurant has its own allowance. Memberships renew monthly; cancel anytime.</p>
     </section>
 
     <!-- Testimonials -->
@@ -305,7 +278,7 @@ const testimonials = [
       <div class="mt-10 space-y-3">
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">How does it work? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>
-          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pay{{ monthlyLabel ? ' ' + monthlyLabel + '/mo' : '' }}, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
+          <p class="text-ink-500 mt-3 text-sm leading-relaxed">Sign up, pick Basic, Gold or Premium, and start redeeming. Browse offers, claim what you want, show the rotating QR code at the merchant. They scan, you save.</p>
         </details>
         <details class="ios-card p-5 group">
           <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">Can I cancel anytime? <span class="text-ink-300 group-open:rotate-45 transition">+</span></summary>

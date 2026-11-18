@@ -1,4 +1,5 @@
 <script setup>
+import { claimErrorToast } from '../utils/claimError';
 import { goBack } from '../utils/goBack';
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -58,7 +59,6 @@ function windowLabel(coupon) {
 }
 
 onMounted(async () => {
-  daily.refresh();
   try {
     const params = {};
     if (coords.value) { params.lat = coords.value.lat; params.lng = coords.value.lng; }
@@ -69,6 +69,8 @@ onMounted(async () => {
         : Promise.resolve({ data: { subscription: null } }),
     ]);
     merchant.value = m.data.merchant;
+    const vid = merchant.value?.vendorId?._id || merchant.value?.vendorId;
+    if (vid) daily.refresh(vid);
     coupons.value = m.data.coupons;
     subscription.value = s.data.subscription;
   } finally { loading.value = false; }
@@ -99,13 +101,13 @@ async function onClaim(coupon) {
     return;
   }
   if (daily.isExhausted) {
-    toast.warning(`You've used all ${daily.limit} of today's coupons. Reset at midnight.`, { title: 'Daily limit reached' });
+    toast.warning(`You've used all ${daily.limit} of your ${daily.planLabel} coupons here this month. They reset on ${daily.resetLabel}.`, { title: 'Monthly limit reached', action: daily.tier !== 'premium' ? { label: 'Upgrade →', handler: () => router.push('/subscribe') } : undefined });
     return;
   }
   claiming.value = coupon._id;
   try {
     const { data } = await client.post(`/customer/coupons/${coupon._id}/claim`);
-    daily.optimisticIncrement();
+    if (!data.reused) daily.optimisticIncrement();
     // Pop the redeem QR immediately — no trip through the Wallet.
     redeemCtx.value = {
       purchasedId: data.purchased._id,
@@ -115,7 +117,7 @@ async function onClaim(coupon) {
       activeNow: data.activeNow !== false,
     };
   } catch (e) {
-    toast.error(e.response?.data?.error?.message || 'Could not claim coupon', { title: 'Claim failed' });
+    claimErrorToast(toast, router, e);
   } finally { claiming.value = null; }
 }
 
@@ -294,7 +296,7 @@ function offPeakLabel() {
           <div class="font-bold">Subscribe to unlock all</div>
         </div>
         <div class="text-right">
-          <div v-if="pricing.gold" class="text-lg font-bold text-teal-700">{{ formatUSD(pricing.gold.price.monthly) }} / mo</div>
+          <div v-if="pricing.entry" class="text-lg font-bold text-teal-700">From {{ formatUSD(pricing.entry.price.monthly) }} / mo</div>
         </div>
       </div>
       <button @click="router.push('/subscribe')" class="ios-button-primary w-full">
@@ -305,7 +307,7 @@ function offPeakLabel() {
     <div v-else class="fixed bottom-0 inset-x-0 z-30 glass border-t border-white/40 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
       <div class="text-center text-sm">
         <span class="font-bold text-teal-700">{{ daily.remainingLabel }}</span>
-        <span class="text-ink-500"> of {{ daily.limitLabel }} daily coupons left</span>
+        <span class="text-ink-500"> of {{ daily.limitLabel }} {{ daily.planLabel }} coupons left here this month</span>
       </div>
     </div>
 

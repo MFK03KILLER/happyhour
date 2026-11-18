@@ -1,4 +1,5 @@
 <script setup>
+import { planStyle } from '../lib/plans';
 import { onMounted, ref, computed } from 'vue';
 import client from '../api/client';
 
@@ -47,6 +48,17 @@ const trendMax = computed(() => {
           <div class="text-[11px] uppercase font-semibold text-ink-500 tracking-wider">Month</div>
           <div class="text-2xl font-bold mt-1">{{ stats.month }}</div>
         </div>
+      </div>
+
+      <div class="ios-card p-5">
+        <div class="text-sm font-semibold text-ink-500 uppercase tracking-wider">This month by member plan</div>
+        <div class="mt-3 grid grid-cols-3 gap-2">
+          <div v-for="t in ['basic', 'gold', 'premium']" :key="t" class="rounded-2xl border p-3 text-center" :class="planStyle(t).cls">
+            <div class="text-[11px] font-bold uppercase tracking-wider">{{ planStyle(t).label }}</div>
+            <div class="text-2xl font-bold mt-0.5">{{ stats.monthByPlan?.[t] || 0 }}</div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-ink-500">Redemptions at this location since the 1st, by the plan each member was on.</p>
       </div>
 
       <div class="ios-card p-5">

@@ -15,7 +15,7 @@ const steps = [
     icon: 'fa-ticket',
     color: 'from-coral-500 to-coral-600',
     title: '3 coupons every day',
-    body: 'Your $4.99/month membership lets you claim up to 3 coupons per day. The counter resets every midnight. Pick the best deals near you!',
+    body: 'Pick a membership (Basic, Gold or Premium) and get 1, 2 or 4 coupons at every participating restaurant each month. Your allowance resets on the 1st.',
   },
   {
     icon: 'fa-clock',

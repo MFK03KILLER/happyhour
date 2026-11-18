@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
     updatedAt: Date,
   },
   profileCompletedAt: Date,
+  stripeCustomerId: { type: String, index: true, sparse: true },
   // Forgot-password: sha256 of the emailed token, single use.
   resetTokenHash: { type: String, select: false },
   resetTokenExpires: Date,
@@ -68,8 +69,8 @@ const userSchema = new mongoose.Schema({
   },
   planTier: {
     type: String,
-    enum: ['basic', 'gold', 'premium'],
-    default: 'basic',
+    enum: ['free', 'basic', 'gold', 'premium'],
+    default: 'free',
     index: true,
   },
   // Test / QA accounts. When true this user bypasses ALL claim & redemption

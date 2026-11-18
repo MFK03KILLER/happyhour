@@ -48,6 +48,11 @@ exports.checkout = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
+exports.changePlan = asyncHandler(async (req, res) => {
+  const result = await subscriptionService.changePlan({ userOrId: req.user, tier: req.body.tier });
+  res.json(result);
+});
+
 // Preview a promo code against a chosen plan (no redemption recorded).
 exports.validatePromo = asyncHandler(async (req, res) => {
   const audience = audienceOf(req, true);

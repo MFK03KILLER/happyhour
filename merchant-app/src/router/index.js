@@ -6,6 +6,7 @@ import LoginView from '../views/Login.vue';
 import ApplyView from '../views/Apply.vue';
 import AdminApplications from '../views/admin/AdminApplications.vue';
 import AdminPricing from '../views/admin/AdminPricing.vue';
+import AdminPlanReport from '../views/admin/AdminPlanReport.vue';
 import ScanView from '../views/Scan.vue';
 import HistoryView from '../views/History.vue';
 import StatsView from '../views/Stats.vue';
@@ -82,6 +83,7 @@ const routes = [
       { path: 'audit', component: AdminAudit },
       { path: 'applications', component: AdminApplications },
       { path: 'pricing', component: AdminPricing },
+      { path: 'plan-payouts', component: AdminPlanReport },
     ],
   },
 ];

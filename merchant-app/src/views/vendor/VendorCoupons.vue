@@ -1,4 +1,5 @@
 <script setup>
+import { TIER_OPTIONS } from '../../lib/plans';
 import { onMounted, ref, computed } from 'vue';
 import { Capacitor } from '@capacitor/core';
 import client from '../../api/client';
@@ -17,7 +18,7 @@ const planInfo = ref(null); // { tier, plan: { label, limits: { activeCoupons } 
 function blankForm() {
   return {
     title: '', subtitle: '', description: '',
-    heroImageUrl: '', offerType: 'BOGO', discountValue: 0,
+    heroImageUrl: '', offerType: 'BOGO', discountValue: 0, requiredPlanTier: 'basic',
     maxUsesPerCustomer: 1, categorySlug: 'dining',
     merchantIds: [],
     validFrom: new Date().toISOString().slice(0, 10),
@@ -64,7 +65,7 @@ function openEdit(c) {
   form.value = {
     title: c.title || '', subtitle: c.subtitle || '', description: c.description || '',
     heroImageUrl: c.heroImageUrl || '',
-    offerType: c.offerType || 'BOGO', discountValue: c.discountValue || 0,
+    offerType: c.offerType || 'BOGO', discountValue: c.discountValue || 0, requiredPlanTier: ({ none: 'basic', lite: 'basic', plus: 'gold', pro: 'premium' }[c.requiredPlanTier] || c.requiredPlanTier || 'basic'),
     maxUsesPerCustomer: c.maxUsesPerCustomer || 1,
     categorySlug: c.categorySlug || 'dining',
     merchantIds: (c.merchantIds || []).map((x) => typeof x === 'object' ? x._id : x),
@@ -301,6 +302,12 @@ onMounted(load);
                 {{ offerTypeLabel(t) }}
               </button>
             </div>
+            <label class="block">
+              <span class="text-xs uppercase font-semibold text-ink-500">Who can claim</span>
+              <select v-model="form.requiredPlanTier" class="input mt-1">
+                <option v-for="o in TIER_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+            </label>
           </div>
 
           <input v-if="['PERCENT_OFF','FLAT_OFF'].includes(form.offerType)" v-model.number="form.discountValue" type="number" min="0" class="input" :placeholder="form.offerType === 'PERCENT_OFF' ? 'Discount %' : 'Discount $'" />

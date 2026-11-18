@@ -17,6 +17,7 @@ const items = [
   { to: '/admin/merchants', label: 'Merchants', icon: 'store' },
   { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
   { to: '/admin/pricing', label: 'Pricing', icon: 'price' },
+  { to: '/admin/plan-payouts', label: 'Plan payouts', icon: 'dollar' },
   { to: '/admin/promo-codes', label: 'Promo Codes', icon: 'ticket' },
   { to: '/admin/deliveries', label: 'Deliveries', icon: 'truck' },
   { to: '/admin/users', label: 'Users', icon: 'users' },

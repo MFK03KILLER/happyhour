@@ -29,7 +29,14 @@ async function merchantStats(merchantId) {
     { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$scannedAt' } }, count: { $sum: 1 } } },
     { $sort: { _id: 1 } },
   ]);
+  const { monthStart } = require('../utils/periods');
+  const byPlanRows = await Redemption.aggregate([
+    { $match: { merchantId, status: 'completed', scannedAt: { $gte: monthStart() } } },
+    { $group: { _id: { $ifNull: ['$memberTier', 'unknown'] }, count: { $sum: 1 } } },
+  ]);
+  const monthByPlan = Object.fromEntries(byPlanRows.map((r) => [r._id, r.count]));
   return {
+    monthByPlan,
     today,
     week,
     month,

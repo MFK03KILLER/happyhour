@@ -8,7 +8,7 @@ const { ForbiddenError } = require('../utils/errors');
 // - Falls back to 'basic' if nothing/expired.
 async function getUserPlan(userOrId, audienceOverride) {
   const user = userOrId._id ? userOrId : await User.findById(userOrId);
-  if (!user) return { plan: plans.getPlan('basic', 'customer'), subscription: null };
+  if (!user) return { plan: plans.getPlan('free', 'customer'), subscription: null, tier: 'free' };
   const audience = audienceOverride || (user.role === 'vendor' || user.role === 'merchant_staff' ? 'merchant' : 'customer');
 
   // For merchants/vendors the subscription tier follows the VENDOR (not each user).
@@ -21,12 +21,11 @@ async function getUserPlan(userOrId, audienceOverride) {
   // Back-compat: old subs may not have audience set
   if (!sub && audience === 'customer') sub = await Subscription.findOne({ customerId: user._id, status: 'active' });
 
-  let tier = user.planTier || 'basic';
+  const none = audience === 'merchant' ? 'basic' : 'free';
+  let tier = sub ? (sub.tier || 'basic') : none;
   // Legacy migration: if a subscription exists but has no tier (pre-3-tier era),
   // assume Gold — that was the only paid plan back then.
-  if (sub && sub.tier) tier = sub.tier;
-  else if (sub) tier = 'gold';
-  if (sub && sub.currentPeriodEnd && sub.currentPeriodEnd < new Date()) tier = 'basic'; // expired
+  if (sub && sub.currentPeriodEnd && sub.currentPeriodEnd < new Date()) tier = none; // expired
 
   return { plan: plans.getPlan(tier, audience), subscription: sub, tier, audience };
 }

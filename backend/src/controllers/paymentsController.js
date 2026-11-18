@@ -23,6 +23,12 @@ exports.webhook = async (req, res) => {
       } else {
         await subscriptionService.finalizeStripeCheckout(session);
       }
+    } else if (event.type === "invoice.paid") {
+      await subscriptionService.handleInvoicePaid(event.data.object);
+    } else if (event.type === "customer.subscription.updated") {
+      await subscriptionService.syncStripeSubscription(event.data.object);
+    } else if (event.type === "customer.subscription.deleted") {
+      await subscriptionService.syncStripeSubscription(event.data.object, true);
     }
     return res.json({ received: true });
   } catch (err) {

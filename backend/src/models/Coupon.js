@@ -18,7 +18,9 @@ const couponSchema = new mongoose.Schema({
   maxUsesPerCustomer: { type: Number, default: 1, min: 1 },
   totalRedemptionsLimit: Number,
   totalRedemptionsCount: { type: Number, default: 0 },
-  requiredPlanTier: { type: String, enum: ['none', 'lite', 'plus', 'pro'], default: 'lite' },
+  // Lowest plan that can claim this coupon. none/lite/plus/pro are pre-Nov-2026
+  // values, read as basic/basic/gold/premium (config/plans.js).
+  requiredPlanTier: { type: String, enum: ['basic', 'gold', 'premium', 'none', 'lite', 'plus', 'pro'], default: 'basic' },
   validFrom: { type: Date, required: true },
   validUntil: { type: Date, required: true, index: true },
   priceUSD: { type: Number, default: 0, min: 0 },

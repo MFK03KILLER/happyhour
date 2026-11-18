@@ -24,7 +24,7 @@ function normalise(value) {
     for (const [tier, p] of Object.entries(tiers)) {
       const monthly = Number(p && p.monthly);
       const yearly = Number(p && p.yearly);
-      if (Number.isFinite(monthly) && monthly > 0 && Number.isFinite(yearly) && yearly > 0) {
+      if (Number.isFinite(monthly) && monthly > 0 && Number.isFinite(yearly) && yearly >= 0) {
         out[audience][tier] = {
           monthly: round2(monthly),
           yearly: round2(yearly),

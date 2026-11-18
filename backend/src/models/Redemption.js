@@ -17,6 +17,13 @@ const redemptionSchema = new mongoose.Schema({
     phone: String,
   },
   amountSavedUSD: Number,
+  // The restaurant (vendor) and the member's plan at the moment of the scan -
+  // used for the monthly per-restaurant allowance and for paying restaurants
+  // back by plan.
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', index: true },
+  memberTier: { type: String, enum: ['free', 'basic', 'gold', 'premium'] },
+  memberPlanPriceUSD: Number,
+  memberSubscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' },
   rating: {
     stars: { type: Number, min: 1, max: 5 },
     comment: String,

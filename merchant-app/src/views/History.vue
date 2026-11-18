@@ -1,4 +1,5 @@
 <script setup>
+import { planStyle } from '../lib/plans';
 import { onMounted, ref } from 'vue';
 import client from '../api/client';
 
@@ -41,6 +42,7 @@ function initials(name) {
         <div class="flex-1 min-w-0">
           <div class="font-semibold truncate">{{ r.customerId?.fullName || r.customerSnapshot?.name }}</div>
           <div class="text-sm text-ink-500 truncate">{{ r.couponId?.title }}</div>
+          <span class="mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold" :class="planStyle(r.memberTier).cls">{{ planStyle(r.memberTier).label }}</span>
         </div>
         <div class="text-right">
           <div class="text-[11px] text-ink-300">{{ new Date(r.scannedAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) }}</div>

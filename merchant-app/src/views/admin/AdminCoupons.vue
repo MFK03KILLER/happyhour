@@ -1,4 +1,5 @@
 <script setup>
+import { TIER_OPTIONS } from '../../lib/plans';
 import { onMounted, ref } from 'vue';
 import client from '../../api/client';
 
@@ -8,7 +9,7 @@ const loading = ref(true);
 const showForm = ref(false);
 const form = ref({
   vendorId: '', title: '', subtitle: '', description: '',
-  heroImageUrl: '', offerType: 'BUNDLE', priceUSD: 0,
+  heroImageUrl: '', offerType: 'BUNDLE', priceUSD: 0, requiredPlanTier: 'basic',
   maxUsesPerCustomer: 1, categorySlug: 'restaurants',
   validFrom: new Date().toISOString().slice(0, 10),
   validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -91,6 +92,9 @@ onMounted(load);
               <option value="PERCENT_OFF">% off</option>
               <option value="FLAT_OFF">Flat $ off</option>
               <option value="FREE_ITEM">Free item</option>
+            </select>
+            <select v-model="form.requiredPlanTier" class="input">
+              <option v-for="o in TIER_OPTIONS" :key="o.value" :value="o.value">Who can claim: {{ o.label }}</option>
             </select>
             <select v-model="form.categorySlug" class="input">
               <option value="restaurants">Restaurants</option>

@@ -84,7 +84,7 @@ exports.merchantDetail = asyncHandler(async (req, res) => {
 });
 
 exports.dailyStatus = asyncHandler(async (req, res) => {
-  const status = await couponService.getDailyStatus(req.user._id);
+  const status = await couponService.getDailyStatus(req.user._id, req.query.vendorId);
   res.json(status);
 });
 

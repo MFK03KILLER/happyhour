@@ -11,7 +11,11 @@ const subscriptionSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', sparse: true },
 
   // Plan tier (basic = free, no subscription needed but stored for analytics)
-  tier: { type: String, enum: ['basic', 'gold', 'premium'], default: 'gold', index: true },
+  tier: { type: String, enum: ['basic', 'gold', 'premium'], default: 'basic', index: true },
+  // Recurring Stripe billing (monthly auto-renew). Absent for memberships set up
+  // by hand (demo/review/presenter accounts) or the 100% promo path.
+  stripeSubscriptionId: { type: String, index: true, sparse: true },
+  stripeCustomerId: String,
   // Billing period
   plan: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' },
   status: { type: String, enum: ['active', 'cancelled', 'expired', 'past_due'], default: 'active', index: true },

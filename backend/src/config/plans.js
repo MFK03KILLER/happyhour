@@ -2,122 +2,90 @@
 // Edit feature flags & limits here; do NOT scatter "is gold?" checks across services.
 
 // ------------- Customer plans -------------
+// The membership model (Nov 2026): three paid monthly plans. What a plan buys is
+// a number of coupon redemptions per participating restaurant per calendar
+// month (Pacific time); a "restaurant" is the vendor, so all its locations
+// share one allowance. Higher plans also unlock coupons marked for them.
+// 'free' is having no membership: browse only.
 const CUSTOMER_PLANS = {
+  free: {
+    tier: 'free',
+    rank: 0,
+    audience: 'customer',
+    label: 'Free',
+    price: { monthly: 0, yearly: 0 },
+    description: 'Browse deals. Join a plan to redeem.',
+    badge: null,
+    features: { access: 'browse' },
+    limits: { redemptionsPerRestaurantMonthly: 0 },
+    bullets: ['Browse participating restaurants and deals'],
+    crossedOut: ['No coupon redemptions'],
+    hidden: true,
+  },
   basic: {
     tier: 'basic',
+    rank: 1,
     audience: 'customer',
     label: 'Basic',
-    price: { monthly: 0, yearly: 0 },
-    description: 'Free plan with limited access.',
+    price: { monthly: 15, yearly: 0 },
+    description: '1 coupon per restaurant every month.',
     badge: null,
-    features: {
-      access: 'basic',                       // basic | full | vip
-      browseEntertainers: 'limited',         // limited | unlimited
-      referrals: false,                      // false | 'limited' | 'unlimited'
-      couponRedemptions: 'none',             // 'none' | 'limited' | 'unlimited'
-      dailyOffers: 'limited',                // limited | priority | vip_exclusive
-      featuredListings: false,
-      hotels: false,                         // false | 'partner' | 'luxury'
-      support: 'basic_email',                // basic_email | priority | 24_7_vip
-      exclusiveEventsContent: false,
-      weekendRedemptions: false,             // false | 'limited' | 'unlimited'
-      verificationBadge: false,              // false | true | 'premium'
-    },
-    limits: {
-      dailyClaims: 0,                        // basic = no claims, must upgrade
-      monthlyClaims: 0,
-      weekendClaims: 0,
-    },
+    features: { access: 'basic' },
+    limits: { redemptionsPerRestaurantMonthly: 1 },
     bullets: [
-      'Browse entertainers (limited)',
-      'Limited access to daily offers',
-      'Basic email support',
+      '1 coupon redemption per participating restaurant every month',
+      'Access to participating restaurant deals',
+      'Exclusive dining discounts',
     ],
-    crossedOut: [
-      'No coupon redemptions',
-      'No featured listings',
-      'No hotels access',
-    ],
+    crossedOut: [],
   },
   gold: {
     tier: 'gold',
+    rank: 2,
     audience: 'customer',
     label: 'Gold',
-    price: { monthly: 12.99, yearly: 129.99 },
-    description: 'Most popular — daily savings.',
+    price: { monthly: 100, yearly: 0 },
+    description: '2 coupons per restaurant every month.',
     badge: 'Most Popular',
-    features: {
-      access: 'full',
-      browseEntertainers: 'unlimited',
-      referrals: 'limited',
-      couponRedemptions: 'limited',
-      dailyOffers: 'priority',
-      featuredListings: true,
-      hotels: 'partner',
-      support: 'priority',
-      exclusiveEventsContent: false,
-      weekendRedemptions: 'limited',
-      verificationBadge: true,
-    },
-    limits: {
-      dailyClaims: 1,
-      monthlyClaims: 30,
-      weekendClaims: 1,
-    },
+    features: { access: 'gold' },
+    limits: { redemptionsPerRestaurantMonthly: 2 },
     bullets: [
-      'Unlimited browsing',
-      '1 coupon claim per day',
-      'Limited referrals',
-      'Priority daily offers',
-      'Partner hotel access',
-      'Limited weekend deals',
-      'Priority support',
-      'Verification badge',
+      '2 coupon redemptions per participating restaurant every month',
+      'Access to all Basic offers',
+      'Exclusive premium restaurant deals',
     ],
-    crossedOut: [
-      'No exclusive VIP events',
-    ],
+    crossedOut: [],
   },
   premium: {
     tier: 'premium',
+    rank: 3,
     audience: 'customer',
     label: 'Premium',
-    price: { monthly: 29.99, yearly: 299.99 },
-    description: 'VIP-only access to everything.',
+    price: { monthly: 269.99, yearly: 0 },
+    description: '4 coupons per restaurant every month.',
     badge: 'VIP',
-    features: {
-      access: 'vip',
-      browseEntertainers: 'unlimited',
-      referrals: 'unlimited',
-      couponRedemptions: 'unlimited',
-      dailyOffers: 'vip_exclusive',
-      featuredListings: 'premium_placement',
-      hotels: 'luxury',
-      support: '24_7_vip',
-      exclusiveEventsContent: true,
-      weekendRedemptions: 'unlimited',
-      verificationBadge: 'premium',
-    },
-    limits: {
-      dailyClaims: 1,
-      monthlyClaims: 30,
-      weekendClaims: 1,
-    },
+    features: { access: 'premium' },
+    limits: { redemptionsPerRestaurantMonthly: 4 },
     bullets: [
-      'VIP access to the platform',
-      '1 coupon claim per day',
-      'Unlimited referrals',
-      'VIP-exclusive daily offers',
-      'Premium placement & visibility',
-      'Luxury hotel access',
-      'Unlimited weekend deals',
-      '24/7 VIP support',
-      'Exclusive events & content',
-      'Premium verification badge',
+      '4 coupon redemptions per participating restaurant every month',
+      'Access to all Gold offers',
+      'VIP restaurant promotions',
+      'Access to exclusive high-value deals',
     ],
     crossedOut: [],
   },
 };
+
+// Coupons can be limited to a plan and up. Old values from before the Nov 2026
+// plans (none/lite/plus/pro) map onto the new ones.
+const COUPON_TIER_ALIASES = { none: 'basic', lite: 'basic', plus: 'gold', pro: 'premium' };
+function couponRequiredTier(coupon) {
+  const t = (coupon && coupon.requiredPlanTier) || 'basic';
+  return COUPON_TIER_ALIASES[t] || t;
+}
+function tierRank(tier) {
+  return (CUSTOMER_PLANS[tier] && CUSTOMER_PLANS[tier].rank) || 0;
+}
 
 // ------------- Merchant plans -------------
 const MERCHANT_PLANS = {
@@ -253,8 +221,8 @@ function withPrice(plan) {
 }
 
 function getPlan(tier, audience = 'customer') {
-  const set = audience === 'merchant' ? MERCHANT_PLANS : CUSTOMER_PLANS;
-  return withPrice(set[tier] || set.basic);
+  if (audience === 'merchant') return withPrice(MERCHANT_PLANS[tier] || MERCHANT_PLANS.basic);
+  return withPrice(CUSTOMER_PLANS[tier] || CUSTOMER_PLANS.free);
 }
 
 function listPlans(audience = 'customer') {
@@ -264,7 +232,7 @@ function listPlans(audience = 'customer') {
 
 // Returns trimmed, no-private-fields version suitable for /public/plans
 function publicSummary(audience = 'customer') {
-  return listPlans(audience).map((p) => ({
+  return listPlans(audience).filter((p) => !p.hidden).map((p) => ({
     tier: p.tier,
     audience: p.audience,
     label: p.label,
@@ -280,6 +248,8 @@ function publicSummary(audience = 'customer') {
 
 module.exports = {
   CUSTOMER_PLANS,
+  couponRequiredTier,
+  tierRank,
   MERCHANT_PLANS,
   getPlan,
   listPlans,

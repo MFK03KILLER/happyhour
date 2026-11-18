@@ -225,6 +225,11 @@ const { updateApplicationSchema } = require('../validators/partnerApplicationVal
 router.get('/partner-applications', partnerCtrl.list);
 router.patch('/partner-applications/:id', writeLimiter, validate(updateApplicationSchema), partnerCtrl.update);
 
+// ---------------- Redemptions by member plan (restaurant payouts) ----------------
+const reportsCtrl = require('../controllers/adminReportsController');
+router.get('/reports/redemptions-by-plan', reportsCtrl.redemptionsByPlan);
+router.get('/reports/redemptions.csv', reportsCtrl.redemptionsCsv);
+
 // ---------------- Subscription pricing ----------------
 const pricingCtrl = require('../controllers/adminPricingController');
 const { priceSchema } = require('../validators/pricingValidators');
