@@ -18,6 +18,7 @@ const items = [
   { to: '/admin/coupons', label: 'Coupons', icon: 'tag' },
   { to: '/admin/pricing', label: 'Pricing', icon: 'price' },
   { to: '/admin/plan-payouts', label: 'Plan payouts', icon: 'dollar' },
+  { to: '/admin/contracts', label: 'Contracts', icon: 'doc' },
   { to: '/admin/promo-codes', label: 'Promo Codes', icon: 'ticket' },
   { to: '/admin/deliveries', label: 'Deliveries', icon: 'truck' },
   { to: '/admin/users', label: 'Users', icon: 'users' },
@@ -42,7 +43,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
   <div class="min-h-screen bg-cream-100 flex">
     <div v-if="menuOpen" class="md:hidden fixed inset-0 z-40 bg-black/40 animate-fade-in" @click="menuOpen = false"></div>
     <aside
-      class="flex-col bg-white border-r border-cream-200 safe-top safe-bottom fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto shadow-lift md:static md:z-auto md:w-64 md:max-w-none md:shadow-none md:flex md:flex-shrink-0"
+      class="print:hidden flex-col bg-white border-r border-cream-200 safe-top safe-bottom fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto shadow-lift md:static md:z-auto md:w-64 md:max-w-none md:shadow-none md:flex md:flex-shrink-0"
       :class="menuOpen ? 'flex' : 'hidden'"
     >
       <div class="px-5 py-4 flex items-center gap-2 border-b border-cream-200">
@@ -88,7 +89,7 @@ async function doLogout() { await auth.logout(); router.push('/login'); }
     </aside>
 
     <main class="flex-1 min-w-0 overflow-x-clip">
-      <header class="md:hidden sticky top-0 z-30 safe-top px-3 pb-3 bg-white/95 backdrop-blur border-b border-cream-200 flex items-center gap-2">
+      <header class="print:hidden md:hidden sticky top-0 z-30 safe-top px-3 pb-3 bg-white/95 backdrop-blur border-b border-cream-200 flex items-center gap-2">
         <button type="button" class="w-10 h-10 rounded-full flex items-center justify-center active:bg-cream-200" aria-label="Open menu" @click="menuOpen = true">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>

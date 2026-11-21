@@ -77,4 +77,9 @@ const applyLimiter = rateLimit({
 });
 router.post('/partner-applications', applyLimiter, validate(applySchema), partnerCtrl.submit);
 
+// Contract signing links (the token in the link is the only credential).
+const contractCtrl = require('../controllers/contractController');
+router.get('/contracts/:token', contractCtrl.publicGet);
+router.post('/contracts/:token/sign', applyLimiter, contractCtrl.publicSign);
+
 module.exports = router;

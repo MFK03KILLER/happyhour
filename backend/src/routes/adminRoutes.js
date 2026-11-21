@@ -225,6 +225,17 @@ const { updateApplicationSchema } = require('../validators/partnerApplicationVal
 router.get('/partner-applications', partnerCtrl.list);
 router.patch('/partner-applications/:id', writeLimiter, validate(updateApplicationSchema), partnerCtrl.update);
 
+// ---------------- Contracts ----------------
+const contractCtrl = require('../controllers/contractController');
+router.get('/contracts/templates', contractCtrl.listTemplates);
+router.post('/contracts/templates', writeLimiter, contractCtrl.createTemplate);
+router.put('/contracts/templates/:id', writeLimiter, contractCtrl.updateTemplate);
+router.delete('/contracts/templates/:id', writeLimiter, contractCtrl.archiveTemplate);
+router.get('/contracts/sent', contractCtrl.listSent);
+router.get('/contracts/sent/:id', contractCtrl.getSent);
+router.post('/contracts/sent', writeLimiter, contractCtrl.send);
+router.post('/contracts/sent/:id/void', writeLimiter, contractCtrl.voidSent);
+
 // ---------------- Redemptions by member plan (restaurant payouts) ----------------
 const reportsCtrl = require('../controllers/adminReportsController');
 router.get('/reports/redemptions-by-plan', reportsCtrl.redemptionsByPlan);
