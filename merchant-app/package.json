@@ -28,6 +28,7 @@
     "@capacitor/status-bar": "^8.0.2",
     "@zxing/browser": "^0.1.5",
     "axios": "^1.7.2",
+    "mammoth": "^1.13.0",
     "pinia": "^2.2.0",
     "vue": "^3.4.31",
     "vue-router": "^4.4.0"

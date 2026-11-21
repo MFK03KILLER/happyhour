@@ -7,6 +7,8 @@ import ApplyView from '../views/Apply.vue';
 import AdminApplications from '../views/admin/AdminApplications.vue';
 import AdminPricing from '../views/admin/AdminPricing.vue';
 import AdminPlanReport from '../views/admin/AdminPlanReport.vue';
+import AdminContracts from '../views/admin/AdminContracts.vue';
+import SignContractView from '../views/SignContract.vue';
 import ScanView from '../views/Scan.vue';
 import HistoryView from '../views/History.vue';
 import StatsView from '../views/Stats.vue';
@@ -42,6 +44,7 @@ import AdminDeliveries from '../views/admin/AdminDeliveries.vue';
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
   { path: '/apply', component: ApplyView, meta: { public: true } },
+  { path: '/sign/:token', component: SignContractView, meta: { public: true } },
   { path: '/', component: ScanView, meta: { roles: ['merchant_staff'] } },
   { path: '/history', component: HistoryView, meta: { roles: ['merchant_staff'] } },
   { path: '/stats', component: StatsView, meta: { roles: ['merchant_staff'] } },
@@ -84,6 +87,7 @@ const routes = [
       { path: 'applications', component: AdminApplications },
       { path: 'pricing', component: AdminPricing },
       { path: 'plan-payouts', component: AdminPlanReport },
+      { path: 'contracts', component: AdminContracts },
     ],
   },
 ];

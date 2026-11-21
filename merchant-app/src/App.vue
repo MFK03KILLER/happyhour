@@ -15,7 +15,7 @@ const showTabs = computed(() => auth.isMerchantStaff && route.path !== '/login')
 // Staff screens are phone layouts. On an iPad they stretched to the full width;
 // keep them in a centred column. The dashboards are built wide, and sign-in /
 // apply paint a full-bleed background and centre their own content.
-const wideRoute = computed(() => ['/admin', '/vendor', '/login', '/apply'].some((p) => route.path.startsWith(p)));
+const wideRoute = computed(() => ['/admin', '/vendor', '/login', '/apply', '/sign/'].some((p) => route.path.startsWith(p)));
 </script>
 
 <template>
