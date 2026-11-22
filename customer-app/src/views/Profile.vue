@@ -72,15 +72,16 @@ async function deleteAccount() {
           <div>
             <div class="text-xs uppercase tracking-wider text-ink-500 font-semibold">Membership</div>
             <div class="font-bold mt-1">
-              <span v-if="isSubscribed()">Active · {{ subscription.plan }}</span>
+              <span v-if="isSubscribed()">{{ ({ basic: 'Basic', gold: 'Gold', premium: 'Premium' })[subscription.tier] || 'Active' }} member</span>
               <span v-else class="text-coral-600">Not subscribed</span>
             </div>
             <div v-if="isSubscribed()" class="text-xs text-ink-500 mt-0.5">
-              Renews {{ new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric'}) }}
+              {{ subscription.stripeSubscriptionId && !subscription.cancelAtPeriodEnd ? 'Renews' : 'Active until' }} {{ new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month:'short', day:'numeric'}) }}
             </div>
-            <div v-else class="text-xs text-ink-500 mt-0.5">Subscribe to unlock all coupons</div>
+            <div v-else class="text-xs text-ink-500 mt-0.5">Join a plan to start claiming coupons</div>
           </div>
-          <svg class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
+          <span v-if="isSubscribed() && subscription.tier !== 'premium'" class="rounded-full bg-coral-500 text-white text-xs font-bold px-3 py-1.5">Upgrade</span>
+          <svg v-else class="w-5 h-5 text-ink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 5 7 7-7 7"/></svg>
         </div>
       </router-link>
     </section>

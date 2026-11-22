@@ -112,7 +112,8 @@ const greetingIcon = computed(() => {
         <div class="text-xs uppercase tracking-wider font-semibold text-ink-500">{{ daily.planLabel }} member</div>
         <div class="font-bold">{{ daily.unlimited ? 'Unlimited coupons (test account)' : `${daily.limit} coupon${daily.limit === 1 ? '' : 's'} per restaurant this month` }}</div>
       </div>
-      <i class="fa-solid fa-chevron-right text-ink-300"></i>
+      <span v-if="['basic', 'gold'].includes(daily.tier)" class="rounded-full bg-coral-500 text-white text-xs font-bold px-3 py-1.5">Upgrade</span>
+      <i v-else class="fa-solid fa-chevron-right text-ink-300"></i>
     </router-link>
 
     <section class="mx-5 mt-4">
