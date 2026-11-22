@@ -308,6 +308,7 @@ function offPeakLabel() {
       <div class="text-center text-sm">
         <span class="font-bold text-teal-700">{{ daily.remainingLabel }}</span>
         <span class="text-ink-500"> of {{ daily.limitLabel }} {{ daily.planLabel }} coupons left here this month</span>
+        <router-link v-if="daily.remaining === 0 && ['basic', 'gold'].includes(daily.tier)" :to="{ path: '/subscribe', query: { plan: daily.tier === 'basic' ? 'gold' : 'premium' } }" class="ml-2 font-bold text-coral-600">Upgrade →</router-link>
       </div>
     </div>
 

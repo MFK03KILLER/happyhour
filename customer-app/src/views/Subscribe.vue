@@ -41,7 +41,9 @@ async function loadSub() {
   currentPlan.value = data.plan;
   availablePlans.value = (data.available || []).filter((p) => p.tier !== 'free');
   paymentsProvider.value = data.paymentsProvider || 'mock';
-  if (isActive.value && availablePlans.value.some((p) => p.tier === sub.value.tier)) {
+  const wanted = typeof route.query.plan === 'string' ? route.query.plan : '';
+  if (availablePlans.value.some((p) => p.tier === wanted)) selectedTier.value = wanted;
+  else if (isActive.value && availablePlans.value.some((p) => p.tier === sub.value.tier)) {
     selectedTier.value = nextTierUp(sub.value.tier) || sub.value.tier;
   }
   return data;
@@ -219,10 +221,10 @@ const ctaLabel = computed(() => {
   if (checkingOut.value) return 'Redirecting…';
   if (busy.value) return 'One moment…';
   if (freeLaunch.value) return `Start ${selected.value.label} free`;
-  if (changing.value && autoRenews.value) return `${upgrade.value ? 'Upgrade' : 'Switch'} to ${selected.value.label} — ${money(listPrice.value)}/mo`;
+  if (changing.value) return `${upgrade.value ? 'Upgrade' : 'Switch'} to ${selected.value.label} — ${money(listPrice.value)}/mo`;
   return `Get ${selected.value.label} — ${money(finalPrice.value)}${promo.value ? ' first month' : '/mo'}`;
 });
-const showCta = computed(() => selected.value && (!isActive.value || (changing.value && (autoRenews.value || freeLaunch.value))));
+const showCta = computed(() => selected.value && (!isActive.value || changing.value));
 </script>
 
 <template>
@@ -266,7 +268,7 @@ const showCta = computed(() => selected.value && (!isActive.value || (changing.v
 
       <div class="px-5 mt-6">
         <div class="text-center">
-          <h1 class="text-2xl font-bold tracking-tight">{{ isActive ? 'Change plan' : 'Pick your plan' }}</h1>
+          <h1 class="text-2xl font-bold tracking-tight">{{ !isActive ? 'Pick your plan' : currentTier === 'premium' ? 'Change plan' : 'Upgrade your plan' }}</h1>
           <p class="text-ink-500 mt-1 text-sm">Each plan gives you coupons at every participating restaurant, every month.</p>
         </div>
 
@@ -320,7 +322,11 @@ const showCta = computed(() => selected.value && (!isActive.value || (changing.v
         </div>
 
         <button v-if="showCta" :disabled="checkingOut || busy" class="ios-button-primary w-full mt-5 disabled:opacity-60" @click="startPurchase">{{ ctaLabel }}</button>
-        <p v-if="isActive && changing && !autoRenews && !freeLaunch" class="mt-4 text-center text-sm text-ink-500">To change this membership, contact support.</p>
+        <p v-if="isActive && changing" class="mt-3 text-center text-xs text-ink-500">
+          <template v-if="autoRenews && upgrade">You pay the difference for the rest of this month now; your coupons go up right away.</template>
+          <template v-else-if="autoRenews">The unused part of this month is credited to your next bill.</template>
+          <template v-else-if="!freeLaunch">Your new plan starts today and renews monthly.</template>
+        </p>
         <div class="text-center text-xs text-ink-300 mt-3">
           {{ freeLaunch ? 'Free during launch · Nothing to pay' : `Secure payment by Stripe · ${walletLine} · Renews monthly · Cancel anytime` }}
         </div>
