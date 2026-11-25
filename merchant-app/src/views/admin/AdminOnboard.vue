@@ -21,6 +21,7 @@ onMounted(async () => {
   vendors.value = v.data.items || [];
   contracts.value = c.data.items || [];
   if (contracts.value[0]) form.contractId = contracts.value[0]._id;
+  else form.sendContract = false;
 });
 
 const CATEGORIES = [
@@ -222,7 +223,7 @@ function startOver() { window.location.reload(); }
           <div class="mt-2 rounded-2xl bg-cream-100 divide-y divide-cream-200">
             <div v-for="l in result.logins" :key="l.email" class="px-4 py-3 text-sm flex flex-wrap gap-x-3">
               <span class="font-semibold w-full md:w-48">{{ l.role }}</span>
-              <code>{{ l.email }}</code><code class="font-bold">{{ l.password }}</code>
+              <code class="break-all">{{ l.email }}</code><code class="font-bold">{{ l.password }}</code>
             </div>
           </div>
         </div>
