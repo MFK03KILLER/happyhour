@@ -41,6 +41,7 @@ function buildApp() {
 
   // Contract texts and drawn signatures are bigger than ordinary requests.
   app.use('/api/v1/admin/contracts', express.json({ limit: '2mb' }));
+  app.use('/api/v1/admin/onboarding', express.json({ limit: '500kb' }));
   app.use('/api/v1/public/contracts', express.json({ limit: '1mb' }));
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));

@@ -225,6 +225,11 @@ const { updateApplicationSchema } = require('../validators/partnerApplicationVal
 router.get('/partner-applications', partnerCtrl.list);
 router.patch('/partner-applications/:id', writeLimiter, validate(updateApplicationSchema), partnerCtrl.update);
 
+// ---------------- Restaurant onboarding ----------------
+const onboardCtrl = require('../controllers/onboardingController');
+router.get('/onboarding/places', onboardCtrl.places);
+router.post('/onboarding', writeLimiter, onboardCtrl.onboard);
+
 // ---------------- Contracts ----------------
 const contractCtrl = require('../controllers/contractController');
 router.get('/contracts/templates', contractCtrl.listTemplates);
