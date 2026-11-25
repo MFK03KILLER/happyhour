@@ -66,6 +66,71 @@ function move(e) {
   hasInk.value = true;
 }
 function up() { drawing = false; }
+
+const full = ref(false);
+const fullCanvas = ref(null);
+let fctx = null;
+let fdrawing = false;
+let flast = null;
+const fullInk = ref(false);
+async function openFull() {
+  full.value = true;
+  await nextTick();
+  const c = fullCanvas.value;
+  const ratio = Math.max(1, window.devicePixelRatio || 1);
+  const r = c.getBoundingClientRect();
+  c.width = r.width * ratio;
+  c.height = r.height * ratio;
+  fctx = c.getContext('2d');
+  fctx.scale(ratio, ratio);
+  fctx.lineWidth = 3.4;
+  fctx.lineCap = 'round';
+  fctx.lineJoin = 'round';
+  fctx.strokeStyle = '#0F172A';
+  fullInk.value = false;
+}
+function fpoint(e) { const r = fullCanvas.value.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function fdown(e) { e.preventDefault(); fullCanvas.value.setPointerCapture?.(e.pointerId); fdrawing = true; flast = fpoint(e); }
+function fmove(e) {
+  if (!fdrawing) return;
+  e.preventDefault();
+  const p = fpoint(e);
+  fctx.beginPath();
+  fctx.moveTo(flast.x, flast.y);
+  fctx.lineTo(p.x, p.y);
+  fctx.stroke();
+  flast = p;
+  fullInk.value = true;
+}
+function fup() { fdrawing = false; }
+function fclear() { const c = fullCanvas.value; fctx.clearRect(0, 0, c.width, c.height); fullInk.value = false; }
+// Copy the big signature into the form's box (scaled to fit, trimmed of empty space).
+function useFull() {
+  if (!fullInk.value) { full.value = false; return; }
+  const src = fullCanvas.value;
+  const sctx = src.getContext('2d');
+  const { width: w, height: h } = src;
+  const px = sctx.getImageData(0, 0, w, h).data;
+  let minX = w, minY = h, maxX = 0, maxY = 0;
+  for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+    if (px[(y * w + x) * 4 + 3] > 10) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  }
+  const pad = 12;
+  minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+  maxX = Math.min(w, maxX + pad); maxY = Math.min(h, maxY + pad);
+  const dst = canvas.value;
+  const dctx = dst.getContext('2d');
+  dctx.save();
+  dctx.setTransform(1, 0, 0, 1, 0, 0);
+  dctx.clearRect(0, 0, dst.width, dst.height);
+  const scale = Math.min(dst.width / (maxX - minX), dst.height / (maxY - minY)) * 0.9;
+  const dw = (maxX - minX) * scale;
+  const dh = (maxY - minY) * scale;
+  dctx.drawImage(src, minX, minY, maxX - minX, maxY - minY, (dst.width - dw) / 2, (dst.height - dh) / 2, dw, dh);
+  dctx.restore();
+  hasInk.value = true;
+  full.value = false;
+}
 function clearPad() {
   const c = canvas.value;
   ctx.clearRect(0, 0, c.width, c.height);
@@ -166,7 +231,10 @@ async function sign() {
           <div>
             <div class="flex items-center justify-between">
               <span class="text-xs uppercase tracking-wider font-semibold text-ink-500">Draw your signature</span>
-              <button type="button" class="text-xs font-semibold text-teal-700" @click="clearPad">Clear</button>
+              <span class="flex gap-4">
+                <button type="button" class="text-xs font-semibold text-teal-700" @click="openFull"><i class="fa-solid fa-expand mr-1"></i>Sign full screen</button>
+                <button type="button" class="text-xs font-semibold text-teal-700" @click="clearPad">Clear</button>
+              </span>
             </div>
             <canvas
               ref="canvas"
@@ -182,6 +250,25 @@ async function sign() {
           <button type="submit" :disabled="signing" class="ios-button-primary w-full disabled:opacity-60">{{ signing ? 'Signing…' : 'Sign contract' }}</button>
         </form>
       </template>
+    </div>
+
+    <!-- Full-screen signing: a big white page, sign with your finger -->
+    <div v-if="full" class="fixed inset-0 z-[90] bg-white flex flex-col" style="padding-top: max(env(safe-area-inset-top), 12px); padding-bottom: max(env(safe-area-inset-bottom), 12px)">
+      <div class="px-5 flex items-center justify-between">
+        <button type="button" class="text-ink-500 font-semibold py-2" @click="full = false">Cancel</button>
+        <div class="font-bold">Sign with your finger</div>
+        <button type="button" class="text-teal-700 font-bold py-2" @click="useFull">Done</button>
+      </div>
+      <div class="relative flex-1 m-4">
+        <canvas ref="fullCanvas" class="absolute inset-0 w-full h-full rounded-3xl border-2 border-dashed border-ink-300/50 touch-none" @pointerdown="fdown" @pointermove="fmove" @pointerup="fup" @pointerleave="fup" @pointercancel="fup"></canvas>
+        <div v-if="!fullInk" class="pointer-events-none absolute inset-0 flex items-center justify-center text-ink-300 text-lg">Sign here</div>
+        <div class="pointer-events-none absolute left-8 right-8 bottom-16 border-b-2 border-ink-300/60"></div>
+        <div class="pointer-events-none absolute left-8 bottom-6 text-ink-300 text-2xl">✕</div>
+      </div>
+      <div class="px-5 flex justify-between text-sm">
+        <span class="text-ink-500">Tip: turn your phone sideways for more room.</span>
+        <button type="button" class="font-semibold text-teal-700" @click="fclear">Clear</button>
+      </div>
     </div>
   </div>
 </template>

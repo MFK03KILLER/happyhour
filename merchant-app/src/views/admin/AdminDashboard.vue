@@ -43,6 +43,11 @@ function kindLabel(k) {
   <div class="p-5 md:p-8">
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
     <p class="text-ink-500 mt-1">Platform overview</p>
+    <router-link to="/admin/onboard" class="mt-4 ios-card p-4 flex items-center gap-3 bg-teal-50 border border-teal-600/20 active:scale-[.99] transition">
+      <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center"><i class="fa-solid fa-store"></i></div>
+      <div class="flex-1"><div class="font-bold text-teal-800">Onboard a restaurant</div><div class="text-xs text-ink-500">Locations, offers, logins and contract in a few taps</div></div>
+      <i class="fa-solid fa-chevron-right text-teal-700"></i>
+    </router-link>
 
     <div v-if="loading" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
       <div v-for="i in 8" :key="i" class="ios-card h-28 animate-pulse"></div>

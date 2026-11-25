@@ -56,7 +56,7 @@ onMounted(load);
         <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Vendors</h1>
         <p class="text-ink-500 mt-1">Parent companies / brands</p>
       </div>
-      <button @click="showForm = true" class="ios-button-primary">+ New vendor</button>
+      <div class="flex gap-2 flex-wrap justify-end"><router-link to="/admin/onboard" class="ios-button-primary"><i class="fa-solid fa-store mr-1.5"></i>Onboard restaurant</router-link><button @click="showForm = true" class="ios-card px-4 py-2 text-sm font-semibold text-ink-700">Advanced</button></div>
     </div>
 
     <div v-if="lastCreated" class="mt-6 ios-card p-5 bg-teal-50 border border-teal-600/30">
